@@ -1,3 +1,5 @@
+#![feature(box_patterns)]
+
 mod lang;
 pub use lang::*;
 
@@ -6,6 +8,9 @@ pub use tokenize::*;
 
 mod parser;
 pub use parser::*;
+
+mod run;
+pub use run::*;
 
 use std::fs::*;
 use std::io::Read;
@@ -16,5 +21,7 @@ fn main() {
     let mut data = String::new();
     f.read_to_string(&mut data).unwrap();
 
-    dbg!(parse(data));
+    let l = parse(data);
+    let l = run(l);
+    println!("{:?}", l);
 }
