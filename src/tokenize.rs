@@ -1,6 +1,6 @@
 use crate::lang::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
     Lambda, Dot, // for `\x. x`
     Ident(Var),

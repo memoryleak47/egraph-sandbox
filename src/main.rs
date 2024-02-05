@@ -4,6 +4,9 @@ pub use lang::*;
 mod tokenize;
 pub use tokenize::*;
 
+mod parser;
+pub use parser::*;
+
 use std::fs::*;
 use std::io::Read;
 
@@ -13,5 +16,5 @@ fn main() {
     let mut data = String::new();
     f.read_to_string(&mut data).unwrap();
 
-    dbg!(tokenize(data));
+    dbg!(parse(data));
 }

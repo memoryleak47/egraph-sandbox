@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum Term {
     Abstraction(Var, Box<Term>),
     Application(Box<Term>, Box<Term>),
