@@ -23,5 +23,5 @@ fn main() {
 
     let l = parse(data);
     let l = run(l);
-    println!("{:?}", l);
+    println!("{}", l);
 }
