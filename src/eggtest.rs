@@ -72,5 +72,14 @@ fn simplify(s: &str) -> String {
 pub fn main() {
     assert_eq!(simplify("(app (abs v b) c)"), "b");
     assert_eq!(simplify("(app (abs v v) c)"), "c");
-    assert_eq!(simplify("(app (abs v v) c)"), "c");
+
+    let omega = "(abs x (app x x))";
+    let infinite_loop = format!("(app {omega} {omega})");
+
+    let id = "(abs x x)";
+    let t = "(abs x (abs y x))";
+    let s = format!("(app (app {t} {id}) {infinite_loop})");
+
+    assert_eq!(simplify(&s), "(abs x x)");
+    assert_eq!(simplify(&infinite_loop), infinite_loop);
 }
