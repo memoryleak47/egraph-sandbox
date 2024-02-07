@@ -1,39 +1,66 @@
 use egg::*;
 
 define_language! {
-    enum SimpleLanguage {
+    enum Term {
         "abs" = Abstraction([Id; 2]),
         "app" = Application([Id; 2]),
-        Var(Symbol),
+        Symb(Symbol),
     }
 }
 
-fn make_rules() -> Vec<Rewrite<SimpleLanguage, ()>> {
+fn make_rules() -> Vec<Rewrite<Term, ()>> {
     vec![
-        rewrite!("beta-reduction"; "(app (abs ?a ?b) ?c)" => { BetaReduction }),
+        rewrite!("beta-reduction"; "(app (abs ?v ?b) ?c)" => { BetaReduction }),
     ]
 }
 
 struct BetaReduction;
 
-impl Applier<SimpleLanguage, ()> for BetaReduction {
-    fn apply_one(&self, eg: &mut EGraph<SimpleLanguage, ()>, id: Id, subst: &Subst, pat: Option<&PatternAst<SimpleLanguage>>, _rule_name: Symbol) -> Vec<Id> {
-        let a: Var = "?a".parse().unwrap();
+// returns b[v/c]
+fn substitute(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>) -> Id {
+    // TODO this "choice" might be suboptimal!
+    let l = eg[b].nodes.iter().next().unwrap().clone();
+
+    match l {
+        Term::Abstraction([v2, y]) if eg.find(v2) == eg.find(v) => b,
+        Term::Abstraction([v2, y]) => {
+            let id = substitute(v, y, c, eg, touched);
+            let ret = eg.add(Term::Abstraction([v2, id]));
+            touched.push(ret);
+            ret
+        }
+        Term::Application([l, r]) => {
+            let l = substitute(v, l, c, eg, touched);
+            let r = substitute(v, l, c, eg, touched);
+            let ret = eg.add(Term::Application([l, r]));
+            touched.push(ret);
+            ret
+        },
+        Term::Symb(v2) if eg.find(v) == eg.find(b) => c,
+        Term::Symb(v2) => b,
+    }
+}
+
+impl Applier<Term, ()> for BetaReduction {
+    fn apply_one(&self, eg: &mut EGraph<Term, ()>, id: Id, subst: &Subst, pat: Option<&PatternAst<Term>>, _rule_name: Symbol) -> Vec<Id> {
+        let v: Var = "?v".parse().unwrap();
         let b: Var = "?b".parse().unwrap();
         let c: Var = "?c".parse().unwrap();
 
-        let a = subst.get(a).unwrap().clone();
-        let b = subst.get(b).unwrap().clone();
-        let c = subst.get(c).unwrap().clone();
+        let v: Id = subst[v];
+        let b: Id = subst[b];
+        let c: Id = subst[c];
 
-        eg.union(id, b);
+        let mut touched = vec![id];
+        let new = substitute(v, b, c, eg, &mut touched);
+        eg.union(new, id);
 
-        vec![id, b]
+        touched
     }
 }
 
 fn simplify(s: &str) -> String {
-    let expr: RecExpr<SimpleLanguage> = s.parse().unwrap();
+    let expr: RecExpr<Term> = s.parse().unwrap();
     let runner = Runner::default().with_expr(&expr).run(&make_rules());
     let root = runner.roots[0];
     let extractor = Extractor::new(&runner.egraph, AstSize);
@@ -43,5 +70,7 @@ fn simplify(s: &str) -> String {
 }
 
 pub fn main() {
-    assert_eq!(simplify("(app (abs a b) c)"), "b");
+    assert_eq!(simplify("(app (abs v b) c)"), "b");
+    assert_eq!(simplify("(app (abs v v) c)"), "c");
+    assert_eq!(simplify("(app (abs v v) c)"), "c");
 }
