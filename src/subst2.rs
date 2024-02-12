@@ -23,6 +23,9 @@ fn substitute_impl(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut
     for x in nodes {
         let i = term_subst(x, v, b, c, eg, touched, map);
         touched.push(i); // TODO not necessarily touched!
+
+        // TODO adding this so late to `map` might cause infinite recursion.
+        // Could be solved by allocating a class for `b[v/c]` at the beginning of this function, if that would be possible.
         if new_b.is_none() {
             map.insert(b, i);
             new_b = Some(i);
