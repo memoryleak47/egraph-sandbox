@@ -2,7 +2,7 @@ use egg::*;
 
 define_language! {
     enum Term {
-        "abs" = Abstraction([Id; 2]), // TODO the left arg of `abs` should only be a variable, not a full-blown Term.
+        "lam" = Abstraction([Id; 2]), // TODO the left arg of `lam` should only be a variable, not a full-blown Term.
         "app" = Application([Id; 2]),
         Symb(Symbol),
 
@@ -14,7 +14,7 @@ define_language! {
 
 fn make_rules() -> Vec<Rewrite<Term, ()>> {
     vec![
-        rewrite!("beta-reduction"; "(app (abs ?v ?b) ?c)" => { BetaReduction }),
+        rewrite!("beta-reduction"; "(app (lam ?v ?b) ?c)" => { BetaReduction }),
         rewrite!("mul-0"; "(* ?a 0)" => "0"),
         rewrite!("mul-1"; "(* ?a 1)" => "?a"),
         rewrite!("mul-comm"; "(* ?a ?b)" => "(* ?b ?a)"),
@@ -89,17 +89,17 @@ fn simplify(s: &str) -> String {
 }
 
 pub fn main() {
-    assert_eq!(simplify("(app (abs v b) c)"), "b");
-    assert_eq!(simplify("(app (abs v v) c)"), "c");
+    assert_eq!(simplify("(app (lam v b) c)"), "b");
+    assert_eq!(simplify("(app (lam v v) c)"), "c");
 
-    let omega = "(abs x (app x x))";
+    let omega = "(lam x (app x x))";
     let infinite_loop = format!("(app {omega} {omega})");
 
-    let id = "(abs x x)";
-    let t = "(abs x (abs y x))";
+    let id = "(lam x x)";
+    let t = "(lam x (lam y x))";
     let s = format!("(app (app {t} {id}) {infinite_loop})");
 
-    assert_eq!(simplify(&s), "(abs x x)");
+    assert_eq!(simplify(&s), "(lam x x)");
     assert_eq!(simplify(&infinite_loop), infinite_loop);
 
     assert_eq!(simplify("(+ x (* 2 0))"), "x");
