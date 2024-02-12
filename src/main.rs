@@ -1,7 +1,30 @@
 mod term;
 use term::*;
 
+mod subst1;
+use subst1::*;
+
+mod subst2;
+use subst2::*;
+
 use egg::*;
+
+fn make_rules() -> Vec<Rewrite<Term, ()>> {
+    vec![
+        rewrite!("beta-reduction1"; "(app (lam ?v ?b) ?c)" => { BetaReduction1 }),
+        rewrite!("beta-reduction2"; "(app (lam ?v ?b) ?c)" => { BetaReduction2 }),
+        rewrite!("mul-0"; "(* ?a 0)" => "0"),
+        rewrite!("mul-1"; "(* ?a 1)" => "?a"),
+        rewrite!("mul-comm"; "(* ?a ?b)" => "(* ?b ?a)"),
+        rewrite!("mul-assoc"; "(* ?a (* ?b ?c))" => "(* (* ?a ?b) ?c)"),
+
+        rewrite!("add-0"; "(+ ?a 0)" => "?a"),
+        rewrite!("add-comm"; "(+ ?a ?b)" => "(+ ?b ?a)"),
+        rewrite!("add-assoc"; "(+ ?a (+ ?b ?c))" => "(+ (+ ?a ?b) ?c)"),
+
+        rewrite!("distr"; "(* (+ ?a ?b) ?c)" => "(+ (* ?a ?c) (* ?b ?c))"),
+    ]
+}
 
 fn main() {
     assert_eq!(simplify("(app (lam v b) c)"), "b");
