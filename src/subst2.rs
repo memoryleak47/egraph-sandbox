@@ -2,7 +2,11 @@ use crate::*;
 
 use std::collections::HashMap;
 
-pub struct BetaReduction2;
+pub fn subst2() -> Rewrite<Term, ()> {
+    rewrite!("beta-reduction2"; "(app (lam ?v ?b) ?c)" => { BetaReduction2 })
+}
+
+struct BetaReduction2;
 
 // returns b[v/c]
 fn substitute(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>) -> Id {

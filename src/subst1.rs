@@ -1,6 +1,10 @@
 use crate::*;
 
-pub struct BetaReduction1;
+pub fn subst1() -> Rewrite<Term, ()> {
+    rewrite!("beta-reduction1"; "(app (lam ?v ?b) ?c)" => { BetaReduction1 })
+}
+
+struct BetaReduction1;
 
 // returns b[v/c]
 fn substitute(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>) -> Id {

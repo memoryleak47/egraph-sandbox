@@ -11,8 +11,8 @@ use egg::*;
 
 fn make_rules() -> Vec<Rewrite<Term, ()>> {
     vec![
-        rewrite!("beta-reduction1"; "(app (lam ?v ?b) ?c)" => { BetaReduction1 }),
-        rewrite!("beta-reduction2"; "(app (lam ?v ?b) ?c)" => { BetaReduction2 }),
+        subst1(),
+        subst2(),
         rewrite!("mul-0"; "(* ?a 0)" => "0"),
         rewrite!("mul-1"; "(* ?a 1)" => "?a"),
         rewrite!("mul-comm"; "(* ?a ?b)" => "(* ?b ?a)"),
