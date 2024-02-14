@@ -14,7 +14,7 @@ use egg::*;
 
 fn make_rules() -> Vec<Rewrite<Term, ()>> {
     vec![
-        subst1(),
+        // subst1(),
         subst2(),
         rewrite!("mul-0"; "(* ?a 0)" => "0"),
         rewrite!("mul-1"; "(* ?a 1)" => "?a"),
