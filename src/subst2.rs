@@ -38,6 +38,8 @@ fn substitute_impl(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut
     let nodes = eg[b].nodes.clone();
 
     for x in nodes {
+        if matches!(x, Term::Placeholder(_)) { continue; }
+
         let i = term_subst(x, v, b, c, eg, touched, map, class_gen);
         touched.push(i); // TODO not necessarily touched!
 
