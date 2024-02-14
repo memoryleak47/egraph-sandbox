@@ -1,6 +1,13 @@
 use crate::*;
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+fn next_id() -> i32 {
+    static GLOBAL_CTR: AtomicUsize = AtomicUsize::new(0);
+    let u = GLOBAL_CTR.fetch_add(1, Ordering::SeqCst);
+    u as i32
+}
 
 pub fn subst2() -> Rewrite<Term, ()> {
     rewrite!("beta-reduction2"; "(app (lam ?v ?b) ?c)" => { BetaReduction })
@@ -10,29 +17,21 @@ struct BetaReduction;
 
 // returns b[v/c]
 fn substitute(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>) -> Id {
-    let mut i = 0;
-    let mut class_gen = |eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>| -> Id {
-        let orig_i = i;
-        i += 1;
-
-        let num = eg.add(Term::Num(orig_i));
-        touched.push(num);
-        let placeholder = eg.add(Term::Placeholder(num));
-        touched.push(placeholder);
-
-        placeholder
-    };
-    substitute_impl(v, b, c, eg, touched, &mut Default::default(), &mut class_gen)
+    substitute_impl(v, b, c, eg, touched, &mut Default::default())
 }
 
 // returns b[v/c].
 // `map` caches the b -> b[v/c] mapping.
-fn substitute_impl(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>, map: &mut HashMap<Id, Id>, class_gen: &mut impl FnMut(&mut EGraph<Term, ()>, &mut Vec<Id>) -> Id) -> Id {
+fn substitute_impl(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>, map: &mut HashMap<Id, Id>) -> Id {
     if let Some(o) = map.get(&b) {
         return *o;
     }
 
-    let new_b = (*class_gen)(eg, touched);
+    let num = eg.add(Term::Num(next_id()));
+    touched.push(num);
+    let new_b = eg.add(Term::Placeholder(num));
+    touched.push(new_b);
+
     map.insert(b, new_b);
 
     let nodes = eg[b].nodes.clone();
@@ -40,7 +39,7 @@ fn substitute_impl(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut
     for x in nodes {
         if matches!(x, Term::Placeholder(_)) { continue; }
 
-        let i = term_subst(x, v, b, c, eg, touched, map, class_gen);
+        let i = term_subst(x, v, b, c, eg, touched, map);
         touched.push(i); // TODO not necessarily touched!
 
         eg.union(i, new_b);
@@ -49,7 +48,7 @@ fn substitute_impl(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut
     new_b
 }
 
-fn term_subst(term: Term, v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>, map: &mut HashMap<Id, Id>, class_gen: &mut impl FnMut(&mut EGraph<Term, ()>, &mut Vec<Id>) -> Id) -> Id {
+fn term_subst(term: Term, v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>, map: &mut HashMap<Id, Id>) -> Id {
     let alloc = |t, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>| {
         let i = eg.add(t);
         touched.push(i);
@@ -59,24 +58,24 @@ fn term_subst(term: Term, v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touche
     match term {
         Term::Abstraction([v2, _]) if eg.find(v2) == eg.find(v) => b,
         Term::Abstraction([v2, y]) => {
-            let id = substitute_impl(v, y, c, eg, touched, map, class_gen);
+            let id = substitute_impl(v, y, c, eg, touched, map);
             alloc(Term::Abstraction([v2, id]), eg, touched)
         }
         Term::Application([l, r]) => {
-            let l = substitute_impl(v, l, c, eg, touched, map, class_gen);
-            let r = substitute_impl(v, r, c, eg, touched, map, class_gen);
+            let l = substitute_impl(v, l, c, eg, touched, map);
+            let r = substitute_impl(v, r, c, eg, touched, map);
             alloc(Term::Application([l, r]), eg, touched)
         },
         Term::Symb(_) if eg.find(v) == eg.find(b) => c,
         Term::Symb(_) => b,
         Term::Add([l, r]) => {
-            let l = substitute_impl(v, l, c, eg, touched, map, class_gen);
-            let r = substitute_impl(v, r, c, eg, touched, map, class_gen);
+            let l = substitute_impl(v, l, c, eg, touched, map);
+            let r = substitute_impl(v, r, c, eg, touched, map);
             alloc(Term::Add([l, r]), eg, touched)
         },
         Term::Mul([l, r]) => {
-            let l = substitute_impl(v, l, c, eg, touched, map, class_gen);
-            let r = substitute_impl(v, r, c, eg, touched, map, class_gen);
+            let l = substitute_impl(v, l, c, eg, touched, map);
+            let r = substitute_impl(v, r, c, eg, touched, map);
             alloc(Term::Mul([l, r]), eg, touched)
         },
         Term::Num(_) => b,
