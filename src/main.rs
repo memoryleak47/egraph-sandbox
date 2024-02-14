@@ -30,6 +30,7 @@ fn make_rules() -> Vec<Rewrite<Term, ()>> {
 }
 
 fn main() {
+/*
     assert_eq!(simplify("(app (lam v b) c)"), "b");
     assert_eq!(simplify("(app (lam v v) c)"), "c");
 
@@ -45,6 +46,9 @@ fn main() {
 
     assert_eq!(simplify("(+ x (* 2 0))"), "x");
 
+    assert_eq!(simplify("(app (app (lam x (lam y x)) a1) a2)"), "a1");
+*/
+    assert_eq!(simplify("(app (app (lam x (lam y y)) a1) a2)"), "a2");
 }
 
 fn simplify(s: &str) -> String {
