@@ -32,7 +32,7 @@ fn substitute(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<
         Term::Symb(_) => b,
         Term::Add(l) => map(l, Term::Add, eg),
         Term::Mul(l) => map(l, Term::Mul, eg),
-        Term::Num(_) => b,
+        Term::Num(_) | Term::Placeholder(_)  => b,
     }
 }
 

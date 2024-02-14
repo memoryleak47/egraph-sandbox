@@ -1,6 +1,9 @@
 mod term;
 use term::*;
 
+mod cost;
+use cost::*;
+
 mod subst1;
 use subst1::*;
 
@@ -48,8 +51,8 @@ fn simplify(s: &str) -> String {
     let expr: RecExpr<Term> = s.parse().unwrap();
     let runner = Runner::default().with_expr(&expr).run(&make_rules());
     let root = runner.roots[0];
-    let extractor = Extractor::new(&runner.egraph, AstSize);
+    let extractor = Extractor::new(&runner.egraph, MyAstSize);
     let (best_cost, best) = extractor.find_best(root);
-    println!("Simplified {} to {} with cost {}", expr, best, best_cost);
+    println!("Simplified {} to {} with cost {:?}", expr, best, best_cost);
     best.to_string()
 }

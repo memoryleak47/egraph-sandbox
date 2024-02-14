@@ -74,7 +74,7 @@ fn term_subst(term: Term, v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touche
             let r = substitute_impl(v, r, c, eg, touched, map);
             alloc(Term::Mul([l, r]), eg, touched)
         },
-        Term::Num(_) => b,
+        Term::Num(_) | Term::Placeholder(_) => b,
     }
 }
 

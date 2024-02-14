@@ -9,5 +9,7 @@ define_language! {
         "+" = Add([Id; 2]),
         "*" = Mul([Id; 2]),
         Num(i32),
+
+        "placeholder" = Placeholder(Id),
     }
 }
