@@ -48,7 +48,7 @@ fn substitute_impl(b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touched: &mut
     map.insert(b, new_b);
 
     for enode in eg[b].nodes.clone() {
-        if matches!(enode, Term::Placeholder(_)) { continue; }
+        if let Term::Placeholder(_) = enode { continue; }
 
         let id = enode_subst(enode, b, x, t, eg, touched, map);
         eg.union(new_b, id);
