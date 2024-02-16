@@ -10,19 +10,19 @@ fn next_id() -> i32 {
 }
 
 pub fn subst2() -> Rewrite<Term, ()> {
-    rewrite!("beta-reduction2"; "(app (lam ?v ?b) ?c)" => { BetaReduction })
+    rewrite!("beta-reduction2"; "(app (lam ?x ?b) ?t)" => { BetaReduction })
 }
 
 struct BetaReduction;
 
-// returns b[v/c]
-fn substitute(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>) -> Id {
-    substitute_impl(v, b, c, eg, touched, &mut Default::default())
+// returns b[x := t]
+fn substitute(b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>) -> Id {
+    substitute_impl(b, x, t, eg, touched, &mut Default::default())
 }
 
-// returns b[v/c].
-// `map` caches the b -> b[v/c] mapping.
-fn substitute_impl(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>, map: &mut HashMap<Id, Id>) -> Id {
+// returns b[x := t].
+// `map` caches the b -> b[x := t] mapping.
+fn substitute_impl(b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>, map: &mut HashMap<Id, Id>) -> Id {
     if let Some(o) = map.get(&b) {
         return *o;
     }
@@ -34,12 +34,10 @@ fn substitute_impl(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut
 
     map.insert(b, new_b);
 
-    let nodes = eg[b].nodes.clone();
+    for enode in eg[b].nodes.clone() {
+        if matches!(enode, Term::Placeholder(_)) { continue; }
 
-    for x in nodes {
-        if matches!(x, Term::Placeholder(_)) { continue; }
-
-        let i = term_subst(x, v, b, c, eg, touched, map);
+        let i = enode_subst(enode, b, x, t, eg, touched, map);
         touched.push(i); // TODO not necessarily touched!
 
         eg.union(i, new_b);
@@ -48,36 +46,54 @@ fn substitute_impl(v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut
     new_b
 }
 
-fn term_subst(term: Term, v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>, map: &mut HashMap<Id, Id>) -> Id {
+// `enode` is an enode from the eclass `b`.
+// we return an eclass containing `enode[x := t]`
+fn enode_subst(enode: Term, b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>, map: &mut HashMap<Id, Id>) -> Id {
     let alloc = |t, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>| {
         let i = eg.add(t);
         touched.push(i);
         i
     };
 
-    match term {
-        Term::Abstraction([v2, _]) if eg.find(v2) == eg.find(v) => b,
-        Term::Abstraction([v2, y]) => {
-            let id = substitute_impl(v, y, c, eg, touched, map);
-            alloc(Term::Abstraction([v2, id]), eg, touched)
+    match enode {
+        // (lam x2 b2) --> (lam x2 b2), if x = x2.
+        // In other words, we don't change anything, if x gets re-bound.
+        Term::Abstraction([x2, _]) if eg.find(x2) == eg.find(x) => b,
+
+        // (lam x2 b2) --> (lam x2 b2[x := t]), if x != x2.
+        Term::Abstraction([x2, b2]) => {
+            let b2 = substitute_impl(b2, x, t, eg, touched, map);
+            alloc(Term::Abstraction([x2, b2]), eg, touched)
         }
+
+        // (app l r) --> (app l[x := t] r[x := t])
         Term::Application([l, r]) => {
-            let l = substitute_impl(v, l, c, eg, touched, map);
-            let r = substitute_impl(v, r, c, eg, touched, map);
+            let l = substitute_impl(l, x, t, eg, touched, map);
+            let r = substitute_impl(r, x, t, eg, touched, map);
             alloc(Term::Application([l, r]), eg, touched)
         },
-        Term::Symb(_) if eg.find(v) == eg.find(b) => c,
+
+        // x2 --> t, if x = x2.
+        Term::Symb(_) if eg.find(x) == eg.find(b) => t,
+
+        // x2 --> x2, if x != x2.
         Term::Symb(_) => b,
+
+        // similar to `app`.
         Term::Add([l, r]) => {
-            let l = substitute_impl(v, l, c, eg, touched, map);
-            let r = substitute_impl(v, r, c, eg, touched, map);
+            let l = substitute_impl(l, x, t, eg, touched, map);
+            let r = substitute_impl(r, x, t, eg, touched, map);
             alloc(Term::Add([l, r]), eg, touched)
         },
+
+        // similar to `app`.
         Term::Mul([l, r]) => {
-            let l = substitute_impl(v, l, c, eg, touched, map);
-            let r = substitute_impl(v, r, c, eg, touched, map);
+            let l = substitute_impl(l, x, t, eg, touched, map);
+            let r = substitute_impl(r, x, t, eg, touched, map);
             alloc(Term::Mul([l, r]), eg, touched)
         },
+
+        // n --> n, numbers ignore substitution.
         Term::Num(_) => b,
         Term::Placeholder(_) => panic!("can't substitute in a Placeholder!"),
     }
@@ -85,16 +101,16 @@ fn term_subst(term: Term, v: Id, b: Id, c: Id, eg: &mut EGraph<Term, ()>, touche
 
 impl Applier<Term, ()> for BetaReduction {
     fn apply_one(&self, eg: &mut EGraph<Term, ()>, id: Id, subst: &Subst, _pat: Option<&PatternAst<Term>>, _rule_name: Symbol) -> Vec<Id> {
-        let v: Var = "?v".parse().unwrap();
         let b: Var = "?b".parse().unwrap();
-        let c: Var = "?c".parse().unwrap();
+        let x: Var = "?x".parse().unwrap();
+        let t: Var = "?t".parse().unwrap();
 
-        let v: Id = subst[v];
         let b: Id = subst[b];
-        let c: Id = subst[c];
+        let x: Id = subst[x];
+        let t: Id = subst[t];
 
         let mut touched = vec![id];
-        let new = substitute(v, b, c, eg, &mut touched);
+        let new = substitute(b, x, t, eg, &mut touched);
         eg.union(new, id);
 
         touched
