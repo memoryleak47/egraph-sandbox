@@ -48,6 +48,11 @@ fn main() {
     assert_eq!(simplify("(app (app (lam x (lam y y)) a1) a2)"), "a2");
 
     assert_eq!(simplify(&s), "(lam x x)");
+
+    let p = "(app (lam x (lam y x)) y)";
+    let p = format!("(app {p} a)");
+    // assert_eq!(simplify(&p), "y");
+    // It should return the free variable y, but it does return a.
 }
 
 fn simplify(s: &str) -> String {
