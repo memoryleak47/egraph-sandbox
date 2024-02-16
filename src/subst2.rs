@@ -69,27 +69,27 @@ fn enode_subst(enode: Term, b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touc
     };
 
     match enode {
-        // (lam x2 b2) --> (lam x2 b2), if x = x2.
+        // (lam x2 b2)[x := t] --> (lam x2 b2), if x = x2.
         // In other words, we don't change anything, if x gets re-bound.
         Term::Abstraction([x2, _]) if eg.find(x2) == eg.find(x) => b,
 
-        // (lam x2 b2) --> (lam x2 b2[x := t]), if x != x2.
+        // (lam x2 b2)[x := t] --> (lam x2 b2[x := t]), if x != x2.
         Term::Abstraction([x2, b2]) => {
             let b2 = substitute_impl(b2, x, t, eg, touched, map);
             alloc(Term::Abstraction([x2, b2]), eg, touched)
         }
 
-        // (app l r) --> (app l[x := t] r[x := t])
+        // (app l r)[x := t] --> (app l[x := t] r[x := t])
         Term::Application([l, r]) => {
             let l = substitute_impl(l, x, t, eg, touched, map);
             let r = substitute_impl(r, x, t, eg, touched, map);
             alloc(Term::Application([l, r]), eg, touched)
         },
 
-        // x2 --> t, if x = x2.
+        // x2[x := t] --> t, if x = x2.
         Term::Symb(_) if eg.find(x) == eg.find(b) => t,
 
-        // x2 --> x2, if x != x2.
+        // x2[x := t] --> x2, if x != x2.
         Term::Symb(_) => b,
 
         // similar to `app`.
@@ -106,7 +106,7 @@ fn enode_subst(enode: Term, b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touc
             alloc(Term::Mul([l, r]), eg, touched)
         },
 
-        // n --> n, numbers ignore substitution.
+        // n[x := t] --> n, numbers ignore substitution.
         Term::Num(_) => b,
         Term::Placeholder(_) => panic!("can't substitute in a Placeholder!"),
     }
