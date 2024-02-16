@@ -2,6 +2,15 @@ use crate::*;
 
 use std::collections::HashMap;
 
+define_language! {
+    pub enum ENode {
+        "lam" = Abstraction([Id; 2]),
+        "app" = Application([Id; 2]),
+        Symb(Symbol), // variables
+        Num(i32),
+    }
+}
+
 pub fn subst2() -> Rewrite<Term, ()> {
     rewrite!("beta-reduction2"; "(app (lam ?x ?b) ?t)" => { BetaReduction })
 }
@@ -20,7 +29,7 @@ fn substitute_impl(b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, map: &mut Has
         return o;
     }
 
-    // new_b represents the e-class `b[x := t]`.
+    // new_b represents the eclass `b[x := t]`.
     let new_b = eg.allocate_empty_eclass();
     map.insert(b, new_b);
 
@@ -32,7 +41,8 @@ fn substitute_impl(b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, map: &mut Has
     new_b
 }
 
-// TODO this might be easier to follow, if we return another enode instead of returning an eclass.
+// `b` is the eclass of `enode`.
+// applies substitution on `enode[x := t]` and returns it as an eclass.
 fn enode_subst(enode: ENode, b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, map: &mut HashMap<Id, Id>) -> Id {
     match enode {
         // if we encounter `(lam x b2)`, we return `(lam x b2)`, i.e. we don't change anything.
