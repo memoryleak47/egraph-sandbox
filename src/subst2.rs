@@ -44,20 +44,16 @@ fn substitute_impl(b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touched: &mut
         return *o;
     }
 
-    let num = eg.add(Term::Num(next_id()));
-    touched.push(num);
-    let new_b = eg.add(Term::Placeholder(num));
-    touched.push(new_b);
-
+    let new_b = alloc_eclass(eg, touched);
     map.insert(b, new_b);
 
     for enode in eg[b].nodes.clone() {
         if matches!(enode, Term::Placeholder(_)) { continue; }
 
-        let i = enode_subst(enode, b, x, t, eg, touched, map);
-        touched.push(i); // TODO not necessarily touched!
+        let id = enode_subst(enode, b, x, t, eg, touched, map);
+        eg.union(new_b, id);
 
-        eg.union(i, new_b);
+        touched.push(id);
     }
 
     new_b
@@ -116,8 +112,14 @@ fn enode_subst(enode: Term, b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touc
     }
 }
 
-fn next_id() -> i32 {
+// allocates a new (conceptually empty) eclass, by doing eg.add(Placeholder(GLOBAL_CTR++)).
+fn alloc_eclass(eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>) -> Id {
     static GLOBAL_CTR: AtomicUsize = AtomicUsize::new(0);
-    let u = GLOBAL_CTR.fetch_add(1, Ordering::SeqCst);
-    u as i32
+    let num = GLOBAL_CTR.fetch_add(1, Ordering::SeqCst);
+
+    let num = eg.add(Term::Num(num as i32));
+    touched.push(num);
+    let num = eg.add(Term::Placeholder(num));
+    touched.push(num);
+    num
 }
