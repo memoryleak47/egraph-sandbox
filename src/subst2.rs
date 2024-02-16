@@ -3,17 +3,34 @@ use crate::*;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-fn next_id() -> i32 {
-    static GLOBAL_CTR: AtomicUsize = AtomicUsize::new(0);
-    let u = GLOBAL_CTR.fetch_add(1, Ordering::SeqCst);
-    u as i32
-}
+//// The beta-reduction2 Rewrite Rule:
 
 pub fn subst2() -> Rewrite<Term, ()> {
     rewrite!("beta-reduction2"; "(app (lam ?x ?b) ?t)" => { BetaReduction })
 }
 
 struct BetaReduction;
+
+impl Applier<Term, ()> for BetaReduction {
+    fn apply_one(&self, eg: &mut EGraph<Term, ()>, id: Id, subst: &Subst, _pat: Option<&PatternAst<Term>>, _rule_name: Symbol) -> Vec<Id> {
+        let b: Var = "?b".parse().unwrap();
+        let x: Var = "?x".parse().unwrap();
+        let t: Var = "?t".parse().unwrap();
+
+        let b: Id = subst[b];
+        let x: Id = subst[x];
+        let t: Id = subst[t];
+
+        let mut touched = vec![id];
+        let new = substitute(b, x, t, eg, &mut touched);
+        eg.union(new, id);
+
+        touched
+    }
+}
+
+
+//// The Substitution implementation:
 
 // returns b[x := t]
 fn substitute(b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>) -> Id {
@@ -99,21 +116,8 @@ fn enode_subst(enode: Term, b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touc
     }
 }
 
-impl Applier<Term, ()> for BetaReduction {
-    fn apply_one(&self, eg: &mut EGraph<Term, ()>, id: Id, subst: &Subst, _pat: Option<&PatternAst<Term>>, _rule_name: Symbol) -> Vec<Id> {
-        let b: Var = "?b".parse().unwrap();
-        let x: Var = "?x".parse().unwrap();
-        let t: Var = "?t".parse().unwrap();
-
-        let b: Id = subst[b];
-        let x: Id = subst[x];
-        let t: Id = subst[t];
-
-        let mut touched = vec![id];
-        let new = substitute(b, x, t, eg, &mut touched);
-        eg.union(new, id);
-
-        touched
-    }
+fn next_id() -> i32 {
+    static GLOBAL_CTR: AtomicUsize = AtomicUsize::new(0);
+    let u = GLOBAL_CTR.fetch_add(1, Ordering::SeqCst);
+    u as i32
 }
-
