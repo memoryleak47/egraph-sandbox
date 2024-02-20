@@ -4,18 +4,22 @@ use term::*;
 mod cost;
 use cost::*;
 
-mod subst1;
-use subst1::*;
+#[allow(unused)] mod subst1;
+#[allow(unused)] use subst1::*;
 
-mod subst2;
-use subst2::*;
+#[allow(unused)] mod subst2;
+#[allow(unused)] use subst2::*;
+
+#[allow(unused)] mod subst3;
+#[allow(unused)] use subst3::*;
 
 use egg::*;
 
 fn make_rules() -> Vec<Rewrite<Term, ()>> {
     vec![
         // subst1(),
-        subst2(),
+        // subst2(),
+        subst3(),
         rewrite!("mul-0"; "(* ?a 0)" => "0"),
         rewrite!("mul-1"; "(* ?a 1)" => "?a"),
         rewrite!("mul-comm"; "(* ?a ?b)" => "(* ?b ?a)"),
@@ -51,8 +55,7 @@ fn main() {
 
     let p = "(app (lam x (lam y x)) y)";
     let p = format!("(app {p} a)");
-    // assert_eq!(simplify(&p), "y");
-    // It should return the free variable y, but it does return a.
+    assert_eq!(simplify(&p), "y");
 }
 
 fn simplify(s: &str) -> String {

@@ -1,12 +1,12 @@
 use crate::*;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-//// The beta-reduction2 Rewrite Rule:
+//// The beta-reduction3 Rewrite Rule:
 
-pub fn subst2() -> Rewrite<Term, ()> {
-    rewrite!("beta-reduction2"; "(app (lam ?x ?b) ?t)" => { BetaReduction })
+pub fn subst3() -> Rewrite<Term, ()> {
+    rewrite!("beta-reduction3"; "(app (lam ?x ?b) ?t)" => { BetaReduction })
 }
 
 struct BetaReduction;
@@ -73,12 +73,24 @@ fn enode_subst(enode: Term, b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touc
         // In other words, we don't change anything, if x gets re-bound.
         Term::Abstraction([x2, _]) if eg.find(x2) == eg.find(x) => b,
 
-        // (lam x2 b2)[x := t] --> (lam x2 b2[x := t]), if x != x2.
-        // XXX problem: x2 might be free in t.
+        // (lam x2 b2)[x := t] --> (lam x3 b2[x2 := x3][x := t]), if x != x2 and x2 in free(t).
+        // x3 is fresh.
+        Term::Abstraction([x2, b2]) if comes_up_free(x2, t, eg) => {
+            let x3 = fresh_var(eg, touched);
+
+            // alpha-conversion!
+            // note that this `substitute`, will never call another `substitute`, because `x3` is never bound.
+            let b2 = substitute(b2, x2, x3, eg, touched);
+
+            let b2 = substitute_impl(b2, x, t, eg, touched, map);
+            alloc(Term::Abstraction([x3, b2]), eg, touched)
+        },
+
+        // (lam x2 b2)[x := t] --> (lam x2 b2[x := t]), if x != x2 and x2 not in free(t).
         Term::Abstraction([x2, b2]) => {
             let b2 = substitute_impl(b2, x, t, eg, touched, map);
             alloc(Term::Abstraction([x2, b2]), eg, touched)
-        }
+        },
 
         // (app l r)[x := t] --> (app l[x := t] r[x := t])
         Term::Application([l, r]) => {
@@ -111,6 +123,52 @@ fn enode_subst(enode: Term, b: Id, x: Id, t: Id, eg: &mut EGraph<Term, ()>, touc
         Term::Num(_) => b,
         Term::Placeholder(_) => panic!("can't substitute in a Placeholder!"),
     }
+}
+
+// returns whether x in free(t).
+fn comes_up_free(x: Id, t: Id, eg: &EGraph<Term, ()>) -> bool {
+    comes_up_free_impl(x, t, eg, &mut HashSet::new())
+}
+
+// `set` stores whether an eclass `t` was already checked.
+fn comes_up_free_impl(x: Id, t: Id, eg: &EGraph<Term, ()>, set: &mut HashSet<Id>) -> bool {
+    if set.contains(&t) { return false; }
+    set.insert(t);
+
+    for enode in &eg[t].nodes {
+        match *enode {
+            Term::Abstraction([x2, _]) if eg.find(x2) == eg.find(x) => {},
+            Term::Abstraction([x2, b]) => {
+                if comes_up_free_impl(x, b, eg, set) { return true; }
+            }
+            Term::Application([l, r]) | Term::Add([l, r]) | Term::Mul([l, r]) => {
+                if comes_up_free_impl(x, l, eg, set) { return true; }
+                if comes_up_free_impl(x, r, eg, set) { return true; }
+            },
+            Term::Symb(_) => {
+                if eg.find(x) == eg.find(t) { return true; }
+            },
+            Term::Symb(_) | Term::Num(_) | Term::Placeholder(_) => {},
+        }
+    }
+
+    false
+}
+
+fn fresh_var(eg: &mut EGraph<Term, ()>, touched: &mut Vec<Id>) -> Id {
+    static GLOBAL_CTR: AtomicUsize = AtomicUsize::new(0);
+    loop {
+        let i = GLOBAL_CTR.fetch_add(1, Ordering::SeqCst);
+        let symbol: Symbol = format!("s{i}").parse().unwrap();
+
+        let t = Term::Symb(symbol);
+        if eg.lookup(t.clone()).is_none() {
+            let out = eg.add(t);
+            touched.push(out);
+            return out;
+        }
+    }
+    
 }
 
 // allocates a new (conceptually empty) eclass, by doing eg.add(Placeholder(GLOBAL_CTR++)).
