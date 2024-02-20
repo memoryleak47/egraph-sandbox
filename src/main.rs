@@ -67,7 +67,7 @@ fn main() {
 
     let d = "(lam a (+ (app f a) 1))";
     let translate_impl = format!("(lam f (lam n (app (app n 0) {d})))");
-    let translate = format!("(lam n (app {y} {translate_impl}))");
+    let translate = format!("(app {y} {translate_impl})");
 
     // the number 2.
     let rhs = format!("(app {suc} (app {suc} {zero}))");
