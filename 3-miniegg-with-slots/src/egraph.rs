@@ -12,11 +12,10 @@ struct EClass {
 
 // invariants:
 // 1. If two ENodes (that are in the EGraph) have equal ENode::shape(), they have to be in the same eclass.
-// 2. Every ENode of class c, has to use all slots from [0 .. c.slotcount].
-//    All additional used slots, are "redundant", or qualified by a ENode::Lam.
-//    ENode::Lam(si) requires i >= c.slotcount.
+// 2. set(enode.slot_occurences()) is always an interval [0 .. N], and a weak superset of [0 .. c.slotcount], if enode is in the eclass c.
+//    if ENode::Lam(si) = enode, then we require i >= c.slotcount.
+//    All additional slots from our enode are called "redundant".
 // 3. AppliedId::args is always deduplicated. (eg. c1(s0, s1, s0) is illegal!)
-// 4. open question: is set(ENode::slot_occurences()) always an interval?
 pub struct EGraph {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
     unionfind: HashMap<Id, AppliedId>, // normalizes the eclass. is "idempotent".
