@@ -33,4 +33,47 @@ impl ENode {
             ENode::Var(x) => ENode::Var(x),
         }
     }
+
+    // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.
+    pub fn shape(&self) -> ENode {
+        // all occurences of all slots, ordered from left to right through the ENode.
+        let mut slotlist: Vec<Slot> = Vec::new();
+        match self {
+            ENode::Lam(s, r) => {
+                slotlist.push(*s);
+                slotlist.extend(r.clone().args);
+            },
+            ENode::App(l, r) => {
+                slotlist.extend(l.clone().args);
+                slotlist.extend(r.clone().args);
+            }
+            ENode::Var(s) => {
+                slotlist.push(*s);
+            },
+        };
+
+        // maps the old slot name to the new order-based name.
+        let mut slotmap: HashMap<Slot, Slot> = HashMap::new();
+
+        for x in slotlist {
+            if !slotmap.contains_key(&x) {
+                let n = Slot(slotmap.len());
+                slotmap.insert(x, n);
+            }
+        }
+
+        let f = |s: &Slot| slotmap[s];
+        let g = |a: &AppliedId| -> AppliedId {
+            AppliedId {
+                id: a.id,
+                args: a.args.iter().map(f).collect(),
+            }
+        };
+
+        match self {
+            ENode::Lam(s, r) => ENode::Lam(f(s), g(r)),
+            ENode::App(l, r) => ENode::App(g(l), g(r)),
+            ENode::Var(s) => ENode::Var(f(s)),
+        }
+    }
 }
