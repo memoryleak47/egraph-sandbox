@@ -65,25 +65,16 @@ impl EGraph {
     // normalize i.id
     //
     // Example:
-    // find(c1(s3, s7, s1)), where 'c1 -> c2(s2, s1, s0)' in unionfind,
-    // yields c2(s1, s7, s3).
-    //
-    // TODO: what about redundant things?
+    // find(c1(s3, s7, s8)), where 'c1(s0, s1, s2) -> c2(s2, s1)' in unionfind,
+    // yields c2(s8, s7).
     pub fn find(&self, i: AppliedId) -> AppliedId {
         let a: &AppliedId = &self.unionfind[&i.id];
 
-        let idx = |x: Slot, v: &AppliedId| Slot(v.args.iter().position(|y| y == &x).unwrap());
-
-        let f = |x: Slot| {
-            let x = idx(x, &i);
-            let x = a.args[x.0];
-            let x = i.args[x.0];
-            x
-        };
+        let f = |x: Slot| i.args[x.0];
 
         AppliedId {
             id: a.id,
-            args: i.args.iter().copied().map(f).collect(),
+            args: a.args.iter().copied().map(f).collect(),
         }
     }
 
