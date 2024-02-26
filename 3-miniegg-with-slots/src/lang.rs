@@ -26,11 +26,11 @@ pub struct RecExpr {
 }
 
 impl ENode {
-    pub fn map_ids(self, f: impl Fn(AppliedId) -> AppliedId) -> ENode {
+    pub fn map_ids(&self, f: impl Fn(AppliedId) -> AppliedId) -> ENode {
         match self {
-            ENode::Lam(x, i) => ENode::Lam(x, f(i)),
-            ENode::App(i1, i2) => ENode::App(f(i1), f(i2)),
-            ENode::Var(x) => ENode::Var(x),
+            ENode::Lam(x, i) => ENode::Lam(*x, f(i.clone())),
+            ENode::App(i1, i2) => ENode::App(f(i1.clone()), f(i2.clone())),
+            ENode::Var(x) => ENode::Var(*x),
         }
     }
 

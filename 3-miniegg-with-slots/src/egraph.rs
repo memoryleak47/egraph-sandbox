@@ -28,12 +28,12 @@ impl EGraph {
         todo!()
     }
 
-    fn normalize_enode(&self, enode: ENode) -> ENode {
+    fn normalize_enode(&self, enode: &ENode) -> ENode {
         enode.map_ids(|x| self.find(x))
     }
 
     pub fn add(&mut self, enode: ENode) -> AppliedId {
-        let enode = self.normalize_enode(enode);
+        let enode = self.normalize_enode(&enode);
 
         if let Some(x) = self.lookup(&enode) {
             return x;
@@ -44,10 +44,26 @@ impl EGraph {
     }
 
     pub fn lookup(&self, enode: &ENode) -> Option<AppliedId> {
-        todo!()
+        // 1. normalize eclasses.
+        let enode = self.normalize_enode(enode);
+
+        // 2. normalize slots.
+        let shape = enode.shape();
+
+        for (&i, c) in &self.classes {
+            for n in &c.nodes {
+                if n.shape() == shape {
+                    todo!();
+                }
+            }
+        }
+
+        None
     }
 
+    // normalize i.id
     pub fn find(&self, i: AppliedId) -> AppliedId {
+        // self.unionfind[&i.id]
         todo!()
     }
 
