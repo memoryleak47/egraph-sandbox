@@ -12,6 +12,7 @@ struct EClass {
 
 // If two ENodes (that are in the EGraph) have equal ENode::shape(), they have to be in the same eclass.
 pub struct EGraph {
+    // an entry (l, r(sa, sb, sc)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb, sc).
     unionfind: HashMap<Id, AppliedId>, // normalizes the eclass. is "idempotent".
     classes: HashMap<Id, EClass>, // only ids with unionfind[x].id = x are contained.
 }
@@ -29,7 +30,7 @@ impl EGraph {
     }
 
     fn normalize_enode(&self, enode: &ENode) -> ENode {
-        enode.map_ids(|x| self.find(x))
+        enode.map_ids(&|x| self.find(x))
     }
 
     pub fn add(&mut self, enode: ENode) -> AppliedId {
@@ -62,9 +63,28 @@ impl EGraph {
     }
 
     // normalize i.id
+    //
+    // Example:
+    // find(c1(s3, s7, s1)), where 'c1 -> c2(s2, s1, s0)' in unionfind,
+    // yields c2(s1, s7, s3).
+    //
+    // TODO: what about redundant things?
     pub fn find(&self, i: AppliedId) -> AppliedId {
-        // self.unionfind[&i.id]
-        todo!()
+        let a: &AppliedId = &self.unionfind[&i.id];
+
+        let idx = |x: Slot, v: &AppliedId| Slot(v.args.iter().position(|y| y == &x).unwrap());
+
+        let f = |x: Slot| {
+            let x = idx(x, &i);
+            let x = a.args[x.0];
+            let x = i.args[x.0];
+            x
+        };
+
+        AppliedId {
+            id: a.id,
+            args: i.args.iter().copied().map(f).collect(),
+        }
     }
 
     pub fn union(&mut self, l: AppliedId, r: AppliedId) {

@@ -34,6 +34,14 @@ impl ENode {
         }
     }
 
+    pub fn map_slots(&self, f: impl Fn(Slot) -> Slot) -> ENode {
+        match self {
+            ENode::Lam(x, i) => ENode::Lam(f(*x), i.map_slots(f)),
+            ENode::App(i1, i2) => ENode::App(i1.map_slots(&f), i2.map_slots(f)),
+            ENode::Var(x) => ENode::Var(f(*x)),
+        }
+    }
+
     // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.
     pub fn shape(&self) -> ENode {
         // all occurences of all slots, ordered from left to right through the ENode.
@@ -62,18 +70,15 @@ impl ENode {
             }
         }
 
-        let f = |s: &Slot| slotmap[s];
-        let g = |a: &AppliedId| -> AppliedId {
-            AppliedId {
-                id: a.id,
-                args: a.args.iter().map(f).collect(),
-            }
-        };
+        self.map_slots(|s| slotmap[&s])
+    }
+}
 
-        match self {
-            ENode::Lam(s, r) => ENode::Lam(f(s), g(r)),
-            ENode::App(l, r) => ENode::App(g(l), g(r)),
-            ENode::Var(s) => ENode::Var(f(s)),
+impl AppliedId {
+    pub fn map_slots(&self, f: impl Fn(Slot) -> Slot) -> AppliedId {
+        AppliedId {
+            id: self.id,
+            args: self.args.iter().copied().map(f).collect(),
         }
     }
 }
