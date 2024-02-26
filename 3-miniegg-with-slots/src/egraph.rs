@@ -12,7 +12,7 @@ struct EClass {
 
 // If two ENodes (that are in the EGraph) have equal ENode::shape(), they have to be in the same eclass.
 pub struct EGraph {
-    // an entry (l, r(sa, sb, sc)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb, sc).
+    // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
     unionfind: HashMap<Id, AppliedId>, // normalizes the eclass. is "idempotent".
     classes: HashMap<Id, EClass>, // only ids with unionfind[x].id = x are contained.
 }
