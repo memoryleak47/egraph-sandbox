@@ -75,10 +75,18 @@ impl ENode {
 }
 
 impl AppliedId {
+    pub fn new(id: Id, args: Vec<Slot>) -> Self {
+        // every Slot can be used at most once!
+        let args_set: HashSet<Slot> = args.iter().copied().collect();
+        assert_eq!(args.len(), args_set.len());
+
+        AppliedId { id, args }
+    }
+
     pub fn map_slots(&self, f: impl Fn(Slot) -> Slot) -> AppliedId {
-        AppliedId {
-            id: self.id,
-            args: self.args.iter().copied().map(f).collect(),
-        }
+        AppliedId::new(
+            self.id,
+            self.args.iter().copied().map(f).collect(),
+        )
     }
 }

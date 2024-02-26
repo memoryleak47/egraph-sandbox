@@ -72,10 +72,10 @@ impl EGraph {
 
         let f = |x: Slot| i.args[x.0];
 
-        AppliedId {
-            id: a.id,
-            args: a.args.iter().copied().map(f).collect(),
-        }
+        AppliedId::new(
+            a.id,
+            a.args.iter().copied().map(f).collect(),
+        )
     }
 
     pub fn union(&mut self, l: AppliedId, r: AppliedId) {
