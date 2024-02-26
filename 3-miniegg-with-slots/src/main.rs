@@ -1,10 +1,10 @@
 mod lang;
 use lang::*;
 
-/*
 mod egraph;
 use egraph::*;
 
+/*
 mod syntax;
 use syntax::*;
 
