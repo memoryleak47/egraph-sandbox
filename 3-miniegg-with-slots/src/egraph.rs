@@ -10,7 +10,13 @@ struct EClass {
     slotcount: usize,
 }
 
-// If two ENodes (that are in the EGraph) have equal ENode::shape(), they have to be in the same eclass.
+// invariants:
+// 1. If two ENodes (that are in the EGraph) have equal ENode::shape(), they have to be in the same eclass.
+// 2. Every ENode of class c, has to use all slots from [0 .. c.slotcount].
+//    All additional used slots, are "redundant", or qualified by a ENode::Lam.
+//    ENode::Lam(si) requires i >= c.slotcount.
+// 3. AppliedId::args is always deduplicated. (eg. c1(s0, s1, s0) is illegal!)
+// 4. open question: is set(ENode::slot_occurences()) always an interval?
 pub struct EGraph {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
     unionfind: HashMap<Id, AppliedId>, // normalizes the eclass. is "idempotent".
@@ -30,7 +36,7 @@ impl EGraph {
     }
 
     fn normalize_enode(&self, enode: &ENode) -> ENode {
-        enode.map_ids(&|x| self.find(x))
+        enode.map_ids(|x| self.find(x))
     }
 
     pub fn add(&mut self, enode: ENode) -> AppliedId {
@@ -54,12 +60,22 @@ impl EGraph {
         for (&i, c) in &self.classes {
             for n in &c.nodes {
                 if n.shape() == shape {
-                    todo!();
+                    let l1 = enode.slot_occurences();
+                    let l2 = n.slot_occurences();
+                    let args = self.slot_match(&l1, &l2);
+                    let app_id = AppliedId::new(i, args);
+                    return Some(app_id);
                 }
             }
         }
 
         None
+    }
+
+    // returns v with v[s1[i]] = s2[i].
+    // assumes that set(s1) forms an interval [0..N].
+    fn slot_match(&self, s1: &[Slot], s2: &[Slot]) -> Vec<Slot> {
+        panic!()
     }
 
     // normalize i.id
