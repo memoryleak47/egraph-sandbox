@@ -25,6 +25,17 @@ pub struct RecExpr {
     pub node_dag: Vec<ENode>,
 }
 
+impl RecExpr {
+    pub fn new() -> Self {
+        RecExpr { node_dag: Vec::new() }
+    }
+
+    pub fn push(&mut self, t: ENode) -> AppliedId {
+        self.node_dag.push(t);
+        todo!()
+    }
+}
+
 impl ENode {
     pub fn map_ids(&self, f: impl Fn(AppliedId) -> AppliedId) -> ENode {
         match self {

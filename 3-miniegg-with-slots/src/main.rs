@@ -4,6 +4,9 @@ use lang::*;
 mod egraph;
 use egraph::*;
 
+mod ast;
+use ast::*;
+
 mod syntax;
 use syntax::*;
 
