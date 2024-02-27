@@ -48,7 +48,7 @@ pub fn parse_ast(s: &str) -> (Ast, &str) {
 }
 
 fn parse_ident(s: &str) -> (/*ident*/ &str, /*rest*/ &str) {
-    let i = s.find(|x| x == '(' || x == ')' || x == ' ').unwrap();
+    let i = s.find(|x| x == '(' || x == ')' || x == ' ').unwrap_or(s.len());
 
     let ident = &s[0..i];
     let rest = &s[i..];

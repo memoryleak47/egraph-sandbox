@@ -80,9 +80,10 @@ fn to_ast(re: &[ENode], mut name_map: HashMap<Slot, String>, namegen: &mut impl 
 pub fn to_string(re: RecExpr, name_map: NameMap) -> String {
     let mut name_id = 0;
     let mut namegen = || {
+        let name = format!("x{name_id}");
         name_id += 1;
 
-        format!("x{name_id}")
+        name
     };
 
     let name_map: HashMap<Slot, String> = name_map.into_iter().map(|(x, y)| (y, x)).collect();
