@@ -1,15 +1,23 @@
 use crate::*;
 
-pub fn parse(s: &str) -> RecExpr {
-    let mut node_dag = vec![];
+#[derive(Debug)]
+enum Ast {
+    Lam(String, Box<Ast>),
+    App(Box<Ast>, Box<Ast>),
+    Var(String),
+}
 
-    let s = parse_impl(s, &mut node_dag);
+///// parse
+
+pub fn parse(s: &str) -> RecExpr {
+    let (ast, s) = parse_ast(s);
     assert!(s.is_empty());
 
+    let node_dag = todo!();
     RecExpr { node_dag }
 }
 
-fn parse_impl<'a>(s: &'a str, node_dag: &mut Vec<ENode>) -> &'a str {
+fn parse_ast(s: &str) -> (Ast, &str) {
     if s.starts_with("(lam ") {
         let s = &s["(lam ".len()..];
         let (ident, s) = parse_ident(s);
@@ -17,39 +25,35 @@ fn parse_impl<'a>(s: &'a str, node_dag: &mut Vec<ENode>) -> &'a str {
         assert!(s.starts_with(" "));
         let s = &s[1..];
 
-        let s = parse_impl(s, node_dag);
-
+        let (b, s) = parse_ast(s);
         let ident = ident.to_string();
-        let id = Id(node_dag.len() - 1);
 
         assert!(s.starts_with(")"));
         let s = &s[1..];
 
-        node_dag.push(ENode::Lam(ident, id));
+        let ast = Ast::Lam(ident, Box::new(b));
 
-        s
+        (ast, s)
     } else if s.starts_with("(app ") {
         let s = &s["(app ".len()..];
-        let s = parse_impl(s, node_dag);
-        let id1 = Id(node_dag.len() - 1);
+        let (l, s) = parse_ast(s);
 
         assert!(s.starts_with(" "));
         let s = &s[1..];
 
-        let s = parse_impl(s, node_dag);
-        let id2 = Id(node_dag.len() - 1);
+        let (r, s) = parse_ast(s);
 
         assert!(s.starts_with(")"));
         let s = &s[1..];
 
-        node_dag.push(ENode::App(id1, id2));
+        let ast = Ast::App(Box::new(l), Box::new(r));
 
-        s
+        (ast, s)
     } else {
         let (ident, s) = parse_ident(s);
-        node_dag.push(ENode::Var(ident.to_string()));
+        let ast = Ast::Var(ident.to_string());
 
-        s
+        (ast, s)
     }
 }
 
@@ -62,18 +66,24 @@ fn parse_ident(s: &str) -> (/*ident*/ &str, /*rest*/ &str) {
     (ident, rest)
 }
 
-pub fn to_string(re: RecExpr) -> String {
-    let mut strings = vec![];
-    for x in re.node_dag.iter() {
-        let s = match x {
-            ENode::Lam(x, b) => format!("(lam {} {})", x, &strings[b.0]),
-            ENode::App(l, r) => format!("(app {} {})", &strings[l.0], &strings[r.0]),
-            ENode::Var(x) => format!("{x}"),
-        };
-        strings.push(s);
-    }
 
-    strings.pop().unwrap()
+///// to_string
+
+fn to_ast(re: RecExpr) -> Ast {
+    todo!()
+}
+
+pub fn to_string(re: RecExpr) -> String {
+    let ast = to_ast(re);
+    ast_to_string(ast)
+}
+
+fn ast_to_string(a: Ast) -> String {
+    match a {
+        Ast::Lam(x, b) => format!("(lam {} {})", x, ast_to_string(*b)),
+        Ast::App(l, r) => format!("(app {} {})", ast_to_string(*l), ast_to_string(*r)),
+        Ast::Var(x) => format!("{x}"),
+    }
 }
 
 #[test]

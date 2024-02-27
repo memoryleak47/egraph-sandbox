@@ -4,9 +4,10 @@ use lang::*;
 mod egraph;
 use egraph::*;
 
-/*
 mod syntax;
 use syntax::*;
+
+/*
 
 mod rewrite;
 use rewrite::*;
@@ -21,9 +22,9 @@ use extract::*;
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-/*
     let s = "(app (lam x (app x x)) (lam y y))";
     let re = parse(s);
+/*
     let mut eg = EGraph::new();
     let i = eg.add_expr(re);
 
@@ -32,7 +33,7 @@ fn main() {
     }
 
     let re = extract(i, &eg);
+*/
     let s = to_string(re);
     println!("{}", s);
-*/
 }
