@@ -35,8 +35,17 @@ impl RecExpr {
     }
 
     pub fn push(&mut self, t: ENode) -> AppliedId {
+        let slots = t.slots();
+
+        let id = Id(self.node_dag.len());
         self.node_dag.push(t);
-        todo!()
+
+        let m = SlotMap::identity(&slots);
+
+        AppliedId {
+            id,
+            m,
+        }
     }
 }
 
@@ -57,43 +66,58 @@ impl ENode {
         }
     }
 
-    // lists all slot occurences in order.
-    pub fn slot_occurences(&self) -> Vec<Slot> {
-        let mut slotlist: Vec<Slot> = Vec::new();
-
-        match self {
-            ENode::Lam(s, r) => {
-                slotlist.push(*s);
-                slotlist.extend(r.m.values());
-            },
-            ENode::App(l, r) => {
-                slotlist.extend(l.m.values());
-                slotlist.extend(r.m.values());
-            }
-            ENode::Var(s) => {
-                slotlist.push(*s);
-            },
-        };
-
-        slotlist
-    }
-
     // equivalent to slot_occurences, but with duplicates removed.
     pub fn slot_order(&self) -> Vec<Slot> {
         let mut out = Vec::new();
         let mut done = HashSet::new();
-        for x in self.slot_occurences() {
+        for x in slot_occurences(self) {
             if !done.contains(&x) {
                 done.insert(x);
                 out.push(x);
             }
         }
 
-        out
+        return out;
+
+        // lists all slot occurences in order.
+        fn slot_occurences(n: &ENode) -> Vec<Slot> {
+            let mut slotlist: Vec<Slot> = Vec::new();
+
+            match n {
+                ENode::Lam(s, r) => {
+                    slotlist.push(*s);
+                    slotlist.extend(r.m.values());
+                },
+                ENode::App(l, r) => {
+                    slotlist.extend(l.m.values());
+                    slotlist.extend(r.m.values());
+                }
+                ENode::Var(s) => {
+                    slotlist.push(*s);
+                },
+            };
+
+            slotlist
+        }
     }
 
+    // different than set(slot_order), as it doesn't contain lambda slots.
     pub fn slots(&self) -> HashSet<Slot> {
-        self.slot_occurences().into_iter().collect()
+        let mut set = HashSet::new();
+        match self {
+            ENode::Lam(s, r) => {
+                set.extend(r.m.values().filter(|x| x != s));
+            },
+            ENode::App(l, r) => {
+                set.extend(l.m.values());
+                set.extend(r.m.values());
+            }
+            ENode::Var(s) => {
+                set.insert(*s);
+            },
+        };
+
+        set
     }
 
     // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.

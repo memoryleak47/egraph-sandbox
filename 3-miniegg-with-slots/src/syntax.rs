@@ -16,7 +16,7 @@ fn translate(ast: Ast, re: &mut RecExpr, vars: &HashMap<String, Slot>) -> Applie
     match ast {
         Ast::Lam(x, b) => {
             let mut vars = vars.clone();
-            let slot = todo!();
+            let slot = Slot::fresh();
             vars.insert(x, slot);
             let b = translate(*b, re, &vars);
             re.push(ENode::Lam(slot, b))

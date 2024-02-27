@@ -93,6 +93,14 @@ impl SlotMap {
         out
     }
 
+    pub fn identity(set: &HashSet<Slot>) -> SlotMap {
+        let mut out = SlotMap::new();
+        for &x in set {
+            out.insert(x, x);
+        }
+        out
+    }
+
     // checks invariants.
     fn inv(&self) {
         // sortedness.
