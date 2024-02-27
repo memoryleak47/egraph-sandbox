@@ -10,6 +10,9 @@ use ast::*;
 mod syntax;
 use syntax::*;
 
+mod slotmap;
+use slotmap::*;
+
 /*
 
 mod rewrite;
