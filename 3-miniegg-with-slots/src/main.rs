@@ -1,9 +1,6 @@
 mod lang;
 use lang::*;
 
-mod egraph;
-use egraph::*;
-
 mod ast;
 use ast::*;
 
@@ -14,6 +11,9 @@ mod slotmap;
 use slotmap::*;
 
 /*
+
+mod egraph;
+use egraph::*;
 
 mod rewrite;
 use rewrite::*;

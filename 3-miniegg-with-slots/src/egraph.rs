@@ -5,9 +5,8 @@ struct EClass {
     // The set of equivalent ENodes that make up this eclass.
     nodes: HashSet<ENode>,
 
-    // The set of slots of this eclass is [0..slotcount].
-    // All larger slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
-    slotcount: usize,
+    // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
+    slots: Vec<Slot>,
 }
 
 // invariants:

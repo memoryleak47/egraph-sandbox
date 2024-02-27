@@ -10,7 +10,7 @@ pub struct Slot(pub usize);
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct AppliedId {
     pub id: Id,
-    pub args: Vec<Slot>,
+    pub m: SlotMap, // TODO fix semantics of m.
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -45,11 +45,11 @@ impl ENode {
         }
     }
 
-    pub fn map_slots(&self, f: impl Fn(Slot) -> Slot) -> ENode {
+    pub fn apply_slotmap(&self, m: &SlotMap) -> ENode {
         match self {
-            ENode::Lam(x, i) => ENode::Lam(f(*x), i.map_slots(f)),
-            ENode::App(i1, i2) => ENode::App(i1.map_slots(&f), i2.map_slots(f)),
-            ENode::Var(x) => ENode::Var(f(*x)),
+            ENode::Lam(x, i) => ENode::Lam(m[*x], i.apply_slotmap(&m)),
+            ENode::App(i1, i2) => ENode::App(i1.apply_slotmap(&m), i2.apply_slotmap(&m)),
+            ENode::Var(x) => ENode::Var(m[*x]),
         }
     }
 
@@ -60,11 +60,11 @@ impl ENode {
         match self {
             ENode::Lam(s, r) => {
                 slotlist.push(*s);
-                slotlist.extend(r.clone().args);
+                slotlist.extend(r.m.values());
             },
             ENode::App(l, r) => {
-                slotlist.extend(l.clone().args);
-                slotlist.extend(r.clone().args);
+                slotlist.extend(l.m.values());
+                slotlist.extend(r.m.values());
             }
             ENode::Var(s) => {
                 slotlist.push(*s);
@@ -94,32 +94,40 @@ impl ENode {
         let slots = self.slot_occurences();
 
         // maps the old slot name to the new order-based name.
-        let mut slotmap: HashMap<Slot, Slot> = HashMap::new();
+        let mut slotmap = SlotMap::new();
 
         for x in slots {
-            if !slotmap.contains_key(&x) {
+            if !slotmap.contains(x) {
                 let n = Slot(slotmap.len());
                 slotmap.insert(x, n);
             }
         }
 
-        self.map_slots(|s| slotmap[&s])
+        self.apply_slotmap(&slotmap)
     }
 }
 
 impl AppliedId {
-    pub fn new(id: Id, args: Vec<Slot>) -> Self {
-        // every Slot can be used at most once!
-        let args_set: HashSet<Slot> = args.iter().copied().collect();
-        assert_eq!(args.len(), args_set.len());
+    pub fn new(id: Id, m: SlotMap) -> Self {
+        assert!(m.is_bijection());
 
-        AppliedId { id, args }
+        AppliedId { id, m }
     }
 
-    pub fn map_slots(&self, f: impl Fn(Slot) -> Slot) -> AppliedId {
+    pub fn apply_slotmap(&self, m: &SlotMap) -> AppliedId {
         AppliedId::new(
             self.id,
-            self.args.iter().copied().map(f).collect(),
+            self.m.compose(m),
         )
+    }
+}
+
+impl Slot {
+    pub fn fresh() -> Self {
+        use std::sync::atomic::*;
+
+        static CTR: AtomicUsize = AtomicUsize::new(0);
+        let u = CTR.fetch_add(1, Ordering::SeqCst);
+        Slot(u)
     }
 }
