@@ -63,8 +63,23 @@ impl ENode {
         slotlist
     }
 
+    // equivalent to slot_occurences, but with duplicates removed.
+    pub fn slot_order(&self) -> Vec<Slot> {
+        let mut out = Vec::new();
+        let mut done = HashSet::new();
+        for x in self.slot_occurences() {
+            if !done.contains(&x) {
+                done.insert(x);
+                out.push(x);
+            }
+        }
+
+        out
+    }
+
     // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.
     pub fn shape(&self) -> ENode {
+        // TODO can I simplify this using slot_order?
         let slots = self.slot_occurences();
 
         // maps the old slot name to the new order-based name.

@@ -49,19 +49,26 @@ impl EGraph {
         todo!()
     }
 
-    pub fn lookup(&self, enode: &ENode) -> Option<AppliedId> {
+    pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
         // 1. normalize eclasses.
-        let enode = self.normalize_enode(enode);
+        let n = self.normalize_enode(n);
 
         // 2. normalize slots.
-        let shape = enode.shape();
+        let n_shape = n.shape();
 
         for (&i, c) in &self.classes {
-            for n in &c.nodes {
-                if n.shape() == shape {
-                    let l1 = enode.slot_occurences();
-                    let l2 = n.slot_occurences();
-                    let args = self.slot_match(&l1, &l2);
+            for nc in &c.nodes {
+                if nc.shape() == n_shape {
+                    let n_ord = n.slot_order();
+                    let nc_ord = nc.slot_order();
+                    let args = (0..c.slotcount).map(|x| {
+                        let x = Slot(x);
+                        // where does x come up in nc.slot_order()?
+                        let x = nc_ord.iter().position(|y| y == &x).unwrap();
+                        // we want the entry in n_ord at that same index!
+                        let x = n_ord[x];
+                        x
+                    }).collect();
                     let app_id = AppliedId::new(i, args);
                     return Some(app_id);
                 }
@@ -69,12 +76,6 @@ impl EGraph {
         }
 
         None
-    }
-
-    // returns v with v[s1[i]] = s2[i].
-    // assumes that set(s1) forms an interval [0..N].
-    fn slot_match(&self, s1: &[Slot], s2: &[Slot]) -> Vec<Slot> {
-        panic!()
     }
 
     // normalize i.id
