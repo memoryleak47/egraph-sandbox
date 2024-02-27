@@ -149,6 +149,10 @@ impl AppliedId {
             self.m.compose(m),
         )
     }
+
+    pub fn slots(&self) -> HashSet<Slot> {
+        self.m.values().collect()
+    }
 }
 
 impl Slot {
