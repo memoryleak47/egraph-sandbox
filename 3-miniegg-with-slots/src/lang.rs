@@ -24,7 +24,7 @@ pub enum ENode {
     Var(Slot),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RecExpr {
     pub node_dag: Vec<ENode>,
 }

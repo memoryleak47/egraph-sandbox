@@ -1,11 +1,8 @@
 use crate::*;
 
-// maps the names of free variables to its slots.
-pub type NameMap = HashMap<String, Slot>;
-
 ///// parse
 
-pub fn parse(s: &str) -> (RecExpr, NameMap) {
+pub fn parse(s: &str) -> (RecExpr, HashMap<String, Slot>) {
     let (ast, s) = parse_ast(s);
     assert!(s.is_empty());
 
@@ -17,7 +14,7 @@ pub fn parse(s: &str) -> (RecExpr, NameMap) {
 
 // adds the ENode corresponding to `ast` to `re`, and returns its `AppliedId`.
 // each free variable in `ast` corresponds to a Slot in the returned HashMap.
-fn translate(ast: Ast, re: &mut RecExpr) -> (AppliedId, NameMap) {
+fn translate(ast: Ast, re: &mut RecExpr) -> (AppliedId, HashMap<String, Slot>) {
     match ast {
         Ast::Lam(x, b) => {
             let (b, mut map) = translate(*b, re);
@@ -29,7 +26,7 @@ fn translate(ast: Ast, re: &mut RecExpr) -> (AppliedId, NameMap) {
                     let mut slotmap = SlotMap::identity(&b.slots());
                     slotmap.insert(x_slot, slot);
 
-                    let id = re.push(ENode::Lam(slot, b));
+                    let id = re.push(ENode::Lam(slot, b.apply_slotmap(&slotmap)));
                     (id, map)
                 },
                 None => {
@@ -77,7 +74,7 @@ fn to_ast(re: &[ENode], mut name_map: HashMap<Slot, String>, namegen: &mut impl 
     }
 }
 
-pub fn to_string(re: RecExpr, name_map: NameMap) -> String {
+pub fn to_string(re: RecExpr, name_map: HashMap<String, Slot>) -> String {
     let mut name_id = 0;
     let mut namegen = || {
         let name = format!("x{name_id}");
