@@ -6,15 +6,14 @@ struct EClass {
     nodes: HashSet<ENode>,
 
     // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
-    slots: Vec<Slot>,
+    slots: HashSet<Slot>,
 }
 
 // invariants:
 // 1. If two ENodes (that are in the EGraph) have equal ENode::shape(), they have to be in the same eclass.
-// 2. set(enode.slot_occurences()) is always an interval [0 .. N], and a weak superset of [0 .. c.slotcount], if enode is in the eclass c.
-//    if ENode::Lam(si) = enode, then we require i >= c.slotcount.
-//    All additional slots from our enode are called "redundant".
-// 3. AppliedId::args is always deduplicated. (eg. c1(s0, s1, s0) is illegal!)
+// 2. set(enode.slot_order()) is always a superset of c.slots, if enode is within the eclass c.
+//    if ENode::Lam(si) = enode, then we require i to not be in c.slots.
+// 3. AppliedId::m is always a bijection. (eg. c1(s0, s1, s0) is illegal!)
 pub struct EGraph {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
     unionfind: HashMap<Id, AppliedId>, // normalizes the eclass. is "idempotent".
@@ -27,6 +26,10 @@ impl EGraph {
             unionfind: Default::default(),
             classes: Default::default(),
         }
+    }
+
+    pub fn slots(&self, id: Id) -> HashSet<Slot> {
+        self.classes[&id].slots.clone()
     }
 
     pub fn add_expr(&mut self, re: RecExpr) -> Id {

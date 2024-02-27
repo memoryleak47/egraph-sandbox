@@ -10,7 +10,11 @@ pub struct Slot(pub usize);
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct AppliedId {
     pub id: Id,
-    pub m: SlotMap, // TODO fix semantics of m.
+
+    // m is always a bijection!
+    // m maps the slots from `id` (be it ENode::slots() in a RecExpr, or EGraph::slots(Id) for eclasses) to the slots that we insert into it.
+    // m.keys() == id.slots
+    pub m: SlotMap,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -88,19 +92,20 @@ impl ENode {
         out
     }
 
+    pub fn slots(&self) -> HashSet<Slot> {
+        self.slot_occurences().into_iter().collect()
+    }
+
     // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.
     pub fn shape(&self) -> ENode {
-        // TODO can I simplify this using slot_order?
-        let slots = self.slot_occurences();
+        let slots = self.slot_order();
 
         // maps the old slot name to the new order-based name.
         let mut slotmap = SlotMap::new();
 
         for x in slots {
-            if !slotmap.contains(x) {
-                let n = Slot(slotmap.len());
-                slotmap.insert(x, n);
-            }
+            let n = Slot(slotmap.len());
+            slotmap.insert(x, n);
         }
 
         self.apply_slotmap(&slotmap)
