@@ -10,6 +10,8 @@ use syntax::*;
 mod slotmap;
 use slotmap::*;
 
+mod debug;
+
 /*
 
 mod egraph;
@@ -31,6 +33,7 @@ fn main() {
     // let s = "(app (lam x (app x x)) (lam y y))";
     let s = "(lam x (lam y x))";
     let re = parse(s);
+    dbg!(&re);
 /*
     let mut eg = EGraph::new();
     let i = eg.add_expr(re);

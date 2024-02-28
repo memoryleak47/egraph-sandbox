@@ -1,7 +1,7 @@
 use crate::*;
 use std::ops::Index;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct SlotMap {
     // if (l, r) in map, then there is no (l, r') in map. Each key is uniquely contained.
     // Also: map is sorted by their keys.

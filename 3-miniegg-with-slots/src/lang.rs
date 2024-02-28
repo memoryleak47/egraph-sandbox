@@ -1,13 +1,13 @@
 use crate::*;
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Id(pub usize);
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 // For each eclass, its slots form an interval [0..n].
 pub struct Slot(pub usize);
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct AppliedId {
     pub id: Id,
 
@@ -17,7 +17,7 @@ pub struct AppliedId {
     pub m: SlotMap,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub enum ENode {
     Lam(Slot, AppliedId),
     App(AppliedId, AppliedId),
