@@ -21,7 +21,7 @@ impl SlotMap {
         self.map.binary_search_by_key(&l, |(x, _)| *x)
     }
 
-    pub fn contains(&self, k: Slot) -> bool {
+    pub fn contains_key(&self, k: Slot) -> bool {
         self.get(k).is_some()
     }
 

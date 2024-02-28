@@ -3,88 +3,116 @@ use crate::*;
 ///// parse
 
 pub fn parse(s: &str) -> RecExpr {
-    let (ast, s) = parse_ast(s);
-    assert!(s.is_empty());
+    let ast = parse_ast(s);
 
-    let mut re = RecExpr::new();
-    let (_, namemap) = translate(ast, &mut re);
-    assert!(namemap.is_empty(), "Free variables are not allowed in parsed terms!");
+    let mut v = Vec::new();
+    for x in ast {
+        let x_v = translate(x, &v);
 
-    re
+        let name_map_slots: HashSet<_> = x_v.name_map.values().copied().collect();
+        let enode_slots = x_v.enode.slots();
+
+        v.push(x_v);
+
+        if name_map_slots != enode_slots {
+            dbg!(&v);
+            println!("{:?}", name_map_slots);
+            println!("!=");
+            println!("{:?}", enode_slots);
+            panic!("slots error!");
+        }
+    }
+
+    assert!(v.last().unwrap().name_map.is_empty(), "Free variables are not allowed in parsed terms!");
+
+    let node_dag = v.into_iter().map(|x| x.enode).collect();
+
+    RecExpr { node_dag }
 }
 
-// adds the ENode corresponding to `ast` to `re`, and returns its `AppliedId`.
-// each free variable in `ast` corresponds to a Slot in the returned HashMap.
-// for (a: AppliedId, m: HashMap<..>) = translate(..); we require a.slots() == m.values();
-fn translate(ast: Ast, re: &mut RecExpr) -> (AppliedId, HashMap<String, Slot>) {
-    let mut out_id: AppliedId;
-    let mut out_name_map;
+#[derive(Clone, Debug)]
+struct TranslateData {
+    enode: ENode,
+    name_map: HashMap<String, Slot>,
+}
 
-    match ast {
-        Ast::Lam(x, b) => {
-            let (b, mut name_map) = translate(*b, re);
+// for (a: AppliedId, m: HashMap<..>) = translate(..); we require a.slots() == m.values();
+fn translate(ast_node: AstNode, v: &[TranslateData]) -> TranslateData {
+    match ast_node {
+        AstNode::Lam(x, b) => {
+            let b_data = v[b].clone();
 
             // The slot in the ENode::Lam(..) that we will create.
             let lam_slot = Slot::fresh();
 
             let mut slotmap = SlotMap::new();
-            for s in b.slots() {
-                slotmap.insert(s, Slot::fresh());
+            let mut name_map = HashMap::new();
+
+            if let Some(xb_slot) = b_data.name_map.get(&x) {
+                slotmap.insert(*xb_slot, lam_slot);
             }
 
-            match name_map.remove(&x) {
-                Some(x_slot) => {
-                    slotmap.insert(x_slot, lam_slot);
-                },
-                None => {},
+            for (name, &s) in &b_data.name_map {
+                if name == &x { continue; }
+
+                let new_s = Slot::fresh();
+                if !slotmap.contains_key(s) {
+                    slotmap.insert(s, new_s);
+                }
+                name_map.insert(name.to_string(), new_s);
             }
 
-            let enode = ENode::Lam(lam_slot, b.apply_slotmap(&slotmap));
-            out_id = re.push(enode);
-            out_name_map = name_map;
+            let id = AppliedId::new(Id(b), slotmap);
+            let enode = ENode::Lam(lam_slot, id);
+
+            TranslateData { enode, name_map }
         },
-        Ast::App(l, r) => todo!(),
-        Ast::Var(x) => {
+        AstNode::App(l, r) => todo!(),
+        AstNode::Var(x) => {
             let s = Slot::fresh();
-            out_id = re.push(ENode::Var(s));
-            out_name_map = HashMap::new();
-            out_name_map.insert(x, s);
+            let enode = ENode::Var(s);
+            let mut name_map = HashMap::new();
+            name_map.insert(x, s);
+
+            TranslateData { enode, name_map }
         },
-    };
-
-    let slots: HashSet<_> = out_name_map.values().copied().collect();
-    assert_eq!(out_id.slots(), slots);
-
-    (out_id, out_name_map)
+    }
 }
 
 ///// to_string
 
-fn to_ast(re: &[ENode], name_map: HashMap<Slot, String>, namegen: &mut impl FnMut() -> String) -> Ast {
+/*
+fn to_ast(en: &ENode, name_map: HashMap<Slot, String>, namegen: &mut impl FnMut() -> String, v: &mut Vec<AstNode>) -> AstId {
     let n = re.last().unwrap();
-    match n {
+
+    let enode = match n {
         ENode::Lam(x, b) => {
             let xname = namegen();
             let mut sub_name_map = name_map.clone();
             sub_name_map.insert(*x, xname.clone());
             sub_name_map = sub_name_map.into_iter().map(|(x, y)| (b.m.inverse()[x], y)).collect();
 
-            let b = to_ast(&re[0..b.id.0+1], sub_name_map, namegen);
+            let b = to_ast(&re[0..b.id.0+1], sub_name_map, namegen, v);
 
-            Ast::Lam(xname, Box::new(b))
+            AstNode::Lam(xname, b)
         },
         ENode::App(l, r) => {
             let l = to_ast(&re[0..l.id.0+1], name_map.clone(), namegen);
             let r = to_ast(&re[0..r.id.0+1], name_map, namegen);
 
-            Ast::App(Box::new(l), Box::new(r))
+            AstNode::App(Box::new(l), Box::new(r))
         },
         ENode::Var(x) => {
             let name = name_map[&x].clone();
-            Ast::Var(name)
+            AstNode::Var(name)
         },
-    }
+    };
+
+    let idx = v.len();
+    v.push(enode);
+    idx
 }
+*/
 
 pub fn to_string(re: RecExpr) -> String {
     let mut name_id = 0;
@@ -95,8 +123,12 @@ pub fn to_string(re: RecExpr) -> String {
         name
     };
 
-    let ast = to_ast(&re.node_dag, Default::default(), &mut namegen);
-    ast_to_string(ast)
+    let mut v = Vec::new();
+    for x in re.node_dag {
+        // to_ast(&re.node_dag, Default::default(), &mut namegen, &mut v);
+        // TODO
+    }
+    ast_to_string(v)
 }
 
 #[test]

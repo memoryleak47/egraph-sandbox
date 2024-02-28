@@ -1,13 +1,23 @@
 use crate::*;
 
+pub type AstId = usize;
+
 #[derive(Debug)]
-pub enum Ast {
-    Lam(String, Box<Ast>),
-    App(Box<Ast>, Box<Ast>),
+pub enum AstNode {
+    Lam(String, AstId),
+    App(AstId, AstId),
     Var(String),
 }
 
-pub fn parse_ast(s: &str) -> (Ast, &str) {
+pub fn parse_ast(s: &str) -> Vec<AstNode> {
+    let mut v = Vec::new();
+    let (_, s) = parse_ast_impl(s, &mut v);
+    assert!(s.is_empty());
+
+    v
+}
+
+fn parse_ast_impl<'s>(s: &'s str, v: &mut Vec<AstNode>) -> (AstId, &'s str) {
     if s.starts_with("(lam ") {
         let s = &s["(lam ".len()..];
         let (ident, s) = parse_ident(s);
@@ -15,35 +25,38 @@ pub fn parse_ast(s: &str) -> (Ast, &str) {
         assert!(s.starts_with(" "));
         let s = &s[1..];
 
-        let (b, s) = parse_ast(s);
+        let (b, s) = parse_ast_impl(s, v);
         let ident = ident.to_string();
 
         assert!(s.starts_with(")"));
         let s = &s[1..];
 
-        let ast = Ast::Lam(ident, Box::new(b));
+        let idx = v.len();
+        v.push(AstNode::Lam(ident, b));
 
-        (ast, s)
+        (idx, s)
     } else if s.starts_with("(app ") {
         let s = &s["(app ".len()..];
-        let (l, s) = parse_ast(s);
+        let (l, s) = parse_ast_impl(s, v);
 
         assert!(s.starts_with(" "));
         let s = &s[1..];
 
-        let (r, s) = parse_ast(s);
+        let (r, s) = parse_ast_impl(s, v);
 
         assert!(s.starts_with(")"));
         let s = &s[1..];
 
-        let ast = Ast::App(Box::new(l), Box::new(r));
+        let idx = v.len();
+        v.push(AstNode::App(l, r));
 
-        (ast, s)
+        (idx, s)
     } else {
         let (ident, s) = parse_ident(s);
-        let ast = Ast::Var(ident.to_string());
+        let idx = v.len();
+        v.push(AstNode::Var(ident.to_string()));
 
-        (ast, s)
+        (idx, s)
     }
 }
 
@@ -56,10 +69,16 @@ fn parse_ident(s: &str) -> (/*ident*/ &str, /*rest*/ &str) {
     (ident, rest)
 }
 
-pub fn ast_to_string(a: Ast) -> String {
-    match a {
-        Ast::Lam(x, b) => format!("(lam {} {})", x, ast_to_string(*b)),
-        Ast::App(l, r) => format!("(app {} {})", ast_to_string(*l), ast_to_string(*r)),
-        Ast::Var(x) => format!("{x}"),
+pub fn ast_to_string(a: Vec<AstNode>) -> String {
+    let mut strings = Vec::new();
+    for n in a {
+        let s = match n {
+            AstNode::Lam(x, b) => format!("(lam {} {})", x, strings[b]),
+            AstNode::App(l, r) => format!("(app {} {})", strings[l], strings[r]),
+            AstNode::Var(x) => format!("{x}"),
+        };
+        strings.push(s);
     }
+
+    strings.last().unwrap().to_string()
 }
