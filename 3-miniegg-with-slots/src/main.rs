@@ -31,7 +31,7 @@ use std::collections::{HashMap, HashSet};
 
 fn main() {
     // let s = "(app (lam x (app x x)) (lam y y))";
-    let s = "(lam x (lam y x))";
+    let s = "(lam x (lam y (app y (lam z z))))";
     let re = parse(s);
     dbg!(&re);
 /*

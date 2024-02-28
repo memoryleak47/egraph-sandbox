@@ -67,7 +67,30 @@ fn translate(ast_node: AstNode, v: &[TranslateData]) -> TranslateData {
 
             TranslateData { enode, name_map }
         },
-        AstNode::App(l, r) => todo!(),
+        AstNode::App(l, r) => {
+            let l_data = v[l].clone();
+            let r_data = v[r].clone();
+
+            let free_vars: HashSet<String> = l_data.name_map.keys().chain(r_data.name_map.keys()).cloned().collect();
+
+            let mut name_map = HashMap::new();
+            let mut slotmap_l = SlotMap::new();
+            let mut slotmap_r = SlotMap::new();
+
+            for x in free_vars {
+                let s = Slot::fresh();
+                name_map.insert(x.clone(), s);
+                if let Some(lx_slot) = l_data.name_map.get(&x) { slotmap_l.insert(*lx_slot, s); }
+                if let Some(rx_slot) = r_data.name_map.get(&x) { slotmap_r.insert(*rx_slot, s); }
+            }
+
+            let l = AppliedId::new(Id(l), slotmap_l);
+            let r = AppliedId::new(Id(r), slotmap_r);
+
+            let enode = ENode::App(l, r);
+
+            TranslateData { enode, name_map }
+        },
         AstNode::Var(x) => {
             let s = Slot::fresh();
             let enode = ENode::Var(s);
