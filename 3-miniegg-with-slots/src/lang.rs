@@ -107,6 +107,7 @@ impl ENode {
     }
 
     // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.
+    // shape() will later be used as a normalized ENode stored in the hashcons.
     pub fn shape(&self) -> ENode {
         let slots = self.slot_order();
 

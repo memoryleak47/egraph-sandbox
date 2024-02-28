@@ -12,10 +12,11 @@ use slotmap::*;
 
 mod debug;
 
-/*
 
 mod egraph;
 use egraph::*;
+
+/*
 
 mod rewrite;
 use rewrite::*;
@@ -33,10 +34,10 @@ fn main() {
     // let s = "(app (lam x (app x x)) (lam y y))";
     let s = "(lam x (lam y (app y (lam z z))))";
     let re = parse(s);
-    dbg!(&re);
-/*
     let mut eg = EGraph::new();
-    let i = eg.add_expr(re);
+    let i = eg.add_expr(re.clone());
+    dbg!(eg, i);
+/*
 
     for _ in 0..10 {
         rewrite_step(&mut eg);
