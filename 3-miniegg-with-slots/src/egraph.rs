@@ -38,6 +38,8 @@ impl EGraph {
         for x in re.node_dag {
             // TODO x currently references elements from within `re`.
             // It should however reference objects from within the EGraph.
+
+            // let x = x.map_ids(|a| v[a.id.0].clone());
             let x = todo!();
             v.push(self.add(x));
         }
@@ -68,11 +70,27 @@ impl EGraph {
 
     // normalize i.id
     //
-    // Example:
-    // find(c1(s3, s7, s8)), where 'c1(s0, s1, s2) -> c2(s2, s1)' in unionfind,
-    // yields c2(s8, s7).
+    // Example 1:
+    // 'find(c1(s10, s11)) = c2(s11, s10)', where 'c1(s0, s1) -> c2(s1, s0)' in unionfind.
+    //
+    // Example 2:
+    // 'find(c1(s3, s7, s8)) = c2(s8, s7)', where 'c1(s0, s1, s2) -> c2(s2, s1)' in unionfind,
     pub fn find(&self, i: AppliedId) -> AppliedId {
-        todo!()
+        let a = &self.unionfind[&i.id];
+
+        // I = self.slots(i.id);
+        // A = self.slots(a.id);
+        // i.m   :: I -> X
+        // a.m   :: A -> I
+        // out.m :: A -> X
+        // ==> out.m(x) = i.m(a.m(x))
+
+        let f = |x: Slot| i.m[a.m[x]];
+
+        AppliedId::new(
+            a.id,
+            a.m.iter().map(|(x, y)| (x, f(y))).collect(),
+        )
     }
 
     pub fn union(&mut self, l: AppliedId, r: AppliedId) {

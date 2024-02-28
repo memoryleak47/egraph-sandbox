@@ -128,6 +128,17 @@ impl Index<Slot> for SlotMap {
     }
 }
 
+impl FromIterator<(Slot, Slot)> for SlotMap {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (Slot, Slot)> {
+        let mut m = SlotMap::new();
+        for (x, y) in iter.into_iter() {
+            assert!(!m.contains_key(x));
+            m.insert(x, y);
+        }
+        m
+    }
+}
+
 #[test]
 fn test_slotmap() {
     let mut m: SlotMap = SlotMap::new();
