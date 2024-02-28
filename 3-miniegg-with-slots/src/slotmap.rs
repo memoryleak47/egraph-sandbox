@@ -121,7 +121,8 @@ impl Index<Slot> for SlotMap {
     type Output = Slot;
 
     fn index(&self, l: Slot) -> &Slot {
-        let i = self.search(l).unwrap();
+        let i = self.search(l)
+                    .unwrap_or_else(|_| panic!("SlotMap::index({:?}): index missing!", l));
 
         &self.map[i].1
     }

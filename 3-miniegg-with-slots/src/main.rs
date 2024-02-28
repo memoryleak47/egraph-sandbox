@@ -29,7 +29,7 @@ use std::collections::{HashMap, HashSet};
 
 fn main() {
     // let s = "(app (lam x (app x x)) (lam y y))";
-    let s = "(lam x x)";
+    let s = "(lam x (lam y x))";
     let re = parse(s);
 /*
     let mut eg = EGraph::new();
