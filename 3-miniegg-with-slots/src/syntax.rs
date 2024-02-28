@@ -18,33 +18,36 @@ pub fn parse(s: &str) -> RecExpr {
 fn translate(ast: Ast, re: &mut RecExpr) -> (AppliedId, HashMap<String, Slot>) {
     match ast {
         Ast::Lam(x, b) => {
-            let (b, mut map) = translate(*b, re);
+            let (b, mut name_map) = translate(*b, re);
 
-            match map.remove(&x) {
-                Some(x_slot) => {
-                    let slot = Slot::fresh();
+            // The slot in the ENode::Lam(..) that we will create.
+            let lam_slot = Slot::fresh();
 
-                    let mut slotmap = SlotMap::identity(&b.slots());
-                    slotmap.insert(x_slot, slot);
-
-                    let id = re.push(ENode::Lam(slot, b.apply_slotmap(&slotmap)));
-                    (id, map)
-                },
-                None => {
-                    let slot = Slot::fresh();
-                    let id = re.push(ENode::Lam(slot, b));
-                    (id, map)
-                },
+            let mut slotmap = SlotMap::new();
+            for s in b.slots() {
+                slotmap.insert(s, Slot::fresh());
             }
+
+            match name_map.remove(&x) {
+                Some(x_slot) => {
+                    slotmap.insert(x_slot, lam_slot);
+                },
+                None => {},
+            }
+
+            let enode = ENode::Lam(lam_slot, b.apply_slotmap(&slotmap));
+            let id = re.push(enode);
+
+            (id, name_map)
         },
         Ast::App(l, r) => todo!(),
         Ast::Var(x) => {
             let s = Slot::fresh();
             let id = re.push(ENode::Var(s));
-            let mut map = HashMap::new();
-            map.insert(x, s);
+            let mut name_map = HashMap::new();
+            name_map.insert(x, s);
 
-            (id, map)
+            (id, name_map)
         },
     }
 }
