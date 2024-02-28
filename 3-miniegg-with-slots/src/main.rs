@@ -28,7 +28,8 @@ use extract::*;
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    let s = "(app (lam x (app x x)) (lam y y))";
+    // let s = "(app (lam x (app x x)) (lam y y))";
+    let s = "(lam x x)";
     let re = parse(s);
 /*
     let mut eg = EGraph::new();
