@@ -47,13 +47,14 @@ impl EGraph {
                 // v_a.m :: V1 -> V2;
 
                 // f :: V1 -> V2;
-                // TODO is it really correct that this doesn't depend on a.m?
+                // TODO This is wrong, and depends on, the result depends on a.m.
                 let f = |x| v_a.m[x];
 
-                AppliedId::new(
+                let wrong = AppliedId::new(
                     v_a.id,
                     self.slots(v_a.id).iter().map(|x| (*x, f(*x))).collect(),
-                )
+                );
+                todo!()
             });
             v.push(self.add(x));
         }
@@ -74,7 +75,8 @@ impl EGraph {
             return x;
         }
 
-        // allocate eclass.
+        // allocate eclass. We allocate new slots for everything here too.
+        // TODO also allocate new slots for Lambdas.
         let id = Id(self.classes.len());
         let enode_slots = enode.slots();
         // m :: FRESH -> enode.slots()
