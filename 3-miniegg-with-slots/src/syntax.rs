@@ -90,37 +90,31 @@ pub fn to_string(re: RecExpr) -> String {
         name
     };
 
-    let mut v = Vec::new();
-    for x in re.node_dag {
-        let new = to_ast(x, &mut namegen, &v);
-        v.push(new);
-    }
-    ast_to_string(v.into_iter().map(|x| x.ast_node).collect())
+    let en: ENode = re.node_dag.last().unwrap().clone();
+
+    to_string_impl(en, &re.node_dag, Default::default(), &mut namegen)
 }
 
-struct ToAstData {
-    ast_node: AstNode,
-    name_map: HashMap<Slot, String>,
-}
-
-fn to_ast(en: ENode, namegen: &mut impl FnMut() -> String, v: &[ToAstData]) -> ToAstData {
-    todo!()
-    /*
+fn to_string_impl(en: ENode, re: &[ENode], name_map: HashMap<Slot, String>, namegen: &mut impl FnMut() -> String) -> String {
     match en {
         ENode::Lam(x, b) => {
-            let b_data = v[b].clone();
-            let xname = match b.
             let xname = namegen();
-
-            AstNode::Lam(xname, b)
+            let b_node = re[b.id.0].clone();
+            let m = b.m.inverse();
+            let mut name_map: HashMap<_, _> = name_map.iter().map(|(x, y)| (m[*x], y.clone())).collect();
+            if m.contains_key(x) {
+                name_map.insert(m[x], xname.clone());
+            }
+            let b = to_string_impl(b_node, re, name_map, namegen);
+            format!("(lam {xname} {b})")
         },
         ENode::App(l, r) => todo!(),
         ENode::Var(x) => {
-            let name = name_map[&x].clone();
-            AstNode::Var(name)
+            let name = name_map.get(&x)
+                               .unwrap_or_else(|| panic!("Free variables are forbidden in `to_string`!"));
+            format!("{name}")
         },
     }
-    */
 }
 
 #[test]

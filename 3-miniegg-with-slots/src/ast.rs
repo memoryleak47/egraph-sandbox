@@ -69,6 +69,7 @@ fn parse_ident(s: &str) -> (/*ident*/ &str, /*rest*/ &str) {
     (ident, rest)
 }
 
+#[allow(unused)]
 pub fn ast_to_string(a: Vec<AstNode>) -> String {
     let mut strings = Vec::new();
     for n in a {
