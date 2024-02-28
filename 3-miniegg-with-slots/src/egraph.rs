@@ -76,16 +76,22 @@ impl EGraph {
 
         // allocate eclass.
         let id = Id(self.classes.len());
-        let slots = enode.slots();
-        let map = SlotMap::identity(&slots);
-        let app_id = AppliedId::new(id, map);
+        let enode_slots = enode.slots();
+        // m :: FRESH -> enode.slots()
+        let m = SlotMap::bijection_from_fresh_to(&enode_slots);
+        let slots = m.keys();
+        let enode = enode.apply_slotmap(&m.inverse());
+
+        let app_id = AppliedId::new(id, m);
+        let app_id2 = AppliedId::new(id, SlotMap::identity(&slots));
 
         let eclass = EClass {
             nodes: HashSet::from([enode]),
-            slots,
+            slots: slots,
         };
         self.classes.insert(id, eclass);
-        self.unionfind.insert(id, app_id.clone());
+        self.unionfind.insert(id, app_id2);
+
         app_id
     }
 
@@ -112,7 +118,9 @@ impl EGraph {
         // out.m :: A -> X
         // ==> out.m(x) = i.m(a.m(x))
 
-        let f = |x: Slot| i.m[a.m[x]];
+        let f = |x: Slot| {
+            i.m[a.m[x]]
+        };
 
         AppliedId::new(
             a.id,

@@ -42,12 +42,12 @@ impl SlotMap {
         self.map.iter().copied()
     }
 
-    pub fn keys(&self) -> impl Iterator<Item=Slot> + '_ {
-        self.iter().map(|(x, _)| x)
+    pub fn keys(&self) -> HashSet<Slot> {
+        self.iter().map(|(x, _)| x).collect()
     }
 
-    pub fn values(&self) -> impl Iterator<Item=Slot> + '_ {
-        self.iter().map(|(_, x)| x)
+    pub fn values(&self) -> HashSet<Slot> {
+        self.iter().map(|(_, x)| x).collect()
     }
 
     pub fn inverse(&self) -> SlotMap {
@@ -101,6 +101,20 @@ impl SlotMap {
         out
     }
 
+    pub fn bijection_from_fresh_to(set: &HashSet<Slot>) -> SlotMap {
+        let mut out = SlotMap::new();
+        for &x in set {
+            out.insert(Slot::fresh(), x);
+        }
+        out
+    }
+
+    pub fn remove(&mut self, x: Slot) {
+        if let Ok(i) = self.search(x) {
+            self.map.remove(i);
+        }
+    }
+
     // checks invariants.
     fn inv(&self) {
         // sortedness.
@@ -120,9 +134,12 @@ impl SlotMap {
 impl Index<Slot> for SlotMap {
     type Output = Slot;
 
+    #[track_caller]
+    #[inline]
     fn index(&self, l: Slot) -> &Slot {
-        let i = self.search(l)
-                    .unwrap_or_else(|_| panic!("SlotMap::index({:?}): index missing!", l));
+        let Ok(i) = self.search(l) else {
+            panic!("SlotMap::index({:?}): index missing!", l);
+        };
 
         &self.map[i].1
     }

@@ -44,7 +44,7 @@ impl ENode {
         }
     }
 
-    pub fn apply_slotmap(&self, m: &SlotMap) -> ENode {
+    pub fn apply_slotmap_including_lam(&self, m: &SlotMap) -> ENode {
         match self {
             ENode::Lam(x, i) => ENode::Lam(m[*x], i.apply_slotmap(&m)),
             ENode::App(i1, i2) => ENode::App(i1.apply_slotmap(&m), i2.apply_slotmap(&m)),
@@ -52,7 +52,19 @@ impl ENode {
         }
     }
 
-    // equivalent to slot_occurences, but with duplicates removed.
+    pub fn apply_slotmap(&self, m: &SlotMap) -> ENode {
+        match self {
+            ENode::Lam(x, i) => {
+                let mut m = m.clone();
+                m.remove(*x);
+
+                ENode::Lam(*x, i.apply_slotmap(&m))
+            },
+            ENode::App(i1, i2) => ENode::App(i1.apply_slotmap(&m), i2.apply_slotmap(&m)),
+            ENode::Var(x) => ENode::Var(m[*x]),
+        }
+    }
+
     pub fn slot_order(&self) -> Vec<Slot> {
         let mut out = Vec::new();
         let mut done = HashSet::new();
@@ -92,7 +104,7 @@ impl ENode {
         let mut set = HashSet::new();
         match self {
             ENode::Lam(s, r) => {
-                set.extend(r.m.values().filter(|x| x != s));
+                set.extend(r.m.values().into_iter().filter(|x| x != s));
             },
             ENode::App(l, r) => {
                 set.extend(l.m.values());
@@ -119,7 +131,7 @@ impl ENode {
             slotmap.insert(x, n);
         }
 
-        self.apply_slotmap(&slotmap)
+        self.apply_slotmap_including_lam(&slotmap)
     }
 }
 
@@ -138,7 +150,7 @@ impl AppliedId {
     }
 
     pub fn slots(&self) -> HashSet<Slot> {
-        self.m.values().collect()
+        self.m.values()
     }
 }
 
