@@ -2,14 +2,15 @@ use crate::*;
 
 ///// parse
 
-pub fn parse(s: &str) -> (RecExpr, HashMap<String, Slot>) {
+pub fn parse(s: &str) -> RecExpr {
     let (ast, s) = parse_ast(s);
     assert!(s.is_empty());
 
     let mut re = RecExpr::new();
     let (_, namemap) = translate(ast, &mut re);
+    assert!(namemap.is_empty(), "Free variables are not allowed in parsed terms!");
 
-    (re, namemap)
+    re
 }
 
 // adds the ENode corresponding to `ast` to `re`, and returns its `AppliedId`.
@@ -74,7 +75,7 @@ fn to_ast(re: &[ENode], mut name_map: HashMap<Slot, String>, namegen: &mut impl 
     }
 }
 
-pub fn to_string(re: RecExpr, name_map: HashMap<String, Slot>) -> String {
+pub fn to_string(re: RecExpr) -> String {
     let mut name_id = 0;
     let mut namegen = || {
         let name = format!("x{name_id}");
@@ -83,8 +84,7 @@ pub fn to_string(re: RecExpr, name_map: HashMap<String, Slot>) -> String {
         name
     };
 
-    let name_map: HashMap<Slot, String> = name_map.into_iter().map(|(x, y)| (y, x)).collect();
-    let ast = to_ast(&re.node_dag, name_map, &mut namegen);
+    let ast = to_ast(&re.node_dag, Default::default(), &mut namegen);
     ast_to_string(ast)
 }
 
