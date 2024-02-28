@@ -15,7 +15,11 @@ pub fn parse(s: &str) -> RecExpr {
 
 // adds the ENode corresponding to `ast` to `re`, and returns its `AppliedId`.
 // each free variable in `ast` corresponds to a Slot in the returned HashMap.
+// for (a: AppliedId, m: HashMap<..>) = translate(..); we require a.slots() == m.values();
 fn translate(ast: Ast, re: &mut RecExpr) -> (AppliedId, HashMap<String, Slot>) {
+    let mut out_id: AppliedId;
+    let mut out_name_map;
+
     match ast {
         Ast::Lam(x, b) => {
             let (b, mut name_map) = translate(*b, re);
@@ -36,20 +40,22 @@ fn translate(ast: Ast, re: &mut RecExpr) -> (AppliedId, HashMap<String, Slot>) {
             }
 
             let enode = ENode::Lam(lam_slot, b.apply_slotmap(&slotmap));
-            let id = re.push(enode);
-
-            (id, name_map)
+            out_id = re.push(enode);
+            out_name_map = name_map;
         },
         Ast::App(l, r) => todo!(),
         Ast::Var(x) => {
             let s = Slot::fresh();
-            let id = re.push(ENode::Var(s));
-            let mut name_map = HashMap::new();
-            name_map.insert(x, s);
-
-            (id, name_map)
+            out_id = re.push(ENode::Var(s));
+            out_name_map = HashMap::new();
+            out_name_map.insert(x, s);
         },
-    }
+    };
+
+    let slots: HashSet<_> = out_name_map.values().copied().collect();
+    assert_eq!(out_id.slots(), slots);
+
+    (out_id, out_name_map)
 }
 
 ///// to_string
