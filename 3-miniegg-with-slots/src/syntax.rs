@@ -51,14 +51,16 @@ fn translate(ast: Ast, re: &mut RecExpr) -> (AppliedId, HashMap<String, Slot>) {
 
 ///// to_string
 
-fn to_ast(re: &[ENode], mut name_map: HashMap<Slot, String>, namegen: &mut impl FnMut() -> String) -> Ast {
+fn to_ast(re: &[ENode], name_map: HashMap<Slot, String>, namegen: &mut impl FnMut() -> String) -> Ast {
     let n = re.last().unwrap();
     match n {
         ENode::Lam(x, b) => {
             let xname = namegen();
-            name_map.insert(*x, xname.clone());
+            let mut sub_name_map = name_map.clone();
+            sub_name_map.insert(*x, xname.clone());
+            sub_name_map = sub_name_map.into_iter().map(|(x, y)| (b.m.inverse()[x], y)).collect();
 
-            let b = to_ast(&re[0..b.id.0+1], name_map, namegen);
+            let b = to_ast(&re[0..b.id.0+1], sub_name_map, namegen);
 
             Ast::Lam(xname, Box::new(b))
         },
