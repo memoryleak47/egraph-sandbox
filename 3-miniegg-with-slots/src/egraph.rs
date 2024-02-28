@@ -34,13 +34,27 @@ impl EGraph {
     }
 
     pub fn add_expr(&mut self, re: RecExpr) -> AppliedId {
-        let mut v = Vec::new();
+        let mut v: Vec<AppliedId> = Vec::new();
         for x in re.node_dag {
-            // TODO x currently references elements from within `re`.
-            // It should however reference objects from within the EGraph.
+            let x = x.map_ids(|a: AppliedId| {
+                let v_a: AppliedId = v[a.id.0].clone();
 
-            // let x = x.map_ids(|a| v[a.id.0].clone());
-            let x = todo!();
+                // A1 = re.node_dag[a.id.0].slots() = a.m.keys();
+                // A2 = a.slots();
+                // V1 = self.slots(v_a.id);
+                // V2 = v_a.slots(); [subset of A2]
+                // a.m :: A1 -> A2;
+                // v_a.m :: V1 -> V2;
+
+                // f :: V1 -> V2;
+                // TODO is it really correct that this doesn't depend on a.m?
+                let f = |x| v_a.m[x];
+
+                AppliedId::new(
+                    v_a.id,
+                    self.slots(v_a.id).iter().map(|x| (*x, f(*x))).collect(),
+                )
+            });
             v.push(self.add(x));
         }
 
@@ -64,8 +78,10 @@ impl EGraph {
         todo!()
     }
 
+    // TODO implement.
+    // This implementation of `lookup` will not enforce sharing at all.
     pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
-        todo!()
+        None
     }
 
     // normalize i.id
