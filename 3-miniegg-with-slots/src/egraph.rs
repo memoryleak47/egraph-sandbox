@@ -41,6 +41,8 @@ impl EGraph {
         enode.map_ids(|x| self.find(x))
     }
 
+    // self.add(x) = y implies that x.slots() is a superset of y.slots().
+    // x.slots() - y.slots() are redundant slots.
     pub fn add(&mut self, enode: ENode) -> AppliedId {
         let enode = self.normalize_enode(&enode);
 
