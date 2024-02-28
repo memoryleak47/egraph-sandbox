@@ -120,7 +120,7 @@ fn to_string_impl(en: ENode, re: &[ENode], name_map: HashMap<Slot, String>, name
 #[test]
 fn test_parse_roundtrip() {
     let s1 = "(app (lam x0 x0) (lam x1 x1))";
-    let (p, m) = parse(s1);
-    let s2 = to_string(p, m);
+    let p = parse(s1);
+    let s2 = to_string(p);
     assert_eq!(s1, s2);
 }
