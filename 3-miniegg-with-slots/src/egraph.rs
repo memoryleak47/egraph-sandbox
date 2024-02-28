@@ -11,7 +11,7 @@ struct EClass {
 
 // invariants:
 // 1. If two ENodes (that are in the EGraph) have equal ENode::shape(), they have to be in the same eclass.
-// 2. set(enode.slot_order()) is always a superset of c.slots, if enode is within the eclass c.
+// 2. enode.slots() is always a superset of c.slots, if enode is within the eclass c.
 //    if ENode::Lam(si) = enode, then we require i to not be in c.slots.
 // 3. AppliedId::m is always a bijection. (eg. c1(s0, s1, s0) is illegal!)
 #[derive(Debug)]
@@ -33,8 +33,16 @@ impl EGraph {
         self.classes[&id].slots.clone()
     }
 
-    pub fn add_expr(&mut self, re: RecExpr) -> Id {
-        todo!()
+    pub fn add_expr(&mut self, re: RecExpr) -> AppliedId {
+        let mut v = Vec::new();
+        for x in re.node_dag {
+            // TODO x currently references elements from within `re`.
+            // It should however reference objects from within the EGraph.
+            let x = todo!();
+            v.push(self.add(x));
+        }
+
+        v.pop().unwrap()
     }
 
     fn normalize_enode(&self, enode: &ENode) -> ENode {
