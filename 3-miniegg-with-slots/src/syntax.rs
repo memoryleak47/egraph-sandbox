@@ -108,7 +108,18 @@ fn to_string_impl(en: ENode, re: &[ENode], name_map: HashMap<Slot, String>, name
             let b = to_string_impl(b_node, re, name_map, namegen);
             format!("(lam {xname} {b})")
         },
-        ENode::App(l, r) => todo!(),
+        ENode::App(l, r) => {
+            let mut call = |a: AppliedId| {
+                let node = re[a.id.0].clone();
+                let m = a.m.clone();
+                let a_name_map: HashMap<_, _> = node.slots().iter().map(|x| (*x, name_map[&m[*x]].clone())).collect();
+
+                to_string_impl(node, re, a_name_map, namegen)
+            };
+            let l = call(l);
+            let r = call(r);
+            format!("(app {l} {r})")
+        },
         ENode::Var(x) => {
             let name = name_map.get(&x)
                                .unwrap_or_else(|| panic!("Free variables are forbidden in `to_string`!"));
