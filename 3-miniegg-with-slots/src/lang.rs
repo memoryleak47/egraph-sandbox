@@ -33,20 +33,6 @@ impl RecExpr {
     pub fn new() -> Self {
         RecExpr { node_dag: Vec::new() }
     }
-
-    pub fn push(&mut self, t: ENode) -> AppliedId {
-        let slots = t.slots();
-
-        let id = Id(self.node_dag.len());
-        self.node_dag.push(t);
-
-        let m = SlotMap::identity(&slots);
-
-        AppliedId {
-            id,
-            m,
-        }
-    }
 }
 
 impl ENode {

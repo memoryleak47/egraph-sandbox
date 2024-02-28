@@ -81,39 +81,6 @@ fn translate(ast_node: AstNode, v: &[TranslateData]) -> TranslateData {
 
 ///// to_string
 
-/*
-fn to_ast(en: &ENode, name_map: HashMap<Slot, String>, namegen: &mut impl FnMut() -> String, v: &mut Vec<AstNode>) -> AstId {
-    let n = re.last().unwrap();
-
-    let enode = match n {
-        ENode::Lam(x, b) => {
-            let xname = namegen();
-            let mut sub_name_map = name_map.clone();
-            sub_name_map.insert(*x, xname.clone());
-            sub_name_map = sub_name_map.into_iter().map(|(x, y)| (b.m.inverse()[x], y)).collect();
-
-            let b = to_ast(&re[0..b.id.0+1], sub_name_map, namegen, v);
-
-            AstNode::Lam(xname, b)
-        },
-        ENode::App(l, r) => {
-            let l = to_ast(&re[0..l.id.0+1], name_map.clone(), namegen);
-            let r = to_ast(&re[0..r.id.0+1], name_map, namegen);
-
-            AstNode::App(Box::new(l), Box::new(r))
-        },
-        ENode::Var(x) => {
-            let name = name_map[&x].clone();
-            AstNode::Var(name)
-        },
-    };
-
-    let idx = v.len();
-    v.push(enode);
-    idx
-}
-*/
-
 pub fn to_string(re: RecExpr) -> String {
     let mut name_id = 0;
     let mut namegen = || {
@@ -125,10 +92,35 @@ pub fn to_string(re: RecExpr) -> String {
 
     let mut v = Vec::new();
     for x in re.node_dag {
-        // to_ast(&re.node_dag, Default::default(), &mut namegen, &mut v);
-        // TODO
+        let new = to_ast(x, &mut namegen, &v);
+        v.push(new);
     }
-    ast_to_string(v)
+    ast_to_string(v.into_iter().map(|x| x.ast_node).collect())
+}
+
+struct ToAstData {
+    ast_node: AstNode,
+    name_map: HashMap<Slot, String>,
+}
+
+fn to_ast(en: ENode, namegen: &mut impl FnMut() -> String, v: &[ToAstData]) -> ToAstData {
+    todo!()
+    /*
+    match en {
+        ENode::Lam(x, b) => {
+            let b_data = v[b].clone();
+            let xname = match b.
+            let xname = namegen();
+
+            AstNode::Lam(xname, b)
+        },
+        ENode::App(l, r) => todo!(),
+        ENode::Var(x) => {
+            let name = name_map[&x].clone();
+            AstNode::Var(name)
+        },
+    }
+    */
 }
 
 #[test]
