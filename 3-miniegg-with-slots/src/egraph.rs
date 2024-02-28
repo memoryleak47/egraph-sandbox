@@ -74,8 +74,19 @@ impl EGraph {
             return x;
         }
 
-        // TODO alloc new eclass for it.
-        todo!()
+        // allocate eclass.
+        let id = Id(self.classes.len());
+        let slots = enode.slots();
+        let map = SlotMap::identity(&slots);
+        let app_id = AppliedId::new(id, map);
+
+        let eclass = EClass {
+            nodes: HashSet::from([enode]),
+            slots,
+        };
+        self.classes.insert(id, eclass);
+        self.unionfind.insert(id, app_id.clone());
+        app_id
     }
 
     // TODO implement.
