@@ -1,6 +1,9 @@
 mod lang;
 use lang::*;
 
+mod flex;
+use flex::*;
+
 mod ast;
 use ast::*;
 
