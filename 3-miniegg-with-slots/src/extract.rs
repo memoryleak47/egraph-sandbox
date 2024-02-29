@@ -29,45 +29,62 @@ pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
     map.remove(&i).unwrap()
 }
 
-fn extract_step(n: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr>, eg: &EGraph) -> Option<RecExpr> {
-    /*
-    match n {
+fn extract_step(enode: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr>, eg: &EGraph) -> Option<RecExpr> {
+    match enode {
         ENode::Var(x) => {
-            RecExpr { node_dag: vec![ENode::Var(x.clone())] }
+            let re = RecExpr { node_dag: vec![ENode::Var(x)] };
+
+            Some(re)
         },
         ENode::Lam(x, b) => {
-            let Some(mut re) = map.get(b).cloned() else { continue };
-            let last = Id(re.node_dag.len()-1);
-            let enode = ENode::Lam(x.clone(), last);
+            let mut re = db(b)?;
+            let last = Id(re.node_dag.len() - 1);
+            let last_slots = re.node_dag.last().unwrap().slots(); // TODO correct?
+            let last = AppliedId::new(last, SlotMap::identity(&last_slots));
+
+            let enode = ENode::Lam(x, last);
             re.node_dag.push(enode);
-            re
+
+            Some(re)
         },
         ENode::App(l, r) => {
-            let Some(l) = map.get(l).cloned() else { continue };
+            let l = db(l)?;
+            let r = db(r)?;
             let last1 = Id(l.node_dag.len() - 1);
+            let last1_slots = l.node_dag.last().unwrap().slots(); // TODO correct?
+            let last1 = AppliedId::new(last1, SlotMap::identity(&last1_slots));
 
             let n = l.node_dag.len();
-            let f = |Id(x)| Id(x + n);
-            let Some(r) = map.get(r) else { continue };
+            let shift_n = |x: AppliedId| AppliedId::new(Id(x.id.0 + n), x.m);
             let r = r.node_dag.iter()
-                              .map(|enode| enode.clone().map_ids(f));
+                              .map(|enode| enode.map_applied_ids(shift_n));
             let mut re = l;
             re.node_dag.extend(r);
 
             let last2 = Id(re.node_dag.len() - 1);
+            let last2_slots = re.node_dag.last().unwrap().slots(); // TODO correct?
+            let last2 = AppliedId::new(last2, SlotMap::identity(&last2_slots));
 
             let enode = ENode::App(last1, last2);
             re.node_dag.push(enode);
 
-            re
+            Some(re)
         },
     }
-    */
-    todo!()
 }
 
 // a simple lookup of `map[a]`, but wait! `a` is an AppliedId instead of a simple Id.
 // Hence we need to do some renaming.
+// if Some(re) = db_impl(a, ..), then re.last().slots() = a.slots()
 fn db_impl(a: AppliedId, map: &HashMap<Id, RecExpr>, eg: &EGraph) -> Option<RecExpr> {
-    todo!()
+    let mut re: RecExpr = map.get(&a.id)?.clone();
+    let b: ENode = re.node_dag.last().unwrap().clone();
+
+    // a.slots() == A
+    // re.slots() == b.slots() == eg.slots(a.id) == B
+    // a.m :: B -> A
+
+    re.node_dag.last_mut().unwrap().apply_slotmap(&a.m);
+
+    Some(re)
 }
