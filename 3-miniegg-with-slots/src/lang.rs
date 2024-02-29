@@ -122,6 +122,26 @@ impl ENode {
         set
     }
 
+    // TODO rename logically.
+    // like slot_order but doesn't include lambda slots.
+    pub fn free_slot_order(&self) -> Vec<Slot> {
+        let mut v = Vec::new();
+        match self {
+            ENode::Lam(s, r) => {
+                v.extend(r.m.values().into_iter().filter(|x| x != s));
+            },
+            ENode::App(l, r) => {
+                v.extend(l.m.values());
+                v.extend(r.m.values());
+            }
+            ENode::Var(s) => {
+                v.push(*s);
+            },
+        };
+
+        v
+    }
+
     // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.
     // shape() will later be used as a normalized ENode stored in the hashcons.
     pub fn shape(&self) -> ENode {

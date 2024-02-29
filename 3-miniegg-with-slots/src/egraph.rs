@@ -107,9 +107,29 @@ impl EGraph {
         app_id
     }
 
-    // TODO implement.
-    // This implementation of `lookup` will not enforce sharing at all.
     pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
+        let n = self.normalize_enode(n);
+
+        for (i, c) in &self.classes {
+            if self.unionfind[i].id != *i { continue; }
+
+            for enode in &c.nodes {
+                if enode.shape() == n.shape() {
+                    let a1 = enode.free_slot_order();
+                    let a2 = n.free_slot_order();
+                    assert_eq!(a1.len(), a2.len());
+
+                    let mut slotmap = SlotMap::new();
+                    for (x, y) in a1.into_iter().zip(a2) {
+                        if slotmap.contains_key(x) && slotmap[x] != y { panic!(); }
+                        slotmap.insert(x, y);
+                    }
+                    let app_id = AppliedId::new(*i, slotmap);
+                    return Some(app_id);
+                }
+            }
+        }
+
         None
     }
 
