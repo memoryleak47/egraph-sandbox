@@ -33,7 +33,8 @@ impl EGraph {
         self.classes[&id].slots.clone()
     }
 
-    pub fn add_expr(&mut self, re: RecExpr) -> AppliedId {
+    // returns Id instead of AppliedId, as the re isn't allowed to have free variables.
+    pub fn add_expr(&mut self, re: RecExpr) -> Id {
         // re[i] should be "conceptually equivalent" to v[i].
         let mut v: Vec<AppliedId> = Vec::new();
 
@@ -70,7 +71,10 @@ impl EGraph {
             v.push(self.add(enode));
         }
 
-        v.pop().unwrap()
+        let res = v.pop().unwrap();
+        assert!(res.m.is_empty(), "Free variables are not allowed!");
+
+        res.id
     }
 
     fn normalize_enode(&self, enode: &ENode) -> ENode {
@@ -136,7 +140,25 @@ impl EGraph {
         )
     }
 
+    pub fn find_id(&self, i: Id) -> Id {
+        assert!(self.classes[&i].slots.is_empty());
+
+        self.unionfind[&i].id
+    }
+
     pub fn union(&mut self, l: AppliedId, r: AppliedId) {
         unimplemented!()
+    }
+
+    pub fn ids(&self) -> Vec<Id> {
+        self.unionfind.iter()
+                       .filter(|(x, y)| x == &&y.id)
+                       .map(|(x, _)| *x)
+                       .collect()
+    }
+
+    pub fn enodes(&self, i: Id) -> HashSet<ENode> {
+        let i = self.find_id(i);
+        self.classes[&i].nodes.clone()
     }
 }

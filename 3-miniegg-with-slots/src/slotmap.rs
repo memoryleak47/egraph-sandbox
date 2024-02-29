@@ -17,6 +17,10 @@ impl SlotMap {
         self.map.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
+
     fn search(&self, l: Slot) -> Result<usize, usize> {
         self.map.binary_search_by_key(&l, |(x, _)| *x)
     }

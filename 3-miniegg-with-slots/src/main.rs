@@ -16,6 +16,9 @@ mod debug;
 mod egraph;
 use egraph::*;
 
+mod extract;
+use extract::*;
+
 /*
 
 mod rewrite;
@@ -23,9 +26,6 @@ use rewrite::*;
 
 mod subst;
 use subst::*;
-
-mod extract;
-use extract::*;
 */
 
 use std::collections::{HashMap, HashSet};
@@ -36,15 +36,15 @@ fn main() {
     let re = parse(s);
     let mut eg = EGraph::new();
     let i = eg.add_expr(re.clone());
-    dbg!(eg, i);
+    dbg!(&eg, &i);
 /*
 
     for _ in 0..10 {
         rewrite_step(&mut eg);
     }
 
-    let re = extract(i, &eg);
 */
+    let re = extract(i, &eg);
     let s = to_string(re);
     println!("{}", s);
 }
