@@ -80,6 +80,7 @@ impl SlotMap {
         for (x, y) in self.iter() {
             out.insert(x, other[y]);
         }
+
         out
     }
 
@@ -113,6 +114,10 @@ impl SlotMap {
         if let Ok(i) = self.search(x) {
             self.map.remove(i);
         }
+    }
+
+    pub fn from_pairs(pairs: &[(Slot, Slot)]) -> SlotMap {
+        pairs.iter().copied().collect()
     }
 
     // checks invariants.

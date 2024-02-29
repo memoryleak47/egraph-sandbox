@@ -163,3 +163,19 @@ impl Slot {
         Slot(u)
     }
 }
+
+
+#[test]
+fn test_apply_slotmap() {
+    let s = Slot;
+
+    let in_slotmap = SlotMap::from_pairs(&[(s(0), s(10)), (s(1), s(3))]);
+    let in_enode = ENode::Lam(s(3), AppliedId::new(Id(12), in_slotmap));
+
+    let slotmap = SlotMap::from_pairs(&[(s(10), s(100))]);
+    let real = in_enode.apply_slotmap(&slotmap);
+
+    let expected_slotmap = SlotMap::from_pairs(&[(s(0), s(100))]);
+    let expected = ENode::Lam(s(3), AppliedId::new(Id(12), expected_slotmap));
+    assert_eq!(real, expected);
+}
