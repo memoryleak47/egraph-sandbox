@@ -166,8 +166,34 @@ impl EGraph {
         self.unionfind[&i].id
     }
 
+    // creates a new eclass with slots intersection(l.slots(), r.slots).
     pub fn union(&mut self, l: AppliedId, r: AppliedId) {
-        unimplemented!()
+        let l = self.find(l);
+        let r = self.find(r);
+
+        // TODO if f(x, y) = f(y, x) we need even broader equality checking than this. Normalization is not enough, because they might have been merged before.
+        if l == r { return; }
+
+        let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect();
+
+        let id = Id(self.classes.len());
+        let app_id = AppliedId::new(id, SlotMap::identity(&slots));
+        let eclass = EClass {
+            nodes: HashSet::new(),
+            slots,
+        };
+        self.classes.insert(id, eclass);
+        self.unionfind.insert(id, app_id.clone());
+
+        let mut call = |a: AppliedId| {
+            self.unionfind.insert(a.id, AppliedId::new(id, todo!()));
+            // next steps:
+            // - move the old ENodes over.
+            // - upwards merging.
+        };
+
+        call(l);
+        call(r);
     }
 
     pub fn ids(&self) -> Vec<Id> {
