@@ -86,24 +86,19 @@ impl EGraph {
             return x;
         }
 
-        // allocate eclass. We allocate new slots for everything here too.
-        // TODO also allocate new slots for Lambdas.
+        // allocate eclass.
+        // TODO allocate new slots for everything here too (exposed & lambdas).
         let id = Id(self.classes.len());
-        let enode_slots = enode.slots();
-        // m :: FRESH -> enode.slots()
-        let m = SlotMap::bijection_from_fresh_to(&enode_slots);
-        let slots = m.keys();
-        let enode = enode.apply_slotmap(&m.inverse());
+        let slots = enode.slots();
 
-        let app_id = AppliedId::new(id, m);
-        let app_id2 = AppliedId::new(id, SlotMap::identity(&slots));
+        let app_id = AppliedId::new(id, SlotMap::identity(&slots));
 
         let eclass = EClass {
             nodes: HashSet::from([enode]),
-            slots: slots,
+            slots,
         };
         self.classes.insert(id, eclass);
-        self.unionfind.insert(id, app_id2);
+        self.unionfind.insert(id, app_id.clone());
 
         app_id
     }
