@@ -5,6 +5,12 @@ pub struct Id(pub usize);
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 // For each eclass, its slots form an interval [0..n].
+// An ENode contains three kinds of slots:
+// - free / exposed
+// - lambda
+// - internal (not really part of the ENode API, it's rather the exposed slots of its children)
+//
+// A slot is "flexible" if it's free or lambda.
 pub struct Slot(pub usize);
 
 #[derive(Clone, Hash, PartialEq, Eq)]
@@ -29,26 +35,12 @@ pub struct RecExpr {
     pub node_dag: Vec<ENode>,
 }
 
-impl RecExpr {
-    pub fn new() -> Self {
-        RecExpr { node_dag: Vec::new() }
-    }
-}
-
 impl ENode {
     pub fn map_applied_ids(&self, f: impl Fn(AppliedId) -> AppliedId) -> ENode {
         match self {
             ENode::Lam(x, i) => ENode::Lam(*x, f(i.clone())),
             ENode::App(i1, i2) => ENode::App(f(i1.clone()), f(i2.clone())),
             ENode::Var(x) => ENode::Var(*x),
-        }
-    }
-
-    pub fn apply_slotmap_including_lam(&self, m: &SlotMap) -> ENode {
-        match self {
-            ENode::Lam(x, i) => ENode::Lam(m[*x], i.apply_slotmap(&m)),
-            ENode::App(i1, i2) => ENode::App(i1.apply_slotmap(&m), i2.apply_slotmap(&m)),
-            ENode::Var(x) => ENode::Var(m[*x]),
         }
     }
 
@@ -69,62 +61,7 @@ impl ENode {
         }
     }
 
-    pub fn slot_order(&self) -> Vec<Slot> {
-        let mut out = Vec::new();
-        let mut done = HashSet::new();
-        for x in slot_occurences(self) {
-            if !done.contains(&x) {
-                done.insert(x);
-                out.push(x);
-            }
-        }
-
-        return out;
-
-        // lists all slot occurences in order.
-        fn slot_occurences(n: &ENode) -> Vec<Slot> {
-            let mut slotlist: Vec<Slot> = Vec::new();
-
-            match n {
-                ENode::Lam(s, r) => {
-                    slotlist.push(*s);
-                    slotlist.extend(r.m.values());
-                },
-                ENode::App(l, r) => {
-                    slotlist.extend(l.m.values());
-                    slotlist.extend(r.m.values());
-                }
-                ENode::Var(s) => {
-                    slotlist.push(*s);
-                },
-            };
-
-            slotlist
-        }
-    }
-
-    // different than set(slot_order), as it doesn't contain lambda slots.
-    pub fn slots(&self) -> HashSet<Slot> {
-        let mut set = HashSet::new();
-        match self {
-            ENode::Lam(s, r) => {
-                set.extend(r.m.values().into_iter().filter(|x| x != s));
-            },
-            ENode::App(l, r) => {
-                set.extend(l.m.values());
-                set.extend(r.m.values());
-            }
-            ENode::Var(s) => {
-                set.insert(*s);
-            },
-        };
-
-        set
-    }
-
-    // TODO rename logically.
-    // like slot_order but doesn't include lambda slots.
-    pub fn free_slot_order(&self) -> Vec<Slot> {
+    pub fn slot_occurences(&self) -> Vec<Slot> {
         let mut v = Vec::new();
         match self {
             ENode::Lam(s, r) => {
@@ -142,10 +79,36 @@ impl ENode {
         v
     }
 
+    pub fn slot_order(&self) -> Vec<Slot> { firsts(self.slot_occurences()) }
+    pub fn slots(&self) -> HashSet<Slot> { as_set(self.slot_occurences()) }
+
+    pub fn slot_occurences_of_flexible(&self) -> Vec<Slot> {
+        let mut slotlist: Vec<Slot> = Vec::new();
+
+        match self {
+            ENode::Lam(s, r) => {
+                slotlist.push(*s);
+                slotlist.extend(r.m.values());
+            },
+            ENode::App(l, r) => {
+                slotlist.extend(l.m.values());
+                slotlist.extend(r.m.values());
+            }
+            ENode::Var(s) => {
+                slotlist.push(*s);
+            },
+        };
+
+        slotlist
+    }
+
+    pub fn slot_order_of_flexible(&self) -> Vec<Slot> { firsts(self.slot_occurences_of_flexible()) }
+    pub fn slots_of_flexible(&self) -> HashSet<Slot> { as_set(self.slot_occurences_of_flexible()) }
+
     // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.
     // shape() will later be used as a normalized ENode stored in the hashcons.
     pub fn shape(&self) -> ENode {
-        let slots = self.slot_order();
+        let slots = self.slot_order_of_flexible();
 
         // maps the old slot name to the new order-based name.
         let mut slotmap = SlotMap::new();
@@ -155,8 +118,32 @@ impl ENode {
             slotmap.insert(x, n);
         }
 
-        self.apply_slotmap_including_lam(&slotmap)
+        self.apply_slotmap_to_flexible(&slotmap)
     }
+
+    // also renames lambas! useful for shape().
+    fn apply_slotmap_to_flexible(&self, m: &SlotMap) -> ENode {
+        match self {
+            ENode::Lam(x, i) => ENode::Lam(m[*x], i.apply_slotmap(&m)),
+            ENode::App(i1, i2) => ENode::App(i1.apply_slotmap(&m), i2.apply_slotmap(&m)),
+            ENode::Var(x) => ENode::Var(m[*x]),
+        }
+    }
+}
+
+// sorts as_set(v) by their first usage in v.
+fn firsts(v: Vec<Slot>) -> Vec<Slot> {
+    let mut out = Vec::new();
+    for x in v {
+        if !out.contains(&x) {
+            out.push(x);
+        }
+    }
+    out
+}
+
+fn as_set(v: Vec<Slot>) -> HashSet<Slot> {
+    v.into_iter().collect()
 }
 
 impl AppliedId {

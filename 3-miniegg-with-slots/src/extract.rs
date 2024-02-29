@@ -14,8 +14,8 @@ pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
     for _ in 0..eg.ids().len() {
         for id in eg.ids() {
             for n in eg.enodes(id) {
-                let db = |a| db_impl(a, &map, eg);
-                if let Some(re) = extract_step(n, &db, eg) {
+                let db = |a| db_impl(a, &map);
+                if let Some(re) = extract_step(n, &db) {
                     let new_cost = re.node_dag.len();
                     let current_cost = map.get(&id).map(|x| x.node_dag.len()).unwrap_or(usize::MAX);
                     if new_cost < current_cost {
@@ -29,7 +29,7 @@ pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
     map.remove(&i).unwrap()
 }
 
-fn extract_step(enode: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr>, eg: &EGraph) -> Option<RecExpr> {
+fn extract_step(enode: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr>) -> Option<RecExpr> {
     match enode {
         ENode::Var(x) => {
             let re = RecExpr { node_dag: vec![ENode::Var(x)] };
@@ -76,7 +76,7 @@ fn extract_step(enode: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr>, eg: &E
 // a simple lookup of `map[a]`, but wait! `a` is an AppliedId instead of a simple Id.
 // Hence we need to do some renaming.
 // if Some(re) = db_impl(a, ..), then re.last().slots() = a.slots()
-fn db_impl(a: AppliedId, map: &HashMap<Id, RecExpr>, _eg: &EGraph) -> Option<RecExpr> {
+fn db_impl(a: AppliedId, map: &HashMap<Id, RecExpr>) -> Option<RecExpr> {
     let mut re: RecExpr = map.get(&a.id)?.clone();
     let b: &mut ENode = re.node_dag.last_mut().unwrap();
 

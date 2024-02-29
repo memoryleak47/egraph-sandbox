@@ -50,7 +50,7 @@ impl EGraph {
                 // v_a is an AppliedId to be interpreted within the EGraph.
                 // It shares the same exposed slots as `a_enode`.
                 let v_a: AppliedId = v[a.id.0].clone();
-                assert_eq!(v_a.slots(), a_enode.slots());
+                // assert_eq!(v_a.slots(), a_enode.slots()); // might also be a subset relation.
 
                 // I = a_enode.slots() = a.m.keys() = v_a.slots() = AppliedId(a.id, identity) in re;
                 // EX = a.m.values() = a.slots() union out.slots()
@@ -115,8 +115,8 @@ impl EGraph {
 
             for enode in &c.nodes {
                 if enode.shape() == n.shape() {
-                    let a1 = enode.free_slot_order();
-                    let a2 = n.free_slot_order();
+                    let a1 = enode.slot_occurences_of_flexible();
+                    let a2 = n.slot_occurences_of_flexible();
                     assert_eq!(a1.len(), a2.len());
 
                     let mut slotmap = SlotMap::new();
