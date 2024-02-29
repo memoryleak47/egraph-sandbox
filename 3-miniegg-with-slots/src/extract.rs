@@ -76,15 +76,17 @@ fn extract_step(enode: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr>, eg: &E
 // a simple lookup of `map[a]`, but wait! `a` is an AppliedId instead of a simple Id.
 // Hence we need to do some renaming.
 // if Some(re) = db_impl(a, ..), then re.last().slots() = a.slots()
-fn db_impl(a: AppliedId, map: &HashMap<Id, RecExpr>, eg: &EGraph) -> Option<RecExpr> {
+fn db_impl(a: AppliedId, map: &HashMap<Id, RecExpr>, _eg: &EGraph) -> Option<RecExpr> {
     let mut re: RecExpr = map.get(&a.id)?.clone();
-    let b: ENode = re.node_dag.last().unwrap().clone();
+    let b: &mut ENode = re.node_dag.last_mut().unwrap();
 
     // a.slots() == A
     // re.slots() == b.slots() == eg.slots(a.id) == B
     // a.m :: B -> A
 
-    re.node_dag.last_mut().unwrap().apply_slotmap(&a.m);
+    *b = b.apply_slotmap(&a.m);
+
+    assert_eq!(b.slots(), a.slots());
 
     Some(re)
 }
