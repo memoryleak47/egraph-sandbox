@@ -56,7 +56,11 @@ impl ENode {
         match self {
             ENode::Lam(x, i) => {
                 let mut m = m.clone();
-                m.remove(*x);
+                // removing x causes a "missing entry" problem.
+                // in order to keep x "unchanged" we insert x -> x.
+                m.insert(*x, *x);
+
+                assert!(m.is_bijection()); // if this fails, then probably multiple things point to x now - because someone didn't rename enough stuff.
 
                 ENode::Lam(*x, i.apply_slotmap(&m))
             },
