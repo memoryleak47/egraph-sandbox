@@ -158,7 +158,7 @@ impl EGraph {
     }
 
     pub fn enodes(&self, i: Id) -> HashSet<ENode> {
-        let i = self.find_id(i);
+        let i = self.unionfind[&i].id;
         self.classes[&i].nodes.clone()
     }
 }
