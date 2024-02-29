@@ -14,7 +14,7 @@ pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
     for _ in 0..eg.ids().len() {
         for id in eg.ids() {
             for n in eg.enodes(id) {
-                let db = |a: AppliedId| todo!();
+                let db = |a| db_impl(a, &map, eg);
                 if let Some(re) = extract_step(n, &db, eg) {
                     let new_cost = re.node_dag.len();
                     let current_cost = map.get(&id).map(|x| x.node_dag.len()).unwrap_or(usize::MAX);
@@ -63,5 +63,11 @@ fn extract_step(n: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr>, eg: &EGrap
         },
     }
     */
+    todo!()
+}
+
+// a simple lookup of `map[a]`, but wait! `a` is an AppliedId instead of a simple Id.
+// Hence we need to do some renaming.
+fn db_impl(a: AppliedId, map: &HashMap<Id, RecExpr>, eg: &EGraph) -> Option<RecExpr> {
     todo!()
 }
