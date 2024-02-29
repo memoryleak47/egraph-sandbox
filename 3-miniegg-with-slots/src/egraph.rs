@@ -34,36 +34,47 @@ impl EGraph {
     }
 
     pub fn add_expr(&mut self, re: RecExpr) -> AppliedId {
+        // re[i] should be "conceptually equivalent" to v[i].
         let mut v: Vec<AppliedId> = Vec::new();
-        for x in re.node_dag {
-            let x = x.map_ids(|a: AppliedId| {
+
+        for enode in &re.node_dag {
+            // `enode = ENode::Lam(si, a);` might be the hard part.
+            let enode = enode.map_applied_ids(|a: AppliedId| {
+                // a is an AppliedId to be interpreted within `re`.
+                // - a.id.0 expresses the index in re.node_dag where you can find the underlying ENode `a_enode`, and
+                // - a.m maps its internal slots (`a_enode.slots()`) to its exposed slots.
+                let a_enode = re.node_dag[a.id.0].clone();
+                assert_eq!(a.m.keys(), a_enode.slots()); // we call this set I.
+
+                // v_a is an AppliedId to be interpreted within the EGraph.
+                // It shares the same exposed slots as `a_enode`.
                 let v_a: AppliedId = v[a.id.0].clone();
+                assert_eq!(v_a.slots(), a_enode.slots());
 
-                // A1 = re.node_dag[a.id.0].slots() = a.m.keys();
-                // A2 = a.slots();
-                // V1 = self.slots(v_a.id);
-                // V2 = v_a.slots(); [subset of A2]
-                // a.m :: A1 -> A2;
-                // v_a.m :: V1 -> V2;
+                // I = a_enode.slots() = a.m.keys() = v_a.slots() = AppliedId(a.id, identity) in re;
+                // EX = a.m.values() = a.slots() union out.slots()
+                //      The set of slots that we want to expose in this function.
+                //      Should be a subset of what `a` exposes.
+                // V1 = self.slots(v_a.id) = v_a.m.keys();
+                // a.m :: I -> EX;
+                // v_a.m :: V1 -> I;
 
-                // f :: V1 -> V2;
-                // TODO This is wrong, and depends on, the result depends on a.m.
-                let f = |x| v_a.m[x];
+                // f :: V1 -> EX;
+                let f = |x| a.m[v_a.m[x]];
 
-                let wrong = AppliedId::new(
+                AppliedId::new(
                     v_a.id,
                     self.slots(v_a.id).iter().map(|x| (*x, f(*x))).collect(),
-                );
-                todo!()
+                )
             });
-            v.push(self.add(x));
+            v.push(self.add(enode));
         }
 
         v.pop().unwrap()
     }
 
     fn normalize_enode(&self, enode: &ENode) -> ENode {
-        enode.map_ids(|x| self.find(x))
+        enode.map_applied_ids(|x| self.find(x))
     }
 
     // self.add(x) = y implies that x.slots() is a superset of y.slots().
