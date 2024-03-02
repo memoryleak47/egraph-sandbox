@@ -82,6 +82,11 @@ impl ENode {
     pub fn slot_order(&self) -> Vec<Slot> { firsts(self.slot_occurences()) }
     pub fn slots(&self) -> HashSet<Slot> { as_set(self.slot_occurences()) }
 
+    // self == other, while being blind for the ENode::Lam(_) slot-name and also being blind for free slots not contained in "exposed".
+    // free slots not contained in exposed are conceptually "redundant slots" within some EClass.
+    pub fn equal_within_exposed(&self, other: &ENode, exposed: &HashSet<Slot>) -> bool {
+        todo!()
+    }
 }
 
 // sorts as_set(v) by their first usage in v.

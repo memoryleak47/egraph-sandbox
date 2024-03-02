@@ -14,6 +14,9 @@ struct EClass {
 // 2. enode.slots() is always a superset of c.slots, if enode is within the eclass c.
 //    if ENode::Lam(si) = enode, then we require i to not be in c.slots.
 // 3. AppliedId::m is always a bijection. (eg. c1(s0, s1, s0) is illegal!)
+// 4. if applied_id_enodes(i) intersects applied_id_enodes(j), then applied_id_enodes(i) = applied_id_enodes(j).
+//    ENode equality is hereby understood as ENode::equal_within_exposed(_, i.slots()).
+//    TODO what if i.slots() != j.slots()?
 #[derive(Debug)]
 pub struct EGraph {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
@@ -171,8 +174,7 @@ impl EGraph {
         let l = self.find(l);
         let r = self.find(r);
 
-        // TODO if f(x, y) = f(y, x) we need even broader equality checking than this. Normalization is not enough, because they might have been merged before.
-        if l == r { return; }
+        if self.equal(&l, &r) { return; }
 
         let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect();
 
@@ -206,5 +208,17 @@ impl EGraph {
     pub fn enodes(&self, i: Id) -> HashSet<ENode> {
         let i = self.unionfind[&i].id;
         self.classes[&i].nodes.clone()
+    }
+
+    pub fn applied_id_enodes(&self, app_id: AppliedId) -> HashSet<ENode> {
+        let i = self.unionfind[&app_id.id].id;
+        self.classes[&i].nodes.iter()
+                              .map(|x| x.apply_slotmap(&app_id.m))
+                              .collect()
+    }
+
+    // returns whether applied_id_enodes(i1) and applied_id_enodes(i2) are semantically equivalent.
+    pub fn equal(&self, i1: &AppliedId, i2: &AppliedId) -> bool {
+        todo!()
     }
 }
