@@ -6,6 +6,7 @@ pub struct Id(pub usize);
 pub type FreeSlot = usize; // These form an interval [0..N].
 pub type RedundantSlot = usize; // These form a different interval [0..N].
 
+// TODO maybe have a version of AppliedId with only SlotKind::Free for user-facing stuff?
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct AppliedId {
     pub id: Id,
@@ -48,5 +49,41 @@ impl ENode {
         };
 
         v
+    }
+
+    pub fn map_slot_kinds(&self, f: impl Fn(SlotKind) -> SlotKind) -> ENode {
+        match self {
+            ENode::Lam(r) => ENode::Lam(r.map_slot_kinds(f)),
+            ENode::App(l, r) => ENode::App(l.map_slot_kinds(&f), r.map_slot_kinds(f)),
+            ENode::Var => ENode::Var,
+        }
+    }
+
+    // sorts the redundant slots to be ordered by usage.
+    pub fn with_sorted_redundants(&self) -> ENode {
+        let mut redundants = HashMap::new();
+        for x in self.slot_kind_occurences() {
+            if let SlotKind::Redundant(i) = x {
+                if !redundants.contains_key(&i) {
+                    redundants.insert(i, redundants.len());
+                }
+            }
+        }
+
+        self.map_slot_kinds(|x| {
+            match x {
+                SlotKind::Redundant(i) => SlotKind::Redundant(redundants[&i]),
+                y => y,
+            }
+        })
+    }
+}
+
+impl AppliedId {
+    fn map_slot_kinds(&self, f: impl Fn(SlotKind) -> SlotKind) -> AppliedId {
+        AppliedId {
+            id: self.id,
+            args: self.args.iter().cloned().map(f).collect(),
+        }
     }
 }
