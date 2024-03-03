@@ -187,15 +187,38 @@ impl EGraph {
         self.classes.insert(id, eclass);
         self.unionfind.insert(id, app_id.clone());
 
-        let mut call = |a: AppliedId| {
+        let mut call = |a: AppliedId, future_unions: &mut Vec<(AppliedId, AppliedId)>| {
             self.unionfind.insert(a.id, AppliedId::new(id, todo!()));
+            self.fix_unionfind();
+
             // next steps:
             // - move the old ENodes over.
             // - upwards merging.
+
+            todo!()
         };
 
-        call(l);
-        call(r);
+        let mut future_unions = Vec::new();
+        call(l, &mut future_unions);
+        call(r, &mut future_unions);
+
+        for (x, y) in future_unions {
+            self.union(x, y);
+        }
+    }
+
+    fn fix_unionfind(&mut self) {
+        // recursively applies find() until convergence.
+        let full_find = |mut x: AppliedId| {
+            loop {
+                let y = self.find(x.clone());
+                if x == y { return x; }
+                x = y;
+            }
+        };
+        self.unionfind = self.unionfind.iter()
+                        .map(|(x, y)| (*x, full_find(y.clone())))
+                        .collect();
     }
 
     pub fn ids(&self) -> Vec<Id> {
