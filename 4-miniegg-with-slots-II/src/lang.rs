@@ -3,28 +3,31 @@ use crate::*;
 #[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Id(pub usize);
 
-pub type FreeSlot = usize; // These form an interval [0..N].
-pub type RedundantSlot = usize; // These form a different interval [0..N].
+pub type Slot = usize; // In each ENode, these form an interval [0..N].
+                       // This corresponds to the public API of an ENode / EClass.
+pub type Redundant = usize; // In each ENode, these form a different interval [0..N].
+                            // They can be replaced by any Terms. They are "wildcards".
 
-// TODO maybe have a version of AppliedId with only SlotKind::Free for user-facing stuff?
+// TODO maybe have a version of PluggedId with only Plug::Slot for user-facing stuff?
+// Would also be useful for the unionfind datastructure.
 #[derive(Clone, Hash, PartialEq, Eq)]
-pub struct AppliedId {
+pub struct PluggedId {
     pub id: Id,
-    pub args: Vec<SlotKind>,
+    pub plugs: Vec<Plug>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum SlotKind {
-    Free(FreeSlot),
+pub enum Plug {
+    Slot(Slot),
     Lam,
-    Redundant(RedundantSlot),
+    Redundant(Redundant),
 }
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub enum ENode {
-    Lam(AppliedId),
-    App(AppliedId, AppliedId),
-    Var, // always uses FreeSlot 0.
+    Lam(PluggedId),
+    App(PluggedId, PluggedId),
+    Var, // always uses Slot 0.
 }
 
 #[derive(Clone, Debug)]
@@ -33,28 +36,29 @@ pub struct RecExpr {
 }
 
 impl ENode {
-    pub fn slot_kind_occurences(&self) -> Vec<SlotKind> {
+    // lists all plugs in order of their usages (not deduplicated).
+    pub fn plugs(&self) -> Vec<Plug> {
         let mut v = Vec::new();
         match self {
             ENode::Lam(r) => {
-                v.extend(r.args.clone());
+                v.extend(r.plugs.clone());
             },
             ENode::App(l, r) => {
-                v.extend(l.args.clone());
-                v.extend(r.args.clone());
+                v.extend(l.plugs.clone());
+                v.extend(r.plugs.clone());
             }
             ENode::Var => {
-                v.push(SlotKind::Free(0));
+                v.push(Plug::Slot(0));
             },
         };
 
         v
     }
 
-    pub fn map_slot_kinds(&self, f: impl Fn(SlotKind) -> SlotKind) -> ENode {
+    pub fn map_plugs(&self, f: impl Fn(Plug) -> Plug) -> ENode {
         match self {
-            ENode::Lam(r) => ENode::Lam(r.map_slot_kinds(f)),
-            ENode::App(l, r) => ENode::App(l.map_slot_kinds(&f), r.map_slot_kinds(f)),
+            ENode::Lam(r) => ENode::Lam(r.map_plugs(f)),
+            ENode::App(l, r) => ENode::App(l.map_plugs(&f), r.map_plugs(f)),
             ENode::Var => ENode::Var,
         }
     }
@@ -62,28 +66,28 @@ impl ENode {
     // sorts the redundant slots to be ordered by usage.
     pub fn with_sorted_redundants(&self) -> ENode {
         let mut redundants = HashMap::new();
-        for x in self.slot_kind_occurences() {
-            if let SlotKind::Redundant(i) = x {
+        for x in self.plugs() {
+            if let Plug::Redundant(i) = x {
                 if !redundants.contains_key(&i) {
                     redundants.insert(i, redundants.len());
                 }
             }
         }
 
-        self.map_slot_kinds(|x| {
+        self.map_plugs(|x| {
             match x {
-                SlotKind::Redundant(i) => SlotKind::Redundant(redundants[&i]),
+                Plug::Redundant(i) => Plug::Redundant(redundants[&i]),
                 y => y,
             }
         })
     }
 }
 
-impl AppliedId {
-    fn map_slot_kinds(&self, f: impl Fn(SlotKind) -> SlotKind) -> AppliedId {
-        AppliedId {
+impl PluggedId {
+    fn map_plugs(&self, f: impl Fn(Plug) -> Plug) -> Self {
+        Self {
             id: self.id,
-            args: self.args.iter().cloned().map(f).collect(),
+            plugs: self.plugs.iter().cloned().map(f).collect(),
         }
     }
 }

@@ -7,9 +7,9 @@ impl Debug for Id {
     }
 }
 
-impl Debug for AppliedId {
+impl Debug for PluggedId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{:?}{:?}", self.id, self.args)
+        write!(f, "{:?}{:?}", self.id, self.plugs)
     }
 }
 
