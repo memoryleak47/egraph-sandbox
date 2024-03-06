@@ -1,5 +1,6 @@
 use crate::*;
 
+// TODO make complete.
 #[derive(Clone, Debug)]
 pub struct PermGroup {
     omega: Vec<Slot>, // the set of slots we are working on. Ordered lexicographically.
