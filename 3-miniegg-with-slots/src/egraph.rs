@@ -84,6 +84,7 @@ impl EGraph {
         res.id
     }
 
+    // TODO also has to consider the perm_group of each AppliedId.
     fn normalize_enode(&self, enode: &ENode) -> ENode {
         enode.map_applied_ids(|x| self.find(x))
     }
