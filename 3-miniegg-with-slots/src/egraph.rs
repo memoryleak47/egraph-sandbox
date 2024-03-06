@@ -85,6 +85,7 @@ impl EGraph {
     }
 
     // TODO also has to consider the perm_group of each AppliedId.
+    // or does it? I don't think this is necessary.
     fn normalize_enode(&self, enode: &ENode) -> ENode {
         enode.map_applied_ids(|x| self.find(x))
     }
