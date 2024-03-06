@@ -7,6 +7,10 @@ struct EClass {
 
     // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
     slots: HashSet<Slot>,
+
+    // The group of permutations that don't change the meaning.
+    // Eg. for a commutative class, c(x, y) = c(y, x). The perm [x -> y, y -> x] would be part of this group.
+    perm_group: PermGroup,
 }
 
 // invariants:
@@ -102,6 +106,7 @@ impl EGraph {
 
         let eclass = EClass {
             nodes: HashSet::from([enode]),
+            perm_group: PermGroup::identity(&slots),
             slots,
         };
         self.classes.insert(id, eclass);
@@ -182,6 +187,7 @@ impl EGraph {
         let app_id = AppliedId::new(id, SlotMap::identity(&slots));
         let eclass = EClass {
             nodes: HashSet::new(),
+            perm_group: PermGroup::identity(&slots), // TODO this is wrong.
             slots,
         };
         self.classes.insert(id, eclass);

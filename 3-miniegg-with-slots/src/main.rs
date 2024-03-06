@@ -13,6 +13,9 @@ use syntax::*;
 mod slotmap;
 use slotmap::*;
 
+mod perm;
+use perm::*;
+
 mod debug;
 
 
