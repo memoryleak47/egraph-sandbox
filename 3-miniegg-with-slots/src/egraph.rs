@@ -14,13 +14,10 @@ struct EClass {
 }
 
 // invariants:
-// 1. If two ENodes (that are in the EGraph) have equal ENode::shape(), they have to be in the same eclass.
+// 1. If two ENodes (that are in the EGraph) have equal EGraph::shape(_), they have to be in the same eclass.
 // 2. enode.slots() is always a superset of c.slots, if enode is within the eclass c.
 //    if ENode::Lam(si) = enode, then we require i to not be in c.slots.
 // 3. AppliedId::m is always a bijection. (eg. c1(s0, s1, s0) is illegal!)
-// 4. if applied_id_enodes(i) intersects applied_id_enodes(j), then applied_id_enodes(i) = applied_id_enodes(j).
-//    ENode equality is hereby understood as ENode::equal_within_exposed(_, i.slots()).
-//    TODO what if i.slots() != j.slots()?
 #[derive(Debug)]
 pub struct EGraph {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
@@ -150,6 +147,7 @@ impl EGraph {
     //
     // Example 2:
     // 'find(c1(s3, s7, s8)) = c2(s8, s7)', where 'c1(s0, s1, s2) -> c2(s2, s1)' in unionfind,
+    // TODO has to make use of the perm_group! Otherwise union() will not be able to detect some already self-merged eclasses.
     pub fn find(&self, i: AppliedId) -> AppliedId {
         let a = &self.unionfind[&i.id];
 
@@ -181,7 +179,7 @@ impl EGraph {
         let l = self.find(l);
         let r = self.find(r);
 
-        if self.equal(&l, &r) { return; }
+        if l == r { return; }
 
         let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect();
 
@@ -239,17 +237,5 @@ impl EGraph {
     pub fn enodes(&self, i: Id) -> HashSet<ENode> {
         let i = self.unionfind[&i].id;
         self.classes[&i].nodes.clone()
-    }
-
-    pub fn applied_id_enodes(&self, app_id: AppliedId) -> HashSet<ENode> {
-        let i = self.unionfind[&app_id.id].id;
-        self.classes[&i].nodes.iter()
-                              .map(|x| x.apply_slotmap(&app_id.m))
-                              .collect()
-    }
-
-    // returns whether applied_id_enodes(i1) and applied_id_enodes(i2) are semantically equivalent.
-    pub fn equal(&self, i1: &AppliedId, i2: &AppliedId) -> bool {
-        todo!()
     }
 }
