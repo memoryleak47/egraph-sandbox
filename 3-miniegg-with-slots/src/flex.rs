@@ -3,6 +3,7 @@ use crate::*;
 impl ENode {
     // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.
     // shape() will later be used as a normalized ENode stored in the hashcons.
+    // TODO this needs to include the perm_groups of the used eclasses (AppliedIds).
     pub fn shape(&self) -> ENode {
         let slots = self.slot_order_of_flexible();
 
