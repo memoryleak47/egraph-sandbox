@@ -4,9 +4,9 @@ use crate::*;
 #[derive(Clone, Debug)]
 pub struct PermGroup {
     // all perms are bijections : omega -> omega.
-    omega: HashSet<Slot>,
+    pub omega: HashSet<Slot>,
 
-    perms: HashSet<SlotMap>,
+    perms: HashSet<Perm>,
 }
 
 impl PermGroup {
@@ -17,7 +17,7 @@ impl PermGroup {
         }
     }
 
-    pub fn new(omega: &HashSet<Slot>, mut generators: HashSet<SlotMap>) -> Self {
+    pub fn new(omega: &HashSet<Slot>, mut generators: HashSet<Perm>) -> Self {
         for x in &generators {
             assert!(x.is_bijection());
             assert_eq!(&x.keys(), omega);
@@ -65,4 +65,32 @@ impl PermGroup {
 
         Self::new(&self.omega, perms)
     }
+
+    // in the actual implementation, this would return a slightly smaller set.
+    pub fn generators(&self) -> HashSet<Perm> {
+        self.perms.clone()
+    }
+
+    pub fn omega(&self) -> HashSet<Slot> {
+        self.omega.clone()
+    }
+}
+
+#[test]
+fn chaos_test() {
+    let n = 5;
+    let omega: HashSet<_> = (0..n).map(Slot).collect();
+
+    let a = |x| (x+1)%n;
+    let a: Perm = (0..n).map(|x| (Slot(x), Slot(a(x)))).collect();
+
+    let b = |x| if x < 2 { 1 - x } else { x };
+    let b: Perm = (0..n).map(|x| (Slot(x), Slot(b(x)))).collect();
+
+    let perms = HashSet::from([a, b]);
+
+    let grp = PermGroup::new(&omega, perms);
+
+    let fak = |x| (1..=x).product();
+    assert_eq!(grp.generators().len(), fak(n));
 }

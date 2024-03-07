@@ -1,19 +1,19 @@
 use crate::*;
 
 #[derive(Clone, Debug)]
-struct EClass {
+pub struct EClass {
     // The set of equivalent ENodes that make up this eclass.
     // for (x, y) in nodes; x.apply_slotmap(y) represents the actual ENode.
     // The set of nodes is conceptually closed under permutations done by the perm_group; and under arbitrary renaming of redundant slots.
     // But we explicitly only store one representant.
-    nodes: HashMap<Shape, Bijection>,
+    pub nodes: HashMap<Shape, Bijection>,
 
     // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
-    slots: HashSet<Slot>,
+    pub slots: HashSet<Slot>,
 
     // The group of permutations that don't change the meaning.
     // Eg. for a commutative class, c(x, y) = c(y, x). The perm [x -> y, y -> x] would be part of this group.
-    perm_group: PermGroup,
+    pub perm_group: PermGroup,
 }
 
 // invariants:
@@ -26,10 +26,11 @@ pub struct EGraph {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
     // normalizes the eclass.
     // Each Id i that is an output of the unionfind itself has unionfind[i] = (i, identity()).
-    unionfind: HashMap<Id, AppliedId>,
+    pub unionfind: HashMap<Id, AppliedId>,
 
     // only ids with unionfind[x].id = x are contained.
-    classes: HashMap<Id, EClass>,
+    // TODO make things private by adding a recursive EGraph module that contains its implementation details.
+    pub classes: HashMap<Id, EClass>,
 }
 
 impl EGraph {
