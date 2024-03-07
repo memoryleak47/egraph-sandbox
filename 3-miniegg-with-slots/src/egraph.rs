@@ -4,7 +4,7 @@ use crate::*;
 struct EClass {
     // The set of equivalent ENodes that make up this eclass.
     // for (x, y) in nodes; x.apply_slotmap(y) represents the actual ENode.
-    // The set of nodes is conceptually closed under permutations done by the perm_group.
+    // The set of nodes is conceptually closed under permutations done by the perm_group; and under arbitrary renaming of redundant slots.
     // But we explicitly only store one representant.
     nodes: HashMap<Shape, Bijection>,
 
