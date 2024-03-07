@@ -9,57 +9,39 @@ impl EGraph {
     // - y.slots() == n.slots(). Note that these would also include redundant slots.
     // - x is the lexicographically lowest equivalent version of n, reachable by bijective renaming of slots and re-ordering of AppliedId-args.
     // - Note that y is not normalized! There are multiple possible outputs for y, depending on the symmetries of the EClass containing this shape.
+    //
+    // For two ENodes n1, n2 that only differentiate each other by
+    // (1) the names of their public slots (including redundant slots) and lambda slots, and
+    // (2) the order of their AppliedId arguments within the boundaries of their corresponding permutation groups;
+    // then self.shape(n1).0 == self.shape(n2).0
     pub fn shape(&self, n: &ENode) -> (Shape, Bijection) {
-        todo!()
-    }
-}
+        let n = self.normalize_enode_by_unionfind(n);
+        match n {
+            ENode::Var(s) => {
+                let s0 = Slot(0);
+                let l = Shape::Var(s0);
+                let r = Bijection::from([(s0, s)]);
 
-impl ENode {
-    // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.
-    // shape() will later be used as a normalized ENode stored in the hashcons.
-    // TODO this needs to include the perm_groups of the used eclasses (AppliedIds).
-    pub fn shape(&self) -> ENode {
-        let slots = self.slot_order_of_flexible();
+                (l, r)
+            },
+            ENode::Lam(s, x) => {
+                let s0 = Slot(0);
+                let mut r = Bijection::new();
+                r.insert(s0, s);
 
-        // maps the old slot name to the new order-based name.
-        let mut slotmap = SlotMap::new();
+                for sx in x.m.values_vec() {
+                    let next = Slot(r.len());
+                    r.insert(next, sx);
+                }
 
-        for x in slots {
-            let n = Slot(slotmap.len());
-            slotmap.insert(x, n);
-        }
+                let l = Shape::Lam(s0, x.apply_slotmap(&r.inverse()));
+                r.remove(s0);
 
-        self.apply_slotmap_to_flexible(&slotmap)
-    }
-
-    pub fn slot_occurences_of_flexible(&self) -> Vec<Slot> {
-        let mut slotlist: Vec<Slot> = Vec::new();
-
-        match self {
-            ENode::Lam(s, r) => {
-                slotlist.push(*s);
-                slotlist.extend(r.m.values());
+                (l, r)
             },
             ENode::App(l, r) => {
-                slotlist.extend(l.m.values());
-                slotlist.extend(r.m.values());
-            }
-            ENode::Var(s) => {
-                slotlist.push(*s);
+                todo!()
             },
-        };
-
-        slotlist
-    }
-
-    pub fn slot_order_of_flexible(&self) -> Vec<Slot> { firsts(self.slot_occurences_of_flexible()) }
-    pub fn slots_of_flexible(&self) -> HashSet<Slot> { as_set(self.slot_occurences_of_flexible()) }
-
-    pub fn apply_slotmap_to_flexible(&self, m: &SlotMap) -> ENode {
-        match self {
-            ENode::Lam(x, i) => ENode::Lam(m[*x], i.apply_slotmap(&m)),
-            ENode::App(i1, i2) => ENode::App(i1.apply_slotmap(&m), i2.apply_slotmap(&m)),
-            ENode::Var(x) => ENode::Var(m[*x]),
         }
     }
 }

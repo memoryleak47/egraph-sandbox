@@ -142,7 +142,7 @@ impl EGraph {
         None
     }
 
-    fn normalize_enode_by_unionfind(&self, enode: &ENode) -> ENode {
+    pub fn normalize_enode_by_unionfind(&self, enode: &ENode) -> ENode {
         enode.map_applied_ids(|x| self.normalize_applied_id_by_unionfind(x))
     }
 

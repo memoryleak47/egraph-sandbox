@@ -53,13 +53,10 @@ impl SlotMap {
         self.map.iter().copied()
     }
 
-    pub fn keys(&self) -> HashSet<Slot> {
-        self.iter().map(|(x, _)| x).collect()
-    }
-
-    pub fn values(&self) -> HashSet<Slot> {
-        self.iter().map(|(_, x)| x).collect()
-    }
+    pub fn keys(&self) -> HashSet<Slot> { self.iter().map(|(x, _)| x).collect() }
+    pub fn values(&self) -> HashSet<Slot> { self.iter().map(|(_, y)| y).collect() }
+    pub fn keys_vec(&self) -> Vec<Slot> { self.iter().map(|(x, _)| x).collect() }
+    pub fn values_vec(&self) -> Vec<Slot> { self.iter().map(|(_, y)| y).collect() }
 
     pub fn inverse(&self) -> SlotMap {
         assert!(self.is_bijection());
@@ -170,6 +167,18 @@ impl FromIterator<(Slot, Slot)> for SlotMap {
         let mut m = SlotMap::new();
         for (x, y) in iter.into_iter() {
             assert!(!m.contains_key(x));
+            m.insert(x, y);
+        }
+        m
+    }
+}
+
+impl<const N: usize> From<[(Slot, Slot); N]> for SlotMap {
+    fn from(pairs: [(Slot, Slot); N]) -> Self {
+        let mut m = SlotMap::new();
+        for (x, y) in pairs {
+            assert!(!m.contains_key(x));
+
             m.insert(x, y);
         }
         m
