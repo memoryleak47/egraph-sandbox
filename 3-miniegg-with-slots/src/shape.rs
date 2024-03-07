@@ -121,7 +121,6 @@ fn enhance_group(perm_group: PermGroup, superset: &HashSet<Slot>) -> PermGroup {
 // N is a set of slots.
 // Each lists[i] is an ordering of N.
 // Each perm_groups[i] is a perm group over the set N.
-// Slots from N have a lexicographical order _ < _.
 //
 // Returns (perms, theta)
 // - where each perms[i] is a permutation: N -> N from perm_groups[i], and
