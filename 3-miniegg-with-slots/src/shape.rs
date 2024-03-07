@@ -8,6 +8,7 @@ impl EGraph {
     // - x.apply_slotmap(y) is equivalent to n (excluding lambda variable renames)
     // - y.slots() == n.slots(). Note that these would also include redundant slots.
     // - x is the lexicographically lowest equivalent version of n, reachable by bijective renaming of slots and re-ordering of AppliedId-args.
+    // - Note that y is not normalized! There are multiple possible outputs for y, depending on the symmetries of the EClass containing this shape.
     pub fn shape(&self, n: &ENode) -> (Shape, Bijection) {
         todo!()
     }

@@ -128,7 +128,7 @@ impl EGraph {
                 // n_bij :: X -> Y
                 // cn_bij :: X -> Z
                 // out :: Z -> Y
-                let out = cn_bij.inverse().compose_all(&n_bij);
+                let out = cn_bij.inverse().compose(&n_bij);
 
                 let app_id = AppliedId::new(
                     *i,

@@ -114,7 +114,7 @@ impl AppliedId {
     pub fn apply_slotmap(&self, m: &SlotMap) -> AppliedId {
         AppliedId::new(
             self.id,
-            self.m.compose(m),
+            self.m.compose_partial(m), // TODO do we need/want this to be partial?
         )
     }
 

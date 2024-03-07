@@ -90,16 +90,16 @@ impl SlotMap {
         self.is_bijection() && self.keys() == self.values()
     }
 
-    pub fn compose_all(&self, other: &SlotMap) -> SlotMap {
+    pub fn compose(&self, other: &SlotMap) -> SlotMap {
         assert_eq!(self.values(), other.keys());
 
-        self.compose(other)
+        self.compose_partial(other)
     }
 
     // self :: X -> Y
     // other :: Y -> Z
     // out :: X -> Z
-    pub fn compose(&self, other: &SlotMap) -> SlotMap {
+    pub fn compose_partial(&self, other: &SlotMap) -> SlotMap {
         let mut out = SlotMap::new();
         for (x, y) in self.iter() {
             if let Some(z) = other.get(y) {
