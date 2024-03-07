@@ -1,5 +1,18 @@
 use crate::*;
     
+// an ENode that has been reduced to its shape.
+pub type Shape = ENode;
+
+impl EGraph {
+    // let eg.shape(n) = (x, y); then
+    // - x.apply_slotmap(y) is equivalent to n (excluding lambda variable renames)
+    // - y.slots() == n.slots(). Note that these would also include redundant slots.
+    // - x is the lexicographically lowest equivalent version of n, reachable by bijective renaming of slots and re-ordering of AppliedId-args.
+    pub fn shape(&self, n: &ENode) -> (Shape, Bijection) {
+        todo!()
+    }
+}
+
 impl ENode {
     // returns a lossy, normalized version of the ENode, by renaming the Slots to be deterministically ordered by their first usage.
     // shape() will later be used as a normalized ENode stored in the hashcons.

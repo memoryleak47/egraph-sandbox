@@ -1,6 +1,13 @@
 use crate::*;
 use std::ops::Index;
 
+// Permutations are a special kind of Bijections.
+// Their key & value sets agree!
+pub type Perm = Bijection;
+
+// Bijections are bijective SlotMaps.
+pub type Bijection = SlotMap;
+
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct SlotMap {
     // if (l, r) in map, then there is no (l, r') in map. Each key is uniquely contained.
@@ -79,15 +86,19 @@ impl SlotMap {
         true
     }
 
-    pub fn compose_all(&self, other: &SlotMap) -> SlotMap {
-        let mut out = SlotMap::new();
-        for (x, y) in self.iter() {
-            out.insert(x, other[y]);
-        }
-
-        out
+    pub fn is_perm(&self) -> bool {
+        self.is_bijection() && self.keys() == self.values()
     }
 
+    pub fn compose_all(&self, other: &SlotMap) -> SlotMap {
+        assert_eq!(self.values(), other.keys());
+
+        self.compose(other)
+    }
+
+    // self :: X -> Y
+    // other :: Y -> Z
+    // out :: X -> Z
     pub fn compose(&self, other: &SlotMap) -> SlotMap {
         let mut out = SlotMap::new();
         for (x, y) in self.iter() {

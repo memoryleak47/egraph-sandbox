@@ -1,8 +1,8 @@
 mod lang;
 use lang::*;
 
-mod flex;
-use flex::*;
+mod shape;
+use shape::*;
 
 mod ast;
 use ast::*;

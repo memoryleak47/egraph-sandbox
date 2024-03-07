@@ -3,7 +3,10 @@ use crate::*;
 #[derive(Clone, Debug)]
 struct EClass {
     // The set of equivalent ENodes that make up this eclass.
-    nodes: HashSet<ENode>,
+    // for (x, y) in nodes; x.apply_slotmap(y) represents the actual ENode.
+    // The set of nodes is conceptually closed under permutations done by the perm_group.
+    // But we explicitly only store one representant.
+    nodes: HashMap<Shape, Bijection>,
 
     // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
     slots: HashSet<Slot>,
@@ -21,8 +24,12 @@ struct EClass {
 #[derive(Debug)]
 pub struct EGraph {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
-    unionfind: HashMap<Id, AppliedId>, // normalizes the eclass. is "idempotent".
-    classes: HashMap<Id, EClass>, // only ids with unionfind[x].id = x are contained.
+    // normalizes the eclass.
+    // Each Id i that is an output of the unionfind itself has unionfind[i] = (i, identity()).
+    unionfind: HashMap<Id, AppliedId>,
+
+    // only ids with unionfind[x].id = x are contained.
+    classes: HashMap<Id, EClass>,
 }
 
 impl EGraph {
@@ -81,16 +88,10 @@ impl EGraph {
         res.id
     }
 
-    // TODO also has to consider the perm_group of each AppliedId.
-    // or does it? I don't think this is necessary.
-    fn normalize_enode(&self, enode: &ENode) -> ENode {
-        enode.map_applied_ids(|x| self.find(x))
-    }
-
     // self.add(x) = y implies that x.slots() is a superset of y.slots().
     // x.slots() - y.slots() are redundant slots.
     pub fn add(&mut self, enode: ENode) -> AppliedId {
-        let enode = self.normalize_enode(&enode);
+        let enode = self.normalize_enode_by_unionfind(&enode);
 
         if let Some(x) = self.lookup(&enode) {
             return x;
@@ -103,9 +104,10 @@ impl EGraph {
 
         let app_id = AppliedId::new(id, SlotMap::identity(&slots));
 
+        let (x, y) = self.shape(&enode);
         let eclass = EClass {
-            nodes: HashSet::from([enode]),
-            perm_group: PermGroup::identity(&slots),
+            nodes: HashMap::from([(x, y)]),
+            perm_group: PermGroup::identity(&slots), // TODO incorrect.
             slots,
         };
         self.classes.insert(id, eclass);
@@ -115,29 +117,33 @@ impl EGraph {
     }
 
     pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
-        let n = self.normalize_enode(n);
+        let n = self.normalize_enode_by_unionfind(n);
+        let (shape, n_bij) = self.shape(&n);
 
         for (i, c) in &self.classes {
-            if self.unionfind[i].id != *i { continue; }
+            if let Some(cn_bij) = c.nodes.get(&shape) {
+                // X = shape.slots()
+                // Y = n.slots()
+                // Z = c.slots()
+                // n_bij :: X -> Y
+                // cn_bij :: X -> Z
+                // out :: Z -> Y
+                let out = cn_bij.inverse().compose_all(&n_bij);
 
-            for enode in &c.nodes {
-                if enode.shape() == n.shape() {
-                    let a1 = enode.slot_occurences_of_flexible();
-                    let a2 = n.slot_occurences_of_flexible();
-                    assert_eq!(a1.len(), a2.len());
+                let app_id = AppliedId::new(
+                    *i,
+                    out,
+                );
 
-                    let mut slotmap = SlotMap::new();
-                    for (x, y) in a1.into_iter().zip(a2) {
-                        if slotmap.contains_key(x) && slotmap[x] != y { panic!(); }
-                        slotmap.insert(x, y);
-                    }
-                    let app_id = AppliedId::new(*i, slotmap);
-                    return Some(app_id);
-                }
+                return Some(app_id);
             }
         }
 
         None
+    }
+
+    fn normalize_enode_by_unionfind(&self, enode: &ENode) -> ENode {
+        enode.map_applied_ids(|x| self.normalize_applied_id_by_unionfind(x))
     }
 
     // normalize i.id
@@ -147,8 +153,7 @@ impl EGraph {
     //
     // Example 2:
     // 'find(c1(s3, s7, s8)) = c2(s8, s7)', where 'c1(s0, s1, s2) -> c2(s2, s1)' in unionfind,
-    // TODO has to make use of the perm_group! Otherwise union() will not be able to detect some already self-merged eclasses.
-    pub fn find(&self, i: AppliedId) -> AppliedId {
+    pub fn normalize_applied_id_by_unionfind(&self, i: AppliedId) -> AppliedId {
         let a = &self.unionfind[&i.id];
 
         // I = self.slots(i.id);
@@ -168,7 +173,7 @@ impl EGraph {
         )
     }
 
-    pub fn find_id(&self, i: Id) -> Id {
+    pub fn normalize_id_by_unionfind(&self, i: Id) -> Id {
         assert!(self.classes[&i].slots.is_empty());
 
         self.unionfind[&i].id
@@ -176,8 +181,8 @@ impl EGraph {
 
     // creates a new eclass with slots intersection(l.slots(), r.slots).
     pub fn union(&mut self, l: AppliedId, r: AppliedId) {
-        let l = self.find(l);
-        let r = self.find(r);
+        let l = self.normalize_applied_id_by_unionfind(l);
+        let r = self.normalize_applied_id_by_unionfind(r);
 
         if l == r { return; }
 
@@ -186,7 +191,7 @@ impl EGraph {
         let id = Id(self.classes.len());
         let app_id = AppliedId::new(id, SlotMap::identity(&slots));
         let eclass = EClass {
-            nodes: HashSet::new(),
+            nodes: HashMap::new(),
             perm_group: PermGroup::identity(&slots), // TODO this is wrong.
             slots,
         };
@@ -214,10 +219,10 @@ impl EGraph {
     }
 
     fn fix_unionfind(&mut self) {
-        // recursively applies find() until convergence.
+        // recursively applies normalize_applied_id_by_unionfind() until convergence.
         let full_find = |mut x: AppliedId| {
             loop {
-                let y = self.find(x.clone());
+                let y = self.normalize_applied_id_by_unionfind(x.clone());
                 if x == y { return x; }
                 x = y;
             }
@@ -236,6 +241,13 @@ impl EGraph {
 
     pub fn enodes(&self, i: Id) -> HashSet<ENode> {
         let i = self.unionfind[&i].id;
-        self.classes[&i].nodes.clone()
+        self.classes[&i].nodes.iter().map(|(x, y)| x.apply_slotmap(y)).collect()
+    }
+
+    // TODO maybe add more?
+    fn inv(&self) {
+        for (i, c) in &self.classes {
+            assert_eq!(self.unionfind[&i].id, *i);
+        }
     }
 }
