@@ -97,7 +97,14 @@ fn enhance_group(perm_group: PermGroup, superset: &HashSet<Slot>) -> PermGroup {
         let n = delta.len();
         let s = |x| delta[x];
 
-        let m = |f: fn(usize) -> usize| (0..n).map(|x| (s(x), s(f(x) % n))).collect();
+        let m = |f: fn(usize) -> usize| -> Perm {
+            let mut slotmap = SlotMap::identity(&superset);
+            for i in 0..n {
+                slotmap.insert(s(i), s(f(i) % n));
+            }
+
+            slotmap
+        };
 
         let shift = |x| x+1;
         let flip = |x| if x < 2 { 1 - x } else { x };
