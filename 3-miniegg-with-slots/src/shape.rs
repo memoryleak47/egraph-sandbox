@@ -1,5 +1,5 @@
 use crate::*;
-    
+
 // an ENode that has been reduced to its shape.
 pub type Shape = ENode;
 
@@ -44,4 +44,21 @@ impl EGraph {
             },
         }
     }
+}
+
+// Might for a general Language be interesting for more than 2 inputs.
+//
+// N is a set of slots.
+// Each lists[i] is an ordering of N.
+// Each perm_groups[i] is a perm group over the set N.
+// Slots from N have a lexicographical order _ < _.
+//
+// Returns (perms, theta)
+// - where each perms[i] is a permutation: N -> N from perm_groups[i], and
+// - theta is a mapping from N to s0..s|N|, s.t. we can derive
+// - out_lists[i] = lists[i].map(|x| perms[i][x])
+//                          .map(|x| theta[x])
+// where `out_lists` (or equivalently out_lists[0] ++ out_lists[1]) is lexicographically minimal.
+fn find_minimal_ordering(lists: [Vec<Slot>; 2], perm_groups: [PermGroup; 2]) -> ([Perm; 2], Bijection) {
+    todo!()
 }
