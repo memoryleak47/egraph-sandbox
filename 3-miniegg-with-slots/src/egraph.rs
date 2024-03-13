@@ -180,6 +180,11 @@ impl EGraph {
 
         if l == r { return; }
 
+        if l.id == r.id {
+            eprintln!("We reject self-unions for now!");
+            return;
+        };
+
         let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect();
 
         let id = Id(self.classes.len());
