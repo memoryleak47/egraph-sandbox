@@ -17,7 +17,7 @@ pub struct EClass {
 }
 
 // invariants:
-// 1. If two ENodes (that are in the EGraph) have equal EGraph::shape(_), they have to be in the same eclass.
+// 1. If two ENodes (that are in the EGraph) have equal .shape(), they have to be in the same eclass.
 // 2. enode.slots() is always a superset of c.slots, if enode is within the eclass c.
 //    if ENode::Lam(si) = enode, then we require i to not be in c.slots.
 // 3. AppliedId::m is always a bijection. (eg. c1(s0, s1, s0) is illegal!)
@@ -105,7 +105,7 @@ impl EGraph {
 
         let app_id = AppliedId::new(id, SlotMap::identity(&slots));
 
-        let (x, y) = self.shape(&enode);
+        let (x, y) = enode.shape();
         let eclass = EClass {
             nodes: HashMap::from([(x, y)]),
             perm_group: PermGroup::identity(&slots), // TODO incorrect.
@@ -119,7 +119,7 @@ impl EGraph {
 
     pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
         let n = self.normalize_enode_by_unionfind(n);
-        let (shape, n_bij) = self.shape(&n);
+        let (shape, n_bij) = n.shape();
 
         for (i, c) in &self.classes {
             if let Some(cn_bij) = c.nodes.get(&shape) {
