@@ -27,6 +27,8 @@ impl ENode {
                 bij.insert(s0, s);
 
                 for sx in x.m.values_vec() {
+                    if sx == s { continue; }
+
                     let next = Slot(bij.len());
                     bij.insert(next, sx);
                 }
