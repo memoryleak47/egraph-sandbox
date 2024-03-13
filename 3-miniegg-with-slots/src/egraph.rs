@@ -3,17 +3,11 @@ use crate::*;
 #[derive(Clone, Debug)]
 pub struct EClass {
     // The set of equivalent ENodes that make up this eclass.
-    // for (x, y) in nodes; x.apply_slotmap(y) represents the actual ENode.
-    // The set of nodes is conceptually closed under permutations done by the perm_group; and under arbitrary renaming of redundant slots.
-    // But we explicitly only store one representant.
+    // for (sh, bij) in nodes; sh.apply_slotmap(bij) represents the actual ENode.
     pub nodes: HashMap<Shape, Bijection>,
 
     // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
     pub slots: HashSet<Slot>,
-
-    // The group of permutations that don't change the meaning.
-    // Eg. for a commutative class, c(x, y) = c(y, x). The perm [x -> y, y -> x] would be part of this group.
-    pub perm_group: PermGroup,
 }
 
 // invariants:
@@ -105,10 +99,9 @@ impl EGraph {
 
         let app_id = AppliedId::new(id, SlotMap::identity(&slots));
 
-        let (x, y) = enode.shape();
+        let (sh, bij) = enode.shape();
         let eclass = EClass {
-            nodes: HashMap::from([(x, y)]),
-            perm_group: PermGroup::identity(&slots), // TODO incorrect.
+            nodes: HashMap::from([(sh, bij)]),
             slots,
         };
         self.classes.insert(id, eclass);
@@ -193,7 +186,6 @@ impl EGraph {
         let app_id = AppliedId::new(id, SlotMap::identity(&slots));
         let eclass = EClass {
             nodes: HashMap::new(),
-            perm_group: PermGroup::identity(&slots), // TODO this is wrong.
             slots,
         };
         self.classes.insert(id, eclass);
