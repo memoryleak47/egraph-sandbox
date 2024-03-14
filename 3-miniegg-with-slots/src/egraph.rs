@@ -7,6 +7,7 @@ pub struct EClass {
     nodes: HashMap<Shape, Bijection>,
 
     // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
+    // Should not contain Slot(0).
     slots: HashSet<Slot>,
 }
 
@@ -15,6 +16,7 @@ pub struct EClass {
 // 2. enode.slots() is always a superset of c.slots, if enode is within the eclass c.
 //    if ENode::Lam(si) = enode, then we require i to not be in c.slots.
 // 3. AppliedId::m is always a bijection. (eg. c1(s0, s1, s0) is illegal!)
+// 4. Slot(0) should not be in EClass::slots of any class.
 #[derive(Debug)]
 pub struct EGraph {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
@@ -91,22 +93,26 @@ impl EGraph {
             return x;
         }
 
-        // allocate eclass.
-        // TODO allocate new slots for everything here too (exposed & lambdas).
+        let old_slots = enode.slots();
+
+        let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
+        let fresh_enode = enode.apply_slotmap(&fresh_to_old.inverse());
+
+        // allocate new class & slot set.
         let id = Id(self.classes.len());
-        let slots = enode.slots();
+        let fresh_slots = fresh_enode.slots();
 
-        let app_id = AppliedId::new(id, SlotMap::identity(&slots));
+        let identity_app_id = AppliedId::new(id, SlotMap::identity(&fresh_slots));
 
-        let (sh, bij) = enode.shape();
+        let (sh, bij) = fresh_enode.shape();
         let eclass = EClass {
             nodes: HashMap::from([(sh, bij)]),
-            slots,
+            slots: fresh_slots,
         };
         self.classes.insert(id, eclass);
-        self.unionfind.insert(id, app_id.clone());
+        self.unionfind.insert(id, identity_app_id);
 
-        app_id
+        AppliedId::new(id, fresh_to_old)
     }
 
     pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
@@ -245,6 +251,8 @@ impl EGraph {
     fn inv(&self) {
         for (i, c) in &self.classes {
             assert_eq!(self.unionfind[&i].id, *i);
+
+            assert!(!c.slots.contains(&Slot(0)));
         }
     }
 }

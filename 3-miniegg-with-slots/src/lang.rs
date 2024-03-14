@@ -47,6 +47,13 @@ impl ENode {
     pub fn apply_slotmap(&self, m: &SlotMap) -> ENode {
         match self {
             ENode::Lam(x, i) => {
+                if m.contains_key(*x) {
+                    panic!("apply_slotmap applied in lambda trying to rename its Lam variable.");
+                }
+                if m.values().contains(x) {
+                    panic!("apply_slotmap applied in lambda trying to rename *to* its Lam variable.");
+                }
+
                 let mut m = m.clone();
                 // removing x causes a "missing entry" problem.
                 // in order to keep x "unchanged" we insert x -> x.
@@ -127,7 +134,8 @@ impl Slot {
     pub fn fresh() -> Self {
         use std::sync::atomic::*;
 
-        static CTR: AtomicUsize = AtomicUsize::new(0);
+        // starting with 1 might prevent Slot(0) collisions with Lam variables.
+        static CTR: AtomicUsize = AtomicUsize::new(1);
         let u = CTR.fetch_add(1, Ordering::SeqCst);
         Slot(u)
     }
