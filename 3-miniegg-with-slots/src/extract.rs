@@ -16,6 +16,8 @@ pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
             for n in eg.enodes(id) {
                 let db = |a| db_impl(a, &map);
                 if let Some(re) = extract_step(n, &db) {
+                    assert_eq!(re.node_dag.last().unwrap().slots(), eg.slots(id));
+
                     let new_cost = re.node_dag.len();
                     let current_cost = map.get(&id).map(|x| x.node_dag.len()).unwrap_or(usize::MAX);
                     if new_cost < current_cost {
@@ -36,7 +38,14 @@ fn extract_step(enode: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr>) -> Opt
 
             Some(re)
         },
-        ENode::Lam(x, b) => {
+        ENode::Lam(x_old, b_old) => {
+            // rename x_old to a fresh name. Otherwise it might collide with other s0 lambdas later on.
+            let x = Slot::fresh();
+            let mut m = SlotMap::identity(&b_old.slots());
+            m.insert(x_old, x);
+            let b = b_old.apply_slotmap(&m);
+
+
             let mut re = db(b)?;
             let last = Id(re.node_dag.len() - 1);
             let last_slots = re.node_dag.last().unwrap().slots(); // TODO correct?
