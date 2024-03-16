@@ -251,7 +251,6 @@ impl EGraph {
 
             let identity = SlotMap::identity(&slots);
             eg.merge_into_eclass(id, c, &identity);
-            // TODO when are the ENodes normalized to not use `id` anymore?
         }
     }
 
@@ -331,7 +330,21 @@ impl EGraph {
             to_ref.nodes.insert(sh, out_bij);
         }
 
-        // TODO normalize all usages, so that `from` becomes unused!
+        self.normalize_enode_usages();
+    }
+
+    // normalizes all ENodes that come up in the EGraph using the unionfind.
+    fn normalize_enode_usages(&mut self) {
+        for (i, c) in self.classes.clone() {
+            let mut new_nodes = HashMap::new();
+            for (sh, bij) in c.nodes {
+                let n = sh.apply_slotmap(&bij);
+                let n = self.normalize_enode_by_unionfind(&n);
+                let (sh, bij) = n.shape();
+                new_nodes.insert(sh, bij);
+            }
+            self.classes.get_mut(&i).unwrap().nodes = new_nodes;
+        }
     }
 
     pub fn ids(&self) -> Vec<Id> {
