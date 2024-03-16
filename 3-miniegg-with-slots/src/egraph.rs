@@ -99,6 +99,7 @@ impl EGraph {
         let fresh_enode = enode.apply_slotmap(&fresh_to_old.inverse());
 
         // allocate new class & slot set.
+        // TODO consider using the alloc_eclass function here.
         let id = self.fresh_id();
         let fresh_slots = fresh_enode.slots();
 
@@ -205,56 +206,12 @@ impl EGraph {
         let r = r.apply_slotmap(&fresh_map);
         //
 
-        let lr_list = [l.clone(), r.clone()];
+        let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect();
+        let c_id = self.alloc_eclass(&slots);
 
-        // alloc eclass c.
-        let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect(); // We'll call this set "S".
-
-        let c_id = self.fresh_id();
-        let identity_app_id = AppliedId::new(c_id, SlotMap::identity(&slots));
-        let c = EClass {
-            nodes: HashMap::new(),
-            slots,
-        };
-        self.classes.insert(c_id, c);
-        self.unionfind.insert(c_id, identity_app_id.clone());
-        //
-
-        // add lr -> c to unionfind
-        for lr in &lr_list {
-            // X = slots(lr.id)
-            // S = slots(c_id)
-            // lr.m :: X -> S
-            self.unionfind.insert(lr.id, AppliedId::new(c_id, lr.m.inverse()));
+        for lr in [l, r] {
+            self.merge_into_eclass(lr.id, c_id, &lr.m);
         }
-        self.fix_unionfind();
-        //
-
-        // move enodes from lr to c.
-        for lr in &lr_list {
-            let class = self.classes.remove(&lr.id).unwrap();
-            let c_ref = self.classes.get_mut(&c_id).unwrap();
-            for (sh, bij) in class.nodes {
-                // X = slots(sh)
-                // Y = slots(lr.id)
-                // S = slots(c_id)
-                // bij :: X -> Y
-                // lr.m :: Y -> S
-
-                // out_bij :: X -> S
-                let mut out_bij = bij.compose_partial(&lr.m);
-
-                // map redundant slots too.
-                for x in sh.slots() {
-                    if !out_bij.contains_key(x) {
-                        out_bij.insert(x, Slot::fresh());
-                    }
-                }
-
-                c_ref.nodes.insert(sh, out_bij);
-            }
-        }
-        //
 
         // rebuild the egraph invariants
         self.fix_new_redundant_slots();
@@ -336,6 +293,50 @@ impl EGraph {
             }
 
             None
+        }
+    }
+
+    fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
+        let c_id = self.fresh_id();
+        let identity_app_id = AppliedId::new(c_id, SlotMap::identity(slots));
+        let c = EClass {
+            nodes: HashMap::new(),
+            slots: slots.clone(),
+        };
+        self.classes.insert(c_id, c);
+        self.unionfind.insert(c_id, identity_app_id.clone());
+
+        c_id
+    }
+
+    // merges the EClass `from` into `to`. This deprecates the EClass `from`.
+    // This does not do any cleanups!
+    // map :: slots(from) -> slots(to)
+    fn merge_into_eclass(&mut self, from: Id, to: Id, map: &SlotMap) {
+        // X = slots(from)
+        // Y = slots(to)
+        // map :: X -> Y
+        self.unionfind.insert(from, AppliedId::new(to, map.inverse()));
+        self.fix_unionfind();
+
+        // move enodes over.
+        let from_class = self.classes.remove(&from).unwrap();
+        let to_ref = self.classes.get_mut(&to).unwrap();
+        for (sh, bij) in from_class.nodes {
+            // SH = slots(sh)
+            // bij :: SH -> X
+
+            // out_bij :: SH -> Y
+            let mut out_bij = bij.compose_partial(map);
+
+            // map redundant slots too.
+            for x in sh.slots() {
+                if !out_bij.contains_key(x) {
+                    out_bij.insert(x, Slot::fresh());
+                }
+            }
+
+            to_ref.nodes.insert(sh, out_bij);
         }
     }
 
