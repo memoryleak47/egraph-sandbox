@@ -99,8 +99,7 @@ impl EGraph {
 
                     let l1: HashSet<&Shape> = c1.nodes.keys().collect();
                     let l2: HashSet<&Shape> = c2.nodes.keys().collect();
-                    let inter: HashSet<&&Shape> = l1.intersection(&l2).collect();
-                    if let Some(sh) = inter.into_iter().next() {
+                    if let Some(sh) = l1.intersection(&l2).next() {
                         return Some((*i1, *i2, (**sh).clone()));
                     }
                 }
