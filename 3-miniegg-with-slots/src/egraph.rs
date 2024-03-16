@@ -283,7 +283,35 @@ impl EGraph {
 
     // Checks whether two EClasses share a Shape, and if yes: unions them.
     fn fix_shape_collisions(&mut self) {
-        todo!()
+        while let Some((i1, i2, sh)) = find_shape_collision(self) {
+            // X = slots(sh)
+            // bij1 :: X -> slots(i1)
+            // bij2 :: X -> slots(i2)
+            let bij1 = &self.classes[&i1].nodes[&sh];
+            let bij2 = &self.classes[&i2].nodes[&sh];
+
+            let aid1 = AppliedId::new(i1, bij1.inverse());
+            let aid2 = AppliedId::new(i2, bij2.inverse());
+
+            self.union(aid1, aid2);
+        }
+
+        fn find_shape_collision(eg: &mut EGraph) -> Option<(Id, Id, Shape)> {
+            for (i1, c1) in &eg.classes {
+                for (i2, c2) in &eg.classes {
+                    if i1 == i2 { continue; }
+
+                    let l1: HashSet<&Shape> = c1.nodes.keys().collect();
+                    let l2: HashSet<&Shape> = c2.nodes.keys().collect();
+                    let inter: HashSet<&&Shape> = l1.intersection(&l2).collect();
+                    if let Some(sh) = inter.into_iter().next() {
+                        return Some((*i1, *i2, (**sh).clone()));
+                    }
+                }
+            }
+
+            None
+        }
     }
 
     pub fn ids(&self) -> Vec<Id> {
