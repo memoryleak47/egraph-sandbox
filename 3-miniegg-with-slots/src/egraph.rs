@@ -278,7 +278,32 @@ impl EGraph {
 
     // Checks whether an EClass has an ENode not using all of its Slots. If yes, declare the missing slot "redundant".
     fn fix_new_redundant_slots(&mut self) {
-        todo!()
+        while let Some((i, sh)) = find_new_redundant_slot(self) {
+            mark_redundant_slot(self, i, sh);
+        }
+
+        // the ENode (identified by its shape) only has a subset of the slots, relative to its eclass.
+        fn find_new_redundant_slot(eg: &mut EGraph) -> Option<(Id, Shape)> {
+            for (i, c) in &eg.classes {
+                for (sh, bij) in &c.nodes {
+                    if !c.slots.is_subset(&bij.values()) {
+                        return Some((*i, sh.clone()));
+                    }
+                }
+            }
+
+            None
+        }
+
+        // This has some overlap with EGraph::union().
+        fn mark_redundant_slot(eg: &mut EGraph, id: Id, sh: Shape) {
+            let bij = &eg.classes[&id].nodes[&sh];
+
+            let slots: HashSet<Slot> = eg.classes[&id].slots.intersection(&bij.values()).copied().collect();
+
+            // TODO allocate new EClass and move everything over.
+            todo!();
+        }
     }
 
     // Checks whether two EClasses share a Shape, and if yes: unions them.
