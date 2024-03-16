@@ -245,10 +245,13 @@ impl EGraph {
         fn mark_redundant_slot(eg: &mut EGraph, id: Id, sh: Shape) {
             let bij = &eg.classes[&id].nodes[&sh];
 
+            // the new _smaller_ set of slots.
             let slots: HashSet<Slot> = eg.classes[&id].slots.intersection(&bij.values()).copied().collect();
 
-            // TODO allocate new EClass and move everything over.
-            todo!();
+            let c = eg.alloc_eclass(&slots);
+
+            let identity = SlotMap::identity(&slots);
+            eg.merge_into_eclass(id, c, &identity);
         }
     }
 
