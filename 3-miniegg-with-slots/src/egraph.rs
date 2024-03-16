@@ -184,45 +184,64 @@ impl EGraph {
 
     // creates a new eclass with slots intersection(l.slots(), r.slots).
     pub fn union(&mut self, l: AppliedId, r: AppliedId) {
+        // normalize inputs
         let l = self.normalize_applied_id_by_unionfind(l);
         let r = self.normalize_applied_id_by_unionfind(r);
+        //
 
+        // early return, if union should not be made.
         if l == r { return; }
 
         if l.id == r.id {
             eprintln!("We reject self-unions for now!");
             return;
         };
+        //
 
+        // make the slots fresh.
+        let all_slots = l.slots().union(&r.slots()).copied().collect();
+        let fresh_map = SlotMap::bijection_from_fresh_to(&all_slots).inverse();
+        let l = l.apply_slotmap(&fresh_map);
+        let r = r.apply_slotmap(&fresh_map);
+        //
+
+        let lr_list = [l.clone(), r.clone()];
+
+        // alloc eclass c.
         let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect();
 
-        let id = self.fresh_id();
-        let app_id = AppliedId::new(id, SlotMap::identity(&slots));
-        let eclass = EClass {
+        let c_id = self.fresh_id();
+        let identity_app_id = AppliedId::new(c_id, SlotMap::identity(&slots));
+        let c = EClass {
             nodes: HashMap::new(),
             slots,
         };
-        self.classes.insert(id, eclass);
-        self.unionfind.insert(id, app_id.clone());
+        self.classes.insert(c_id, c);
+        self.unionfind.insert(c_id, identity_app_id.clone());
+        //
 
-        let mut call = |a: AppliedId, future_unions: &mut Vec<(AppliedId, AppliedId)>| {
-            self.unionfind.insert(a.id, AppliedId::new(id, todo!()));
-            self.fix_unionfind();
-
-            // next steps:
-            // - move the old ENodes over.
-            // - upwards merging.
-
-            todo!()
-        };
-
-        let mut future_unions = Vec::new();
-        call(l, &mut future_unions);
-        call(r, &mut future_unions);
-
-        for (x, y) in future_unions {
-            self.union(x, y);
+        // add lr -> c to unionfind
+        for lr in &lr_list {
+            self.unionfind.insert(lr.id, AppliedId::new(c_id, lr.m.inverse()));
         }
+        self.fix_unionfind();
+        //
+
+        // move enodes from lr to c.
+        for lr in &lr_list {
+            let class = self.classes.remove(&lr.id).unwrap();
+            let c_ref = self.classes.get_mut(&c_id).unwrap();
+            for (sh, bij) in class.nodes {
+                let bij = bij.compose(&lr.m); // TODO right way?
+                c_ref.nodes.insert(sh, bij);
+            }
+        }
+        //
+
+        // rebuild the egraph invariants
+        self.fix_new_redundant_slots();
+        self.fix_shape_collisions();
+        //
     }
 
     fn fix_unionfind(&mut self) {
@@ -237,6 +256,16 @@ impl EGraph {
         self.unionfind = self.unionfind.iter()
                         .map(|(x, y)| (*x, full_find(y.clone())))
                         .collect();
+    }
+
+    // Checks whether an EClass has an ENode not using all of its Slots. If yes, declare the missing slot "redundant".
+    fn fix_new_redundant_slots(&mut self) {
+        todo!()
+    }
+
+    // Checks whether two EClasses share a Shape, and if yes: unions them.
+    fn fix_shape_collisions(&mut self) {
+        todo!()
     }
 
     pub fn ids(&self) -> Vec<Id> {
