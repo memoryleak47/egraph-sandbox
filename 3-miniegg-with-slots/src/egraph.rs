@@ -228,7 +228,7 @@ impl EGraph {
             mark_redundant_slot(self, i, sh);
         }
 
-        // the ENode (identified by its shape) only has a subset of the slots, relative to its eclass.
+        // the ENode (identified by its shape) only has a strict subset of the slots, relative to its eclass.
         fn find_new_redundant_slot(eg: &mut EGraph) -> Option<(Id, Shape)> {
             for (i, c) in &eg.classes {
                 for (sh, bij) in &c.nodes {
@@ -241,7 +241,6 @@ impl EGraph {
             None
         }
 
-        // This has some overlap with EGraph::union().
         fn mark_redundant_slot(eg: &mut EGraph, id: Id, sh: Shape) {
             let bij = &eg.classes[&id].nodes[&sh];
 
