@@ -251,6 +251,7 @@ impl EGraph {
 
             let identity = SlotMap::identity(&slots);
             eg.merge_into_eclass(id, c, &identity);
+            // TODO when are the ENodes normalized to not use `id` anymore?
         }
     }
 
@@ -329,6 +330,8 @@ impl EGraph {
 
             to_ref.nodes.insert(sh, out_bij);
         }
+
+        // TODO normalize all usages, so that `from` becomes unused!
     }
 
     pub fn ids(&self) -> Vec<Id> {

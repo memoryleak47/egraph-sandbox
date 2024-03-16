@@ -1,6 +1,7 @@
 use crate::*;
 
 // candidate for beta reduction.
+// TODO update this to the new system.
 struct Candidate {
     app: ENode,
     lam: ENode,
@@ -9,11 +10,11 @@ struct Candidate {
 // applies rewrites (only beta-reduction) for all applicable situations.
 pub fn rewrite_step(eg: &mut EGraph) {
     for cand in candidates(eg) {
-        let app_id = eg.add(cand.app.clone()); // will not actually add, because it already exists.
+        let app_id = eg.lookup(&cand.app).unwrap();
 
         let ENode::App(_l, t) = cand.app.clone() else { panic!() };
         let ENode::Lam(x, b) = cand.lam.clone() else { panic!() };
-        let id = subst(b, &x, t, eg);
+        let id = subst(b, x, t, eg);
         eg.union(id, app_id);
     }
 }
@@ -37,8 +38,8 @@ fn candidates(eg: &EGraph) -> Vec<Candidate> {
 
     for c in eg.ids() {
         for enode in eg.enodes(c) {
-            if let ENode::App(l, _t) = enode {
-                for lam in lambdas[&l].clone() {
+            if let ENode::App(l, _t) = &enode {
+                for lam in lambdas[&l.id].clone() {
                     candidates.push(Candidate { app: enode.clone(), lam });
                 }
             }
@@ -47,3 +48,11 @@ fn candidates(eg: &EGraph) -> Vec<Candidate> {
 
     candidates
 }
+
+// returns b[s := t]
+// out has slots (slots(b) - {s}) cup slots(t).
+// I presume that slots(t) is allowed to contain s.
+fn subst(b: AppliedId, s: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId {
+    unimplemented!()
+}
+

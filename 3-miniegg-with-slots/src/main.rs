@@ -22,11 +22,10 @@ use egraph::*;
 mod extract;
 use extract::*;
 
-/*
-
 mod rewrite;
 use rewrite::*;
 
+/*
 mod subst;
 use subst::*;
 */
@@ -40,13 +39,11 @@ fn main() {
     let mut eg = EGraph::new();
     let i = eg.add_expr(re.clone());
     dbg!(&eg, &i);
-/*
 
     for _ in 0..10 {
         rewrite_step(&mut eg);
     }
 
-*/
     let re = extract(i, &eg);
     let s = to_string(re);
     println!("{}", s);
