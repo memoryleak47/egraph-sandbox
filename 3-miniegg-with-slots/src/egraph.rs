@@ -208,7 +208,7 @@ impl EGraph {
         let lr_list = [l.clone(), r.clone()];
 
         // alloc eclass c.
-        let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect();
+        let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect(); // We'll call this set "S".
 
         let c_id = self.fresh_id();
         let identity_app_id = AppliedId::new(c_id, SlotMap::identity(&slots));
@@ -222,6 +222,9 @@ impl EGraph {
 
         // add lr -> c to unionfind
         for lr in &lr_list {
+            // X = slots(lr.id)
+            // S = slots(c_id)
+            // lr.m :: X -> S
             self.unionfind.insert(lr.id, AppliedId::new(c_id, lr.m.inverse()));
         }
         self.fix_unionfind();
@@ -232,8 +235,23 @@ impl EGraph {
             let class = self.classes.remove(&lr.id).unwrap();
             let c_ref = self.classes.get_mut(&c_id).unwrap();
             for (sh, bij) in class.nodes {
-                let bij = bij.compose(&lr.m); // TODO right way?
-                c_ref.nodes.insert(sh, bij);
+                // X = slots(sh)
+                // Y = slots(lr.id)
+                // S = slots(c_id)
+                // bij :: X -> Y
+                // lr.m :: Y -> S
+
+                // out_bij :: X -> S
+                let mut out_bij = bij.compose_partial(&lr.m);
+
+                // map redundant slots too.
+                for x in sh.slots() {
+                    if !out_bij.contains_key(x) {
+                        out_bij.insert(x, Slot::fresh());
+                    }
+                }
+
+                c_ref.nodes.insert(sh, out_bij);
             }
         }
         //
