@@ -49,33 +49,31 @@ impl EGraph {
 
     // Checks whether an EClass has an ENode not using all of its Slots. If yes, declare the missing slot "redundant".
     fn fix_new_redundant_slots(&mut self) {
-        while let Some((i, sh)) = find_new_redundant_slot(self) {
-            mark_redundant_slot(self, i, sh);
-        }
+        loop {
+            let mut changed = false;
 
-        // the ENode (identified by its shape) only has a strict subset of the slots, relative to its eclass.
-        fn find_new_redundant_slot(eg: &mut EGraph) -> Option<(Id, Shape)> {
-            for (i, c) in &eg.classes {
-                for (sh, bij) in &c.nodes {
-                    if !c.slots.is_subset(&bij.values()) {
-                        return Some((*i, sh.clone()));
-                    }
-                }
+            let keys: Vec<Id> = self.classes.keys().copied().collect();
+            for id in keys {
+                let c = &self.classes[&id];
+
+                let class_slots = &self.classes[&id].slots;
+
+                // The slot-intersections of all ENodes of c [excluding redundant nodes that are not contained in class_slots].
+                let node_slots: HashSet<Slot> = c.nodes.iter()
+                                                   .map(|(_, x)| x.values())
+                                                   .fold(class_slots.clone(), |x, y| &x & &y);
+
+                // "class_slots subset node_slots" is an EGraph invariant.
+                if class_slots.is_subset(&node_slots) { continue; }
+
+                let c = self.alloc_eclass(&node_slots);
+
+                let identity = SlotMap::identity(&node_slots);
+                self.merge_into_eclass(id, c, &identity);
+                changed = true;
             }
 
-            None
-        }
-
-        fn mark_redundant_slot(eg: &mut EGraph, id: Id, sh: Shape) {
-            let bij = &eg.classes[&id].nodes[&sh];
-
-            // the new _smaller_ set of slots.
-            let slots: HashSet<Slot> = eg.classes[&id].slots.intersection(&bij.values()).copied().collect();
-
-            let c = eg.alloc_eclass(&slots);
-
-            let identity = SlotMap::identity(&slots);
-            eg.merge_into_eclass(id, c, &identity);
+            if !changed { break; }
         }
     }
 
