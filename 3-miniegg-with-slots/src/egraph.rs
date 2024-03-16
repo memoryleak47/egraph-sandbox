@@ -99,25 +99,14 @@ impl EGraph {
         let fresh_enode = enode.apply_slotmap(&fresh_to_old.inverse());
 
         // allocate new class & slot set.
-        // TODO consider using the alloc_eclass function here.
-        let id = self.fresh_id();
         let fresh_slots = fresh_enode.slots();
-
-        let identity_app_id = AppliedId::new(id, SlotMap::identity(&fresh_slots));
+        let id = self.alloc_eclass(&fresh_slots);
 
         let (sh, bij) = fresh_enode.shape();
-        let eclass = EClass {
-            nodes: HashMap::from([(sh, bij)]),
-            slots: fresh_slots,
-        };
-        self.classes.insert(id, eclass);
-        self.unionfind.insert(id, identity_app_id);
+        let class_ref = self.classes.get_mut(&id).unwrap();
+        class_ref.nodes.insert(sh, bij);
 
         AppliedId::new(id, fresh_to_old)
-    }
-
-    fn fresh_id(&self) -> Id {
-        Id(self.unionfind.len())
     }
 
     pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
@@ -297,7 +286,7 @@ impl EGraph {
     }
 
     fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
-        let c_id = self.fresh_id();
+        let c_id = Id(self.unionfind.len()); // Pick the next unused Id.
         let identity_app_id = AppliedId::new(c_id, SlotMap::identity(slots));
         let c = EClass {
             nodes: HashMap::new(),
