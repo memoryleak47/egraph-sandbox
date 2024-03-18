@@ -33,12 +33,10 @@ use subst::*;
 use std::collections::{HashMap, HashSet};
 
 fn main() {
-    // let s = "(app (lam x (app x x)) (lam y y))";
-    let s = "(lam x (lam y (app x y)))";
+    let s = "(app (lam x (app x x)) (lam y y))";
     let re = parse(s);
     let mut eg = EGraph::new();
     let i = eg.add_expr(re.clone());
-    dbg!(&eg, &i);
 
     for _ in 0..10 {
         rewrite_step(&mut eg);

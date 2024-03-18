@@ -1,7 +1,7 @@
 use crate::*;
 
 // candidate for beta reduction.
-// TODO update this to the new system.
+// Both ENodes are computed by "sh.apply_slotmap(bij)", where (sh, bij) in EClass::nodes from their respective classes.
 struct Candidate {
     app: ENode,
     lam: ENode,
@@ -12,10 +12,22 @@ pub fn rewrite_step(eg: &mut EGraph) {
     for cand in candidates(eg) {
         let app_id = eg.lookup(&cand.app).unwrap();
 
-        let ENode::App(_l, t) = cand.app.clone() else { panic!() };
+        let ENode::App(l, t) = cand.app.clone() else { panic!() };
         let ENode::Lam(x, b) = cand.lam.clone() else { panic!() };
-        let id = subst(b, x, t, eg);
-        eg.union(id, app_id);
+        assert_eq!(x, Slot(0));
+
+        // l.m :: slots(lam) -> slots(app)
+        let mut m = l.m.clone();
+
+        // if x is a public slot of "app", we'd need to rename. But as x should always be s0 this shouldn't come up.
+        assert!(!m.contains_key(x));
+
+        m.insert(x, x);
+
+        let b = b.apply_slotmap(&m);
+
+        let new_id = subst(b, x, t, eg);
+        eg.union(new_id, app_id);
     }
 }
 
@@ -25,7 +37,7 @@ fn candidates(eg: &EGraph) -> Vec<Candidate> {
     for c in eg.ids() {
         let mut v = Vec::new();
         for enode in eg.enodes(c) {
-            if let ENode::Lam(_, _) = &enode {
+            if matches!(enode, ENode::Lam(..)) {
                 v.push(enode.clone());
             }
         }
