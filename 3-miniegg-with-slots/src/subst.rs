@@ -1,7 +1,7 @@
 use crate::*;
 
 // returns an eclass containing b[x := t]
-// out has slots (slots(b) - {x}) cup slots(t).
+// out has slots (slots(b) - {x}) | slots(t).
 // I presume that slots(t) is allowed to contain x.
 pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId {
     subst_impl(b, x, t, eg, &mut Default::default())
@@ -26,33 +26,45 @@ fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, map: &mut Ma
 }
 
 // `enode` is an enode from the eclass `b`.
+//
+// enode.slots() == slots(b)
+// b.slots() might intersect t.slots(), this represents the bt_relation (if we exclude x).
+//
+// x in enode.slots(), and x is never part of the bt_relation.
+//
 // we return an eclass containing `enode[x := t]`
+//
+// The resulting AppliedId has slots "(slots(enode)-{x}) | slots(t)"
 fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, map: &mut Map) -> AppliedId {
-    todo!()
-    /*
     match enode {
-        // (lam x2 b2)[x := t] --> (lam x2 b2[x := t]), if x != x2.
+        ENode::Var(x2) => {
+            // We know that enode.slots().contains(x), this already implies x = x2.
+            assert_eq!(x, x2);
+
+            t.clone()
+        }
+
+        ENode::App(l, r) => {
+            let mut call = |a: AppliedId| -> AppliedId {
+                // X := (slots(b) - {x}) | slots(t)
+                // a.m :: slots(a.id) -> X
+                subst_impl(a.clone(), x, t.clone(), eg, map)
+            };
+            let l = call(l);
+            let r = call(r);
+
+            eg.add(ENode::App(l, r))
+        },
+
         ENode::Lam(x2, b2) => {
             assert!(x2 != x);
 
-            let b2 = subst_impl(b2, x, t, eg, map);
-            Some(eg.add(ENode::Lam(x2, b2)))
+            // TODO is this really enough?
+            let b2 = subst_impl(b2.clone(), x, t.clone(), eg, map);
+            eg.add(ENode::Lam(x2, b2))
         }
 
-        // (app l r)[x := t] --> (app l[x := t] r[x := t])
-        ENode::App(l, r) => {
-            let l = subst_impl(l, x, t, eg, map);
-            let r = subst_impl(r, x, t, eg, map);
-            Some(eg.add(ENode::App(l, r)))
-        },
-
-        // x2[x := t] --> t, if x = x2.
-        ENode::Var(x2) if x == x2 => Some(t),
-
-        // x2[x := t] --> x2, if x != x2.
-        ENode::Var(_) => Some(b),
     }
-    */
 }
 
 /////////////// Map impl ///////////////
@@ -62,7 +74,7 @@ struct Key {
     b: Id,
     x: Slot,
 
-    // (w1, w2) in bt_relation, iff w1 in slots(b) & w2 in slots(t), and
+    // (w1, w2) in bt_relation, iff w1 in slots(b) && w2 in slots(t), and
     // if w1 and w2 correspond to the same slot in this subst instance.
     // Note that b and t are Ids in this context.
     bt_relation: SlotMap,
@@ -89,7 +101,7 @@ type Map = HashMap<Key, Value>;
 
 // Ok(app_id) means that it was already in the map, and nothing needs to be done.
 // Err(app_id) means that it was not yet in the map, but a new entry was added for it. Go and union stuff to it!
-// Either way slots(app_id) == (slots(b) - {x}) & slots(t).
+// Either way slots(app_id) == (slots(b) - {x}) | slots(t).
 fn map_lookup(b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, map: &mut Map) -> Result<AppliedId, AppliedId> {
     assert!(b.slots().contains(&x));
 
@@ -114,7 +126,7 @@ fn map_lookup(b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, map: &mut 
     // add to map, if necessary
     if new_class {
         // max_slots = X
-        let max_slots = &(&b.slots() - &HashSet::from([x])) & &t.slots();
+        let max_slots = &(&b.slots() - &HashSet::from([x])) | &t.slots();
         let fresh = SlotMap::bijection_from_fresh_to(&max_slots);
         let slots = fresh.keys();
 
