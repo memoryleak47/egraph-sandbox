@@ -95,6 +95,10 @@ impl EGraph {
         self.classes[&i].nodes.iter().map(|(x, y)| x.apply_slotmap(y)).collect()
     }
 
+    pub fn enodes_applied(&self, i: &AppliedId) -> HashSet<ENode> {
+        self.enodes(i.id).into_iter().map(|x| x.apply_slotmap(&i.m)).collect()
+    }
+
     // TODO maybe add more?
     fn inv(&self) {
         for (i, c) in &self.classes {

@@ -2,6 +2,7 @@ use crate::*;
 
 impl EGraph {
     // creates a new eclass with slots "l.slots() cap r.slots()".
+    // TODO get references here instead!
     pub fn union(&mut self, l: AppliedId, r: AppliedId) {
         // normalize inputs
         let l = self.normalize_applied_id_by_unionfind(l);

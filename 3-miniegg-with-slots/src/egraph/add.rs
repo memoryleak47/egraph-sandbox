@@ -96,7 +96,7 @@ impl EGraph {
         None
     }
 
-    pub(in crate::egraph) fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
+    pub fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
         let c_id = Id(self.unionfind.len()); // Pick the next unused Id.
         let identity_app_id = AppliedId::new(c_id, SlotMap::identity(slots));
         let c = EClass {

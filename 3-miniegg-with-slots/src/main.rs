@@ -25,10 +25,8 @@ use extract::*;
 mod rewrite;
 use rewrite::*;
 
-/*
 mod subst;
 use subst::*;
-*/
 
 use std::collections::{HashMap, HashSet};
 

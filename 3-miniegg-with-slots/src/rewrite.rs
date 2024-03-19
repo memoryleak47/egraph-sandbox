@@ -60,11 +60,3 @@ fn candidates(eg: &EGraph) -> Vec<Candidate> {
 
     candidates
 }
-
-// returns b[s := t]
-// out has slots (slots(b) - {s}) cup slots(t).
-// I presume that slots(t) is allowed to contain s.
-fn subst(b: AppliedId, s: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId {
-    unimplemented!()
-}
-
