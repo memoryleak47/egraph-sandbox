@@ -15,7 +15,6 @@ use slotmap::*;
 
 mod debug;
 
-
 mod egraph;
 use egraph::*;
 
@@ -27,6 +26,8 @@ use rewrite::*;
 
 mod subst;
 use subst::*;
+
+mod tst;
 
 use std::collections::{HashMap, HashSet};
 
@@ -43,24 +44,4 @@ fn main() {
     let re = extract(i, &eg);
     let s = to_string(re);
     println!("{}", s);
-}
-
-#[test]
-fn test_egraph_roundtrip() {
-    let programs = [
-        "(lam x0 x0)",
-        "(lam x0 (lam x1 x0))",
-        "(lam x0 (lam x1 x1))",
-        "(lam x0 (lam x1 (app x0 x1)))",
-        "(app (lam x0 (app x0 x0)) (lam x1 (app x1 x1)))",
-    ];
-
-    for p in programs {
-        let re = parse(p);
-        let mut eg = EGraph::new();
-        let i = eg.add_expr(re.clone());
-        let re = extract(i, &eg);
-        let s = to_string(re);
-        assert_eq!(p, s);
-    }
 }
