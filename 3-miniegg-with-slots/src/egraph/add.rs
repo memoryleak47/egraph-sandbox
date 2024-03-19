@@ -96,6 +96,7 @@ impl EGraph {
         None
     }
 
+    // TODO this should return an AppliedId. Then it can internally allocate fresh slot names.
     pub fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
         let c_id = Id(self.unionfind.len()); // Pick the next unused Id.
         let identity_app_id = AppliedId::new(c_id, SlotMap::identity(slots));
