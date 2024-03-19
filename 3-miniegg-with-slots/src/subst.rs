@@ -19,6 +19,7 @@ pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId 
     out
 }
 
+// TODO do I need this? If yes, why?
 fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
     let large = &(&b.slots() | &t.slots()) | &HashSet::from([x]);
 
