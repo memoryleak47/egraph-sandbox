@@ -51,6 +51,11 @@ static TEST_CASES: &'static [TestCase] = &[
         output: "(app (lam x0 (app x0 x0)) (lam x1 (app x1 x1)))",
         steps: 10,
     },
+    TestCase {
+        input: "(lam x0 (lam x1 (app (lam x2 (app x0 x2)) x1)))",
+        output: "(lam x0 (lam x1 (app x0 x1)))",
+        steps: 1,
+    },
 ];
 
 struct TestCase {
