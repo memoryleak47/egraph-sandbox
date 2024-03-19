@@ -38,7 +38,8 @@ pub type HashMap<K, V> = BTreeMap<K, V>;
 pub type HashSet<T> = BTreeSet<T>;
 
 fn main() {
-    let s = "(app (lam x (app x x)) (lam y y))";
+    let s = "(lam x0 (app (lam x1 (lam x2 x2)) x0))";
+
     let re = parse(s);
     let mut eg = EGraph::new();
     let i = eg.add_expr(re.clone());

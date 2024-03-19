@@ -68,7 +68,7 @@ impl EGraph {
 
         AppliedId::new(
             a.id,
-            a.m.compose(&i.m),
+            a.m.compose_partial(&i.m), // This is partial if `i.id` had redundant slots.
         )
     }
 

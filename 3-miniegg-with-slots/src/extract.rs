@@ -5,6 +5,7 @@ use crate::*;
 // `i` is not allowed to have free variables, hence prefer `Id` over `AppliedId`.
 pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
     let i = eg.normalize_id_by_unionfind(i);
+    dbg!(&eg);
 
     // this is a terribly slow algorithm.
 
