@@ -132,6 +132,20 @@ impl SlotMap {
         pairs.iter().copied().collect()
     }
 
+    // will panic, if the maps are incompatible.
+    pub fn union(&self, other: &SlotMap) -> Self {
+        let mut out = self.clone();
+
+        for (x, y) in other.iter() {
+            if let Some(z) = out.get(x) {
+                assert_eq!(y, z, "SlotMap::union: The SlotMaps disagree!");
+            }
+            out.insert(x, y);
+        }
+
+        out
+    }
+
     // checks invariants.
     fn inv(&self) {
         // sortedness.

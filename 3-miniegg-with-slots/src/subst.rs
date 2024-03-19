@@ -57,7 +57,7 @@ fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGr
 
 /////////////// Map impl ///////////////
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
 struct Key {
     b: Id,
     x: Slot,
@@ -68,6 +68,7 @@ struct Key {
     bt_relation: SlotMap,
 }
 
+#[derive(Clone)]
 struct Value {
     // the returned Id
     out_id: Id,
@@ -90,14 +91,71 @@ type Map = HashMap<Key, Value>;
 // Err(app_id) means that it was not yet in the map, but a new entry was added for it. Go and union stuff to it!
 // Either way slots(app_id) == (slots(b) - {x}) & slots(t).
 fn map_lookup(b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, map: &mut Map) -> Result<AppliedId, AppliedId> {
-    todo!()
-    /*
-        // the else case:
+    assert!(b.slots().contains(&x));
+
+    // b.m :: slots(b.id) -> X
+    // t.m :: slots(t.id) -> X
+
+    // bt_relation :: slots(b.id) -> slots(t.id)
+    let bt_relation = b.m.compose_partial(&t.m.inverse());
+
+    // x :: X
+    // real_x :: slots(b.id)
+    let real_x = b.m.inverse()[x];
+
+    let key = Key {
+        b: b.id,
+        x: real_x,
+        bt_relation: bt_relation.clone(),
+    };
+
+    let new_class = !map.contains_key(&key);
+
+    // add to map, if necessary
+    if new_class {
+        // max_slots = X
         let max_slots = &(&b.slots() - &HashSet::from([x])) & &t.slots();
         let fresh = SlotMap::bijection_from_fresh_to(&max_slots);
         let slots = fresh.keys();
 
         let new_b = eg.alloc_eclass(&slots);
-        map.insert(b, new_b);
-    */
+
+        // fresh :: slots(new_b) -> X
+        // fresh_inv :: X -> slots(new_b)
+        let fresh_inv = fresh.inverse();
+
+        // t_map :: slots(t.id) -> slots(new_b)
+        let t_map = t.m.compose_partial(&fresh_inv);
+
+        // b_map :: slots(b.id) -> slots(new_b)
+        let b_map = b.m.compose_partial(&fresh_inv);
+
+        let v = Value {
+            out_id: new_b,
+            t_map,
+            b_map,
+        };
+
+        map.insert(key.clone(), v);
+    }
+
+    let v = map.get(&key).unwrap();
+    // v.t_map :: slots(t.id) -> slots(v.out_id)
+    // v.b_map :: slots(b.id) -> slots(v.out_id)
+
+    // s_b :: slots(v.out_id) -> slots(b)
+    let s_b: SlotMap = v.b_map.inverse().compose(&b.m);
+
+    // s_t :: slots(v.out_id) -> slots(t)
+    let s_t: SlotMap = v.t_map.inverse().compose(&t.m);
+
+    // s_res :: slots(v.out_id) -> X
+    let s_res = s_b.union(&s_t);
+
+    let app_id = AppliedId::new(v.out_id, s_res);
+
+    match new_class {
+        true => Err(app_id),
+        false => Ok(app_id),
+    }
 }
