@@ -5,7 +5,6 @@ use crate::*;
 // `i` is not allowed to have free variables, hence prefer `Id` over `AppliedId`.
 pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
     let i = eg.normalize_id_by_unionfind(i);
-    dbg!(&eg);
 
     // this is a terribly slow algorithm.
 
@@ -17,7 +16,8 @@ pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
             for n in eg.enodes(id) {
                 let db = |a| db_impl(a, &map);
                 if let Some(re) = extract_step(n, &db) {
-                    assert_eq!(re.node_dag.last().unwrap().slots(), eg.slots(id));
+                    // ENodes can have redundant nodes, hence it's "superset" instead of "equality".
+                    assert!(re.node_dag.last().unwrap().slots().is_superset(&eg.slots(id)));
 
                     let new_cost = re.node_dag.len();
                     let current_cost = map.get(&id).map(|x| x.node_dag.len()).unwrap_or(usize::MAX);
