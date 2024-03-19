@@ -20,6 +20,26 @@ pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId 
 }
 
 fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
+    let large = &(&b.slots() | &t.slots()) | &HashSet::from([x]);
+
+    // m :: Fresh -> Large
+    let m = SlotMap::bijection_from_fresh_to(&large);
+
+    // m_inv :: Large -> Fresh
+    let m_inv = m.inverse();
+
+    // make everything "fresh".
+    let b = b.apply_slotmap(&m_inv);
+    let x = m_inv[x];
+    let t = t.apply_slotmap(&m_inv);
+
+    let out = subst_impl2(b, x, t, eg, union_cmds, map);
+
+    // convert back from Fresh to Large.
+    out.apply_slotmap(&m)
+}
+
+fn subst_impl2(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
     if !b.slots().contains(&x) { // trivial-substitution-check.
         return b;
     }
@@ -73,7 +93,6 @@ fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGr
         ENode::Lam(x2, b2) => {
             assert!(x2 != x);
 
-            // TODO is this really enough?
             let b2 = subst_impl(b2.clone(), x, t.clone(), eg, union_cmds, map);
             eg.add(ENode::Lam(x2, b2))
         }
