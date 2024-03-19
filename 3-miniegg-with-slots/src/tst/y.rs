@@ -50,13 +50,12 @@ fn add_test() {
     assert_alpha_eq(&s, &num(1));
 }
 
-// The infinite loop function "f arg = f arg"
+// The infinite loop function "f arg = f arg".
 // #[test]
 // TODO re-enable
 fn inf_test() {
     let inf_impl = format!("(lam inf (lam arg (app inf arg)))");
     let s = app(y(), inf_impl);
-    let s = simplify(&s, 30);
-    dbg!(&s);
-    assert!(false);
+    let out = simplify(&s, 10);
+    assert_alpha_eq(&out, &s);
 }
