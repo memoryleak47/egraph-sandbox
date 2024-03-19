@@ -37,10 +37,23 @@ use std::collections::{BTreeMap, BTreeSet};
 pub type HashMap<K, V> = BTreeMap<K, V>;
 pub type HashSet<T> = BTreeSet<T>;
 
-fn main() {
-    let s = "(lam x0 (app (lam x1 (lam x2 x2)) x0))";
+// current example:
 
-    let re = parse(s);
+fn y() -> String {
+    let a = format!("(lam x (app f (app x x)))");
+
+    format!("(lam f (app {a} {a}))")
+}
+
+fn app(x: String, y: String) -> String {
+    format!("(app {x} {y})")
+}
+
+fn main() {
+    let inf_impl = format!("(lam inf (lam arg (app inf arg)))");
+    let s = app(y(), inf_impl);
+
+    let re = parse(&s);
     let mut eg = EGraph::new();
     let i = eg.add_expr(re.clone());
 
