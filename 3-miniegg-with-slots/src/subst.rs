@@ -4,10 +4,22 @@ use crate::*;
 // out has slots (slots(b) - {x}) | slots(t).
 // I presume that slots(t) is allowed to contain x.
 pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId {
-    subst_impl(b, x, t, eg, &mut Default::default())
+    let b = eg.normalize_applied_id_by_unionfind(b);
+    let t = eg.normalize_applied_id_by_unionfind(t);
+
+    // Is it necessary to do the unions in the end? Can it not be done "directly"?
+    let mut union_cmds = vec![];
+    let out = subst_impl(b, x, t, eg, &mut union_cmds, &mut Default::default());
+
+    for (x, y) in union_cmds {
+        eg.union(x, y);
+    }
+
+    let out = eg.normalize_applied_id_by_unionfind(out);
+    out
 }
 
-fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, map: &mut Map) -> AppliedId {
+fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
     if !b.slots().contains(&x) { // trivial-substitution-check.
         return b;
     }
@@ -18,8 +30,8 @@ fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, map: &mut Ma
     };
 
     for enode in eg.enodes_applied(&b) {
-        let app_id = enode_subst(enode, &b, x, &t, eg, map);
-        eg.union(new_b.clone(), app_id);
+        let app_id = enode_subst(enode, &b, x, &t, eg, union_cmds, map);
+        union_cmds.push((new_b.clone(), app_id));
     }
 
     new_b
@@ -35,7 +47,7 @@ fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, map: &mut Ma
 // we return an eclass containing `enode[x := t]`
 //
 // The resulting AppliedId has slots "(slots(enode) - {x}) | slots(t)"
-fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, map: &mut Map) -> AppliedId {
+fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
     let out = match enode.clone() {
         ENode::Var(x2) => {
             // We know that b.slots().contains(x) as if would otherwise have been filtered out in the trivial-substitution-check.
@@ -50,7 +62,7 @@ fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGr
             let mut call = |a: AppliedId| -> AppliedId {
                 // X := (slots(b) - {x}) | slots(t)
                 // a.m :: slots(a.id) -> X
-                subst_impl(a.clone(), x, t.clone(), eg, map)
+                subst_impl(a.clone(), x, t.clone(), eg, union_cmds, map)
             };
             let l = call(l);
             let r = call(r);
@@ -62,7 +74,7 @@ fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGr
             assert!(x2 != x);
 
             // TODO is this really enough?
-            let b2 = subst_impl(b2.clone(), x, t.clone(), eg, map);
+            let b2 = subst_impl(b2.clone(), x, t.clone(), eg, union_cmds, map);
             eg.add(ENode::Lam(x2, b2))
         }
     };

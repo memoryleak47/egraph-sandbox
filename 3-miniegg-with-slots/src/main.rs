@@ -57,9 +57,9 @@ fn main() {
     let mut eg = EGraph::new();
     let i = eg.add_expr(re.clone());
 
-    for _ in 0..10 {
-        rewrite_step(&mut eg);
-    }
+    eg.inv();
+    rewrite_step(&mut eg);
+    eg.inv();
 
     let re = extract(i, &eg);
     let s = to_string(re);
