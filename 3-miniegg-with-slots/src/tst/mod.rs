@@ -1,5 +1,7 @@
 use crate::*;
 
+mod church;
+
 static TEST_CASES: &'static [TestCase] = &[
     //// identity test cases ////
     TestCase {
@@ -57,31 +59,41 @@ struct TestCase {
     steps: usize,
 }
 
+fn roundtrip(input: &str) -> String {
+    let re = parse(input);
+    let mut eg = EGraph::new();
+    let i = eg.add_expr(re.clone());
+    let re = extract(i, &eg);
+
+    to_string(re)
+}
+
+fn simplify(input: &str, steps: usize) -> String {
+    let re = parse(input);
+    let mut eg = EGraph::new();
+    let i = eg.add_expr(re.clone());
+
+    for _ in 0..steps {
+        rewrite_step(&mut eg);
+    }
+
+    let re = extract(i, &eg);
+
+    to_string(re)
+}
+
 #[test]
 fn test_egraph_roundtrip() {
     for t in TEST_CASES {
-        let re = parse(t.input);
-        let mut eg = EGraph::new();
-        let i = eg.add_expr(re.clone());
-        let re = extract(i, &eg);
-        let s = to_string(re);
-        assert_eq!(t.input, s);
+        let out = roundtrip(t.input);
+        assert_eq!(&*out, t.input);
     }
 }
 
 #[test]
 fn test_beta_reduction() {
     for t in TEST_CASES {
-        let re = parse(t.input);
-        let mut eg = EGraph::new();
-        let i = eg.add_expr(re.clone());
-
-        for _ in 0..t.steps {
-            rewrite_step(&mut eg);
-        }
-
-        let re = extract(i, &eg);
-        let s = to_string(re);
-        assert_eq!(t.output, s);
+        let out = simplify(t.input, t.steps);
+        assert_eq!(&*out, t.output);
     }
 }

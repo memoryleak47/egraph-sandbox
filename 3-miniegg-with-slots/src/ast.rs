@@ -10,8 +10,16 @@ pub enum AstNode {
 }
 
 pub fn parse_ast(s: &str) -> Vec<AstNode> {
+    // This is a weak pre-processing to make parsing slightly more stable. Tokenizing is obviously better though.
+    let mut s = s.replace("\n", " ");
+    while s.contains("  ") {
+        s = s.replace("  ", " ");
+    }
+    let s = s.replace(") )", "))");
+    //
+
     let mut v = Vec::new();
-    let (_, s) = parse_ast_impl(s, &mut v);
+    let (_, s) = parse_ast_impl(&s, &mut v);
     assert!(s.is_empty());
 
     v
