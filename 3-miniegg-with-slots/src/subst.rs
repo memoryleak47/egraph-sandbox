@@ -156,10 +156,10 @@ fn map_lookup(b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, map: &mut 
     // v.b_map :: slots(b.id) -> slots(v.out_id)
 
     // s_b :: slots(v.out_id) -> slots(b)
-    let s_b: SlotMap = v.b_map.inverse().compose(&b.m);
+    let s_b: SlotMap = v.b_map.inverse().compose_partial(&b.m);
 
     // s_t :: slots(v.out_id) -> slots(t)
-    let s_t: SlotMap = v.t_map.inverse().compose(&t.m);
+    let s_t: SlotMap = v.t_map.inverse().compose_partial(&t.m);
 
     // s_res :: slots(v.out_id) -> X
     let s_res = s_b.union(&s_t);

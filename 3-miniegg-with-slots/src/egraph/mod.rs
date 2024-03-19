@@ -78,9 +78,10 @@ impl EGraph {
     }
 
     pub fn normalize_id_by_unionfind(&self, i: Id) -> Id {
+        let i = self.unionfind[&i].id;
         assert!(self.classes[&i].slots.is_empty());
 
-        self.unionfind[&i].id
+        i
     }
 
     pub fn ids(&self) -> Vec<Id> {
