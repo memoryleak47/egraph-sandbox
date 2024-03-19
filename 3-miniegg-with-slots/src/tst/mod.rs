@@ -82,6 +82,10 @@ fn simplify(input: &str, steps: usize) -> String {
     to_string(re)
 }
 
+fn assert_alpha_eq(l: &str, r: &str) {
+    assert_eq!(roundtrip(l), roundtrip(r));
+}
+
 #[test]
 fn test_egraph_roundtrip() {
     for t in TEST_CASES {
@@ -96,4 +100,12 @@ fn test_beta_reduction() {
         let out = simplify(t.input, t.steps);
         assert_eq!(&*out, t.output);
     }
+}
+
+#[test]
+fn alpha_eq() {
+    let x = "(lam x (app (lam x x) x))";
+    let y = "(lam y (app (lam z z) y))";
+
+    assert_alpha_eq(x, y);
 }
