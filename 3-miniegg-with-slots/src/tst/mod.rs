@@ -82,6 +82,7 @@ fn simplify(input: &str, steps: usize) -> String {
     to_string(re)
 }
 
+// TODO it would be better to have an alpha-equivalence test that doesn't depend on the EGraph. Otherwise it's not great to test the EGraph!
 fn assert_alpha_eq(l: &str, r: &str) {
     assert_eq!(roundtrip(l), roundtrip(r));
 }
