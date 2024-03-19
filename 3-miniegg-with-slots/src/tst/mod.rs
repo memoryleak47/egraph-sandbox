@@ -56,6 +56,11 @@ static TEST_CASES: &'static [TestCase] = &[
         output: "(lam x0 (lam x1 (app x0 x1)))",
         steps: 1,
     },
+    TestCase { // It looks as if x0 is used, but it's not. This is an example of a redundant slot.
+        input: "(lam x0 (app (lam x1 (lam x2 x2)) x0))",
+        output: "(lam x0 (lam x1 x1)))",
+        steps: 1,
+    },
 ];
 
 struct TestCase {
