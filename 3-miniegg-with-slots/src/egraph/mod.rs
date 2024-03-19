@@ -95,12 +95,42 @@ impl EGraph {
         self.enodes(i.id).into_iter().map(|x| x.apply_slotmap(&i.m)).collect()
     }
 
-    // TODO maybe add more?
-    fn inv(&self) {
+    pub fn inv(&self) {
         for (i, c) in &self.classes {
             assert_eq!(self.unionfind[&i].id, *i);
 
             assert!(!c.slots.contains(&Slot(0)));
+
+            for (sh, bij) in &c.nodes {
+                let real = sh.apply_slotmap(bij);
+                assert!(real.slots().is_superset(&c.slots));
+
+                assert_eq!((sh.clone(), bij.clone()), real.shape());
+
+                match real {
+                    ENode::Var(x) => {
+                        assert_eq!(&HashSet::from([x]), &c.slots)
+                    },
+                    ENode::App(l, r) => {
+                        inv_internal_applied_id(self, &l);
+                        inv_internal_applied_id(self, &r);
+                    }
+                    ENode::Lam(x, b) => {
+                        assert_eq!(x, Slot(0));
+
+                        inv_internal_applied_id(self, &b);
+                    }
+                }
+            }
+        }
+
+        fn inv_internal_applied_id(eg: &EGraph, app_id: &AppliedId) {
+            // 1. the app_id needs to be normalized!
+            let y = eg.normalize_applied_id_by_unionfind(app_id.clone());
+            assert_eq!(app_id, &y);
+
+            // 2. It needs to have exactly the same slots as the underlying EClass.
+            assert_eq!(&app_id.m.keys(), &eg.classes[&app_id.id].slots);
         }
     }
 }
