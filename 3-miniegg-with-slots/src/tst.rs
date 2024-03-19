@@ -44,6 +44,11 @@ static TEST_CASES: &'static [TestCase] = &[
         output: "(lam x0 x0)",
         steps: 2,
     },
+    TestCase { // The infinite loop!
+        input: "(app (lam x0 (app x0 x0)) (lam x1 (app x1 x1)))",
+        output: "(app (lam x0 (app x0 x0)) (lam x1 (app x1 x1)))",
+        steps: 10,
+    },
 ];
 
 struct TestCase {
