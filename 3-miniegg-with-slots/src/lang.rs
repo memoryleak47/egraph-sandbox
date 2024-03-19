@@ -13,7 +13,7 @@ pub struct Id(pub usize);
 // A slot is "flexible" if it's free or lambda.
 pub struct Slot(pub usize);
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AppliedId {
     pub id: Id,
 
@@ -23,7 +23,7 @@ pub struct AppliedId {
     pub m: SlotMap,
 }
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ENode {
     Lam(Slot, AppliedId),
     App(AppliedId, AppliedId),

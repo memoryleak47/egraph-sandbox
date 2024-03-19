@@ -1,3 +1,5 @@
+
+
 mod lang;
 use lang::*;
 
@@ -29,7 +31,11 @@ use subst::*;
 
 mod tst;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
+// TODO maybe choose an actual HashMap that is deterministic.
+// Tree Maps are logarithmic in most operations, whereas hashmaps are typically O(1).
+pub type HashMap<K, V> = BTreeMap<K, V>;
+pub type HashSet<T> = BTreeSet<T>;
 
 fn main() {
     let s = "(app (lam x (app x x)) (lam y y))";
