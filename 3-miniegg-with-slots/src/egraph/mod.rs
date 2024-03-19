@@ -65,15 +65,10 @@ impl EGraph {
         // i.m   :: I -> X
         // a.m   :: A -> I
         // out.m :: A -> X
-        // ==> out.m(x) = i.m(a.m(x))
-
-        let f = |x: Slot| {
-            i.m[a.m[x]]
-        };
 
         AppliedId::new(
             a.id,
-            a.m.iter().map(|(x, y)| (x, f(y))).collect(),
+            a.m.compose(&i.m),
         )
     }
 
