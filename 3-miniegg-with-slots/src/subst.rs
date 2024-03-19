@@ -27,7 +27,7 @@ fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, map: &mut Ma
 
 // `enode` is an enode from the eclass `b`.
 //
-// enode.slots() == slots(b)
+// enode.slots() == slots(b) // TODO actually: enode.slots() is superset of slots(b).
 // b.slots() might intersect t.slots(), this represents the bt_relation (if we exclude x).
 //
 // x in enode.slots(), and x is never part of the bt_relation.
