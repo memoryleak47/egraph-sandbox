@@ -1,5 +1,6 @@
 use crate::tst::*;
 
+// The Y combinator.
 fn y() -> String {
     let a = format!("(lam x (app f (app x x)))");
 

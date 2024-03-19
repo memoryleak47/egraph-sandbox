@@ -1,6 +1,6 @@
 use crate::*;
 
-mod church;
+mod y;
 
 static TEST_CASES: &'static [TestCase] = &[
     //// identity test cases ////
