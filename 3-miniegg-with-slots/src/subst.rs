@@ -8,7 +8,7 @@ pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId 
 }
 
 fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, map: &mut Map) -> AppliedId {
-    if !b.slots().contains(&x) {
+    if !b.slots().contains(&x) { // trivial-substitution-check.
         return b;
     }
 
@@ -27,18 +27,20 @@ fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, map: &mut Ma
 
 // `enode` is an enode from the eclass `b`.
 //
-// enode.slots() == slots(b) // TODO actually: enode.slots() is superset of slots(b).
-// b.slots() might intersect t.slots(), this represents the bt_relation (if we exclude x).
+// enode.slots() is superset of slots(b).
+// b.slots() - {x} might intersect t.slots(), this represents the bt_relation.
 //
-// x in enode.slots(), and x is never part of the bt_relation.
+// x in b.slots(), and x is never part of the bt_relation.
 //
 // we return an eclass containing `enode[x := t]`
 //
-// The resulting AppliedId has slots "(slots(enode)-{x}) | slots(t)"
+// The resulting AppliedId has slots "(slots(enode) - {x}) | slots(t)"
 fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, map: &mut Map) -> AppliedId {
-    match enode {
+    let out = match enode.clone() {
         ENode::Var(x2) => {
-            // We know that enode.slots().contains(x), this already implies x = x2.
+            // We know that b.slots().contains(x) as if would otherwise have been filtered out in the trivial-substitution-check.
+            // Thus enode.slots().contains(x), as its a superset of b.slots().
+            // And as enode.slots() == {x2}, we know x == x2.
             assert_eq!(x, x2);
 
             t.clone()
@@ -63,8 +65,12 @@ fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGr
             let b2 = subst_impl(b2.clone(), x, t.clone(), eg, map);
             eg.add(ENode::Lam(x2, b2))
         }
+    };
 
-    }
+    let correct = &(&enode.slots() - &HashSet::from([x])) | &t.slots();
+    assert_eq!(out.slots(), correct);
+
+    out
 }
 
 /////////////// Map impl ///////////////
