@@ -7,8 +7,10 @@ pub fn simplify(input: &str, steps: u32) -> String {
     let mut eg = EGraph::new();
     let i = eg.add_expr(re.clone());
 
+    eg.inv();
     for _ in 0..steps {
         rewrite_step(&mut eg);
+        eg.inv();
     }
 
     let re = extract(i, &eg);

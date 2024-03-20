@@ -96,11 +96,42 @@ impl EGraph {
     }
 
     pub fn inv(&self) {
+        // check that each shape comes up in only one eclass.
+        let mut shapemap = HashMap::new();
         for (i, c) in &self.classes {
-            assert_eq!(self.unionfind[&i].id, *i);
+            for sh in c.nodes.keys() {
+                assert!(!shapemap.contains_key(&sh));
 
+                shapemap.insert(sh, i);
+            }
+        }
+
+        // check that self.classes contains exactly these classes which point to themselves in the unionfind.
+        let all: HashSet<&Id> = &self.unionfind.keys().collect::<HashSet<_>>() | &self.classes.keys().collect::<HashSet<_>>();
+        for i in all {
+            let alive1 = self.unionfind[i].id == *i;
+            let alive2 = self.classes.contains_key(i);
+            assert_eq!(alive1, alive2);
+
+            // if they point to themselves, they should do it using the identity.
+            if alive1 {
+                let slots = &self.classes[i].slots;
+                assert_eq!(self.unionfind[i].m, SlotMap::identity(slots));
+            }
+        }
+
+        // check that no EClass has Slot(0) in its API.
+        for (i, c) in &self.classes {
             assert!(!c.slots.contains(&Slot(0)));
+        }
 
+        // Check that the Unionfind has valid AppliedIds.
+        for (_, app_id) in &self.unionfind {
+            inv_internal_applied_id(self, app_id);
+        }
+
+        // Check that all ENodes are valid.
+        for (i, c) in &self.classes {
             for (sh, bij) in &c.nodes {
                 let real = sh.apply_slotmap(bij);
                 assert!(real.slots().is_superset(&c.slots));
