@@ -1,5 +1,6 @@
 use crate::*;
 
+// TODO can't I deprecate this mostly using the Ast module?
 pub type AstId = usize;
 
 #[derive(Debug)]

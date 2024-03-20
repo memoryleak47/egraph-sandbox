@@ -1,33 +1,38 @@
 use crate::*;
 
+mod ast_list;
+use ast_list::*;
+
 ///// parse
 
-pub fn parse(s: &str) -> RecExpr {
-    let ast = parse_ast(s);
+impl RecExpr {
+    pub fn parse(s: &str) -> Self {
+        let ast = parse_ast(s);
 
-    let mut v = Vec::new();
-    for x in ast {
-        let x_v = translate(x, &v);
+        let mut v = Vec::new();
+        for x in ast {
+            let x_v = translate(x, &v);
 
-        let name_map_slots: HashSet<_> = x_v.name_map.values().copied().collect();
-        let enode_slots = x_v.enode.slots();
+            let name_map_slots: HashSet<_> = x_v.name_map.values().copied().collect();
+            let enode_slots = x_v.enode.slots();
 
-        v.push(x_v);
+            v.push(x_v);
 
-        if name_map_slots != enode_slots {
-            dbg!(&v);
-            println!("{:?}", name_map_slots);
-            println!("!=");
-            println!("{:?}", enode_slots);
-            panic!("slots error!");
+            if name_map_slots != enode_slots {
+                dbg!(&v);
+                println!("{:?}", name_map_slots);
+                println!("!=");
+                println!("{:?}", enode_slots);
+                panic!("slots error!");
+            }
         }
+
+        assert!(v.last().unwrap().name_map.is_empty(), "Free variables are not allowed in parsed terms!");
+
+        let node_dag = v.into_iter().map(|x| x.enode).collect();
+
+        RecExpr { node_dag }
     }
-
-    assert!(v.last().unwrap().name_map.is_empty(), "Free variables are not allowed in parsed terms!");
-
-    let node_dag = v.into_iter().map(|x| x.enode).collect();
-
-    RecExpr { node_dag }
 }
 
 #[derive(Clone, Debug)]
@@ -104,18 +109,20 @@ fn translate(ast_node: AstNode, v: &[TranslateData]) -> TranslateData {
 
 ///// to_string
 
-pub fn to_string(re: RecExpr) -> String {
-    let mut name_id = 0;
-    let mut namegen = || {
-        let name = format!("x{name_id}");
-        name_id += 1;
+impl RecExpr {
+    pub fn to_string(&self) -> String {
+        let mut name_id = 0;
+        let mut namegen = || {
+            let name = format!("x{name_id}");
+            name_id += 1;
 
-        name
-    };
+            name
+        };
 
-    let en: ENode = re.node_dag.last().unwrap().clone();
+        let en: ENode = self.node_dag.last().unwrap().clone();
 
-    to_string_impl(en, &re.node_dag, Default::default(), &mut namegen)
+        to_string_impl(en, &self.node_dag, Default::default(), &mut namegen)
+    }
 }
 
 fn to_string_impl(en: ENode, re: &[ENode], name_map: HashMap<Slot, String>, namegen: &mut impl FnMut() -> String) -> String {
@@ -154,7 +161,7 @@ fn to_string_impl(en: ENode, re: &[ENode], name_map: HashMap<Slot, String>, name
 #[test]
 fn test_parse_roundtrip() {
     let s1 = "(app (lam x0 x0) (lam x1 x1))";
-    let p = parse(s1);
-    let s2 = to_string(p);
+    let p = RecExpr::parse(s1);
+    let s2 = p.to_string();
     assert_eq!(s1, s2);
 }

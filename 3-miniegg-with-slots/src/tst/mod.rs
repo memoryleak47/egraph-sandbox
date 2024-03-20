@@ -70,16 +70,16 @@ struct TestCase {
 }
 
 fn roundtrip(input: &str) -> String {
-    let re = parse(input);
+    let re = RecExpr::parse(input);
     let mut eg = EGraph::new();
     let i = eg.add_expr(re.clone());
     let re = extract(i, &eg);
 
-    to_string(re)
+    re.to_string()
 }
 
 fn simplify(input: &str, steps: usize) -> String {
-    let re = parse(input);
+    let re = RecExpr::parse(input);
     let mut eg = EGraph::new();
     let i = eg.add_expr(re.clone());
 
@@ -89,7 +89,7 @@ fn simplify(input: &str, steps: usize) -> String {
 
     let re = extract(i, &eg);
 
-    to_string(re)
+    re.to_string()
 }
 
 // TODO it would be better to have an alpha-equivalence test that doesn't depend on the EGraph. Otherwise it's not great to test the EGraph!

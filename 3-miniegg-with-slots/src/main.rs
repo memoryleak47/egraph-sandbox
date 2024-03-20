@@ -1,5 +1,3 @@
-
-
 mod lang;
 use lang::*;
 
@@ -8,9 +6,6 @@ use shape::*;
 
 mod ast;
 use ast::*;
-
-mod ast_list;
-use ast_list::*;
 
 mod syntax;
 use syntax::*;
@@ -56,7 +51,7 @@ fn main() {
     let inf_impl = format!("(lam inf (lam arg (app inf arg)))");
     let s = app(y(), inf_impl);
 
-    let re = parse(&s);
+    let re = RecExpr::parse(&s);
     let mut eg = EGraph::new();
     let i = eg.add_expr(re.clone());
 
@@ -65,6 +60,6 @@ fn main() {
     eg.inv();
 
     let re = extract(i, &eg);
-    let s = to_string(re);
+    let s = re.to_string();
     println!("{}", s);
 }
