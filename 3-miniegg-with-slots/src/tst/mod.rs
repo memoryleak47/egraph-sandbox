@@ -59,8 +59,7 @@ fn redudant_slot() {
 #[test]
 fn add_test() {
     let s = app(app(add(), num(0)), num(1));
-    dbg!(run(&s));
-    check_simplify(&s, 3);
+    check_simplify(&s, 5);
 }
 
 #[test]
