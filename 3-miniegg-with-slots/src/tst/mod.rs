@@ -68,3 +68,13 @@ fn inf_loop() {
     let out = simplify(p, 3);
     assert_alpha_eq(&out, p);
 }
+
+// A y-combinator example that directly yields "f x = x" without looping.
+#[test]
+fn y_identity() {
+    let p = "(lam f (lam arg arg))";
+    let s = app(y(), String::from(p));
+
+    let out = simplify(&s, 30);
+    assert_alpha_eq(&out, "(lam x x)");
+}
