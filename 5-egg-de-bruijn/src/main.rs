@@ -33,5 +33,5 @@ fn main() {
     let mut extr = Extractor::new(&runner.egraph, AstSize);
     let (_, out) = extr.find_best(runner.roots[0]);
 
-    dbg!(out);
+    dbg!(out.to_string());
 }
