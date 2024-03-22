@@ -6,6 +6,9 @@ use ast::*;
 mod beta;
 use beta::*;
 
+mod cost;
+use cost::*;
+
 mod translate;
 
 use std::collections::{HashSet, HashMap};
@@ -30,7 +33,7 @@ fn main() {
     let rewrites = [beta_reduction()];
     let runner = Runner::default().with_expr(&s).run(&rewrites);
 
-    let mut extr = Extractor::new(&runner.egraph, AstSize);
+    let mut extr = Extractor::new(&runner.egraph, MyAstSize);
     let (_, out) = extr.find_best(runner.roots[0]);
 
     dbg!(out.to_string());
