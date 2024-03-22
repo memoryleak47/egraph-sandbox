@@ -39,3 +39,10 @@ pub fn check_simplify(p: &str, steps: u32) {
     let out2 = run(p);
     assert_alpha_eq(&*out1, &*out2);
 }
+
+// checks whether simplify has valid output, even though it might not be able to finish the whole computation.
+pub fn check_simplify_incomplete(p: &str, steps: u32) {
+    let out1 = run(&simplify(p, steps));
+    let out2 = run(p);
+    assert_alpha_eq(&*out1, &*out2);
+}

@@ -63,6 +63,12 @@ fn add_test() {
 }
 
 #[test]
+fn add_test_incomplete() {
+    let s = app(app(add(), num(2)), num(3));
+    check_simplify_incomplete(&s, 5);
+}
+
+#[test]
 fn inf_loop() {
     let p = "(app (lam x0 (app x0 x0)) (lam x1 (app x1 x1)))";
     let out = simplify(p, 3);
