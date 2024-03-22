@@ -10,6 +10,7 @@ mod cost;
 use cost::*;
 
 mod translate;
+use translate::*;
 
 use std::collections::{HashSet, HashMap};
 
@@ -27,8 +28,10 @@ pub type EG = EGraph<ENode, ()>;
 
 fn main() {
     let mut eg = EG::new(());
-    let s = "(lam 0)";
-    let s: RecExpr<ENode> = format!("(app {} {})", s, s).parse().unwrap();
+    let s = "(lam x x)";
+    let s = format!("(app {} {})", s, s);
+    let s = named_to_de_bruijn(&s);
+    let s: RecExpr<ENode> = s.parse().unwrap();
 
     let rewrites = [beta_reduction()];
     let runner = Runner::default().with_iter_limit(10).with_expr(&s).run(&rewrites);
