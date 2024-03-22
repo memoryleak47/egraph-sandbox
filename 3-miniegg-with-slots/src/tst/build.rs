@@ -33,10 +33,12 @@ pub fn app(x: String, y: String) -> String {
 // 
 // add_impl add x y = (x y) (\z. add z (suc y))
 pub fn add() -> String {
-    let s = suc();
-    let add_impl = format!("(lam add (lam x (lam y
-        (app (app x y) (lam z (app (app add z) (app {s} y))))
-    )))");
+    app(y(), add_impl())
+}
 
-    app(y(), add_impl)
+pub fn add_impl() -> String {
+    let s = suc();
+    format!("(lam add (lam x (lam y
+        (app (app x y) (lam z (app (app add z) (app {s} y))))
+    )))")
 }

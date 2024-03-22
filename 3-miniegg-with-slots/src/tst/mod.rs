@@ -84,3 +84,10 @@ fn y_identity() {
     let out = simplify(&s, 30);
     assert_alpha_eq(&out, "(lam x x)");
 }
+
+#[test]
+fn add_y_step() {
+    let s1 = app(add_impl(), add());
+    let s2 = add();
+    check_egraph_eq(&s1, &s2, 1);
+}

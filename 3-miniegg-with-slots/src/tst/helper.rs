@@ -46,3 +46,28 @@ pub fn check_simplify_incomplete(p: &str, steps: u32) {
     let out2 = run(p);
     assert_alpha_eq(&*out1, &*out2);
 }
+
+pub fn check_egraph_eq(s1: &str, s2: &str, steps: u32) {
+    let p1 = &norm(s1);
+    let p2 = &norm(s2);
+
+    let p1 = RecExpr::parse(p1);
+    let p2 = RecExpr::parse(p2);
+
+    let mut eg = EGraph::new();
+
+    let i1 = eg.add_expr(p1.clone());
+    let i2 = eg.add_expr(p2.clone());
+
+    eg.inv();
+    for _ in 0..steps {
+        rewrite_step(&mut eg);
+        eg.inv();
+
+        if eg.normalize_id_by_unionfind(i1) == eg.normalize_id_by_unionfind(i2) {
+            return;
+        }
+    }
+
+    panic!("can't find {} = {} using equality saturation", s1, s2)
+}
