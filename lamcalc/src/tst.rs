@@ -34,6 +34,15 @@ macro_rules! unpack_tests {
         }
 
         #[test]
+        fn test_t_shift() {
+            // This caught a bug. The "lam 0" (aka "lam z z") was shifted to "lam 0 1" incorrectly.
+            let l = "(lam x (lam a x))";
+            let r = "(lam z z)";
+            let s = format!("(app {l} {r})");
+            check_simplify::<$R>(&s, 10);
+        }
+
+        #[test]
         fn test_nested_identity1() {
             let p = "(app (lam x0 x0) (lam x1 x1))";
             check_simplify::<$R>(p, 10);
