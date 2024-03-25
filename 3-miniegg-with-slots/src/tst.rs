@@ -44,7 +44,4 @@ impl Realization for RecExpr {
     
 }
 
-#[test]
-fn test_all_here() {
-    lamcalc::test_all::<RecExpr>();
-}
+lamcalc::unpack_tests!(RecExpr);
