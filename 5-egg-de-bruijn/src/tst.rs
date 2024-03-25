@@ -19,7 +19,7 @@ impl Realization for Expr {
         let rewrites = [beta_reduction()];
         let runner = Runner::default().with_iter_limit(steps as usize).with_expr(&self.0).run(&rewrites);
 
-        let mut extr = Extractor::new(&runner.egraph, MyAstSize);
+        let extr = Extractor::new(&runner.egraph, MyAstSize);
         let (_, out) = extr.find_best(runner.roots[0]);
 
         Expr(out)

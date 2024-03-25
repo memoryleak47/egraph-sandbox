@@ -22,7 +22,7 @@ impl Applier<ENode, Varbound> for BetaReduction {
 }
 
 fn beta_substitution(b: Id, t: Id, eg: &mut EG) -> Id {
-    let mut ctxt = &mut Ctxt::default();
+    let ctxt = &mut Ctxt::default();
 
     let out = beta_subst_impl(b, 0, t, eg, ctxt);
 
