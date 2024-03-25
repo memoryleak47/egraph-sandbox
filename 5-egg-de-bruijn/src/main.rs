@@ -10,6 +10,8 @@ use cost::*;
 mod translate;
 use translate::*;
 
+mod tst;
+
 use std::collections::{HashSet, HashMap};
 
 define_language! {
