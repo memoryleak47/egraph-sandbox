@@ -19,6 +19,21 @@ macro_rules! unpack_tests {
         }
 
         #[test]
+        fn test_self_rec() {
+            // The intereting thing about this test is the following:
+            // "\x. (\y. y) x -> \x. x" using beta reduction.
+            //
+            // and "\x. x -> \y. y" by alpha conversion.
+            //
+            // Thus, we suddenly have a self-recursive EClass, for Realizations that share across alpha-equivalence.
+            // C = \y. y | \z. C z
+            //
+            // This sometimes causes infinite loops, if you iterate by depth-first-search.
+            let s = "(lam x (app (lam y y) x))";
+            check_simplify::<$R>(&s, 2);
+        }
+
+        #[test]
         fn test_nested_identity1() {
             let p = "(app (lam x0 x0) (lam x1 x1))";
             check_simplify::<$R>(p, 10);

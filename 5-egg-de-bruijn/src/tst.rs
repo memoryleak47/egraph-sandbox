@@ -17,7 +17,7 @@ impl Realization for Expr {
 
     fn simplify(&self, steps: u32) -> Self {
         let rewrites = [beta_reduction()];
-        let runner = Runner::default().with_iter_limit(10).with_expr(&self.0).run(&rewrites);
+        let runner = Runner::default().with_iter_limit(steps as usize).with_expr(&self.0).run(&rewrites);
 
         let mut extr = Extractor::new(&runner.egraph, MyAstSize);
         let (_, out) = extr.find_best(runner.roots[0]);
@@ -32,7 +32,7 @@ impl Realization for Expr {
         let i2 = eg.add_expr(&other.0);
 
         let rewrites = [beta_reduction()];
-        let runner = Runner::default().with_iter_limit(10).with_egraph(eg).run(&rewrites);
+        let runner = Runner::default().with_iter_limit(steps as usize).with_egraph(eg).run(&rewrites);
 
         runner.egraph.find(i1) == runner.egraph.find(i2)
     }

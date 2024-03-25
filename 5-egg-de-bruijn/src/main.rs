@@ -27,12 +27,12 @@ define_language! {
 pub type EG = EGraph<ENode, ()>;
 
 fn main() {
-    let s = "(lam x (app (lam y (lam z z)) x))";
+    let s = "(lam x (app (lam y y) x))";
     let s = named_to_de_bruijn(&s);
     let s: RecExpr<ENode> = s.parse().unwrap();
 
     let rewrites = [beta_reduction()];
-    let runner = Runner::default().with_iter_limit(2).with_expr(&s).run(&rewrites);
+    let runner = Runner::default().with_iter_limit(14).with_expr(&s).run(&rewrites);
 
     let mut extr = Extractor::new(&runner.egraph, MyAstSize);
     let (_, out) = extr.find_best(runner.roots[0]);

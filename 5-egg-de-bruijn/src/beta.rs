@@ -21,8 +21,24 @@ impl Applier<ENode, ()> for BetaReduction {
     }
 }
 
+// TODO This is a hack.
+fn calc_num_vars(eg: &EG) -> u32 {
+    let mut out = 0;
+    for c in eg.classes() {
+        for x in c.iter() {
+            if let ENode::Var(i) = x {
+                out = (i+1).max(out);
+            }
+        }
+    }
+
+    out
+}
+
 fn beta_substitution(b: Id, t: Id, eg: &mut EG) -> Id {
     let mut ctxt = &mut Ctxt::default();
+    ctxt.num_vars = calc_num_vars(eg);
+
     let out = beta_subst_impl(b, 0, t, eg, ctxt);
 
     for (x, y) in &ctxt.future_unions {
@@ -36,13 +52,17 @@ fn beta_substitution(b: Id, t: Id, eg: &mut EG) -> Id {
 struct Ctxt {
     subst_map: HashMap<(Id, u32), Id>,
     shift_map: HashMap<(Id, u32), Id>,
-    // TODO add: max_var_map: HashMap<Id, u32>,
+    num_vars: u32, // The number of de bruijn indices used in the EGraph.
     future_unions: Vec<(Id, Id)>,
 }
 
 // subst_map[b, x] = b[x := t]
 // shift_map[b, x] = b[shifted by x]
 fn beta_subst_impl(b: Id, x: u32, t: Id, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
+    if x > ctxt.num_vars {
+        return b;
+    }
+
     if let Some(out) = ctxt.subst_map.get(&(b, x)) {
         return *out;
     }
@@ -90,7 +110,12 @@ fn beta_subst_enode(b: ENode, x: u32, t: Id, eg: &mut EG, ctxt: &mut Ctxt) -> Id
 }
 
 // shifts all variables in t by x.
+// TODO that cannot be right. Shifting (lam x x) shouldn't change it.
 fn shift(x: u32, t: Id, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
+    if x > ctxt.num_vars {
+        return t;
+    }
+
     if let Some(out) = ctxt.shift_map.get(&(t, x)) {
         return *out;
     }
