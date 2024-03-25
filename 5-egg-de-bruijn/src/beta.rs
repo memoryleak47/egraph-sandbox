@@ -50,9 +50,17 @@ fn beta_substitution(b: Id, t: Id, eg: &mut EG) -> Id {
 
 #[derive(Default)]
 struct Ctxt {
+    // (b, x) -> b[x := t]
     subst_map: HashMap<(Id, u32), Id>,
-    shift_map: HashMap<(Id, u32), Id>,
-    num_vars: u32, // The number of de bruijn indices used in the EGraph.
+
+    // (t, offset, min_free) -> t[i := i+offset, i >= min_free]
+    shift_map: HashMap<(Id, u32, u32), Id>,
+
+    // The number of de bruijn indices used in the EGraph.
+    // Used as upper bounds for some things.
+    num_vars: u32,
+
+    // Unions whose execution is deferred to the end of this algorithm.
     future_unions: Vec<(Id, Id)>,
 }
 
@@ -94,7 +102,7 @@ fn beta_subst_enode(b: ENode, x: u32, t: Id, eg: &mut EG, ctxt: &mut Ctxt) -> Id
         },
         ENode::Var(i) => {
             if i == x {
-                shift(x, t, eg, ctxt)
+                shift(t, x, eg, ctxt)
             } else if i < x {
                 // It's a "local" reference. Keep it unchanged.
                 eg.add(ENode::Var(i))
@@ -109,43 +117,47 @@ fn beta_subst_enode(b: ENode, x: u32, t: Id, eg: &mut EG, ctxt: &mut Ctxt) -> Id
     }
 }
 
-// shifts all variables in t by x.
-// TODO that cannot be right. Shifting (lam x x) shouldn't change it.
-fn shift(x: u32, t: Id, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
-    if x > ctxt.num_vars {
+// shifts all free(!) variables in t by "offset".
+fn shift(t: Id, offset: u32, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
+    shift_impl(t, offset, 0, eg, ctxt)
+}
+
+fn shift_impl(t: Id, offset: u32, min_free: u32, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
+    if min_free > ctxt.num_vars {
         return t;
     }
 
-    if let Some(out) = ctxt.shift_map.get(&(t, x)) {
+    if let Some(out) = ctxt.shift_map.get(&(t, offset, min_free)) {
         return *out;
     }
 
     let out = alloc_eclass(eg);
-    ctxt.shift_map.insert((t, x), out);
+    ctxt.shift_map.insert((t, offset, min_free), out);
 
     for enode in eg[t].nodes.clone() {
         if matches!(enode, ENode::Placeholder(_)) { continue; }
 
-        let elem = shift_enode(x, enode, eg, ctxt);
+        let elem = shift_enode(enode, offset, min_free, eg, ctxt);
         ctxt.future_unions.push((elem, out));
     }
 
     out
 }
 
-fn shift_enode(x: u32, t: ENode, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
+fn shift_enode(t: ENode, offset: u32, min_free: u32, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
     match t {
         ENode::App([l, r]) => {
-            let l = shift(x, l, eg, ctxt);
-            let r = shift(x, r, eg, ctxt);
+            let l = shift_impl(l, offset, min_free, eg, ctxt);
+            let r = shift_impl(r, offset, min_free, eg, ctxt);
             eg.add(ENode::App([l, r]))
         },
         ENode::Lam(b) => {
-            let b = shift(x, b, eg, ctxt);
+            let b = shift_impl(b, offset, min_free+1, eg, ctxt);
             eg.add(ENode::Lam(b))
         },
         ENode::Var(i) => {
-            eg.add(ENode::Var(i+x))
+            let real_off = if i >= min_free { offset } else { 0 };
+            eg.add(ENode::Var(i+real_off))
         },
         ENode::Placeholder(_) => panic!(),
     }
