@@ -1,7 +1,5 @@
 use egg::*;
-
-mod ast;
-use ast::*;
+use lamcalc::*;
 
 mod beta;
 use beta::*;

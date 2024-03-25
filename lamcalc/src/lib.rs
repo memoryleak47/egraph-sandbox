@@ -1,9 +1,10 @@
-use crate::*;
-
+mod normalize;
+mod step;
 mod parse;
 mod display;
-mod step;
-mod normalize;
+
+type HashSet<T> = std::collections::BTreeSet<T>;
+type HashMap<K, V> = std::collections::BTreeMap<K, V>;
 
 #[derive(Clone)]
 pub enum Ast {
@@ -11,3 +12,4 @@ pub enum Ast {
     App(Box<Ast>, Box<Ast>),
     Var(String),
 }
+

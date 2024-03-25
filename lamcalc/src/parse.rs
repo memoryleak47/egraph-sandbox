@@ -46,7 +46,7 @@ fn tokenize(s: &str) -> Vec<Token> {
     let mut current_string: Option<String> = None;
     let mut tokens = Vec::new();
 
-    let mut cleanup_current_string = |current_string: &mut Option<String>, tokens: &mut Vec<Token>| {
+    let cleanup_current_string = |current_string: &mut Option<String>, tokens: &mut Vec<Token>| {
         if let Some(x) = current_string.take() {
             match &*x {
                 "lam" => tokens.push(Token::Lam),

@@ -1,11 +1,10 @@
+use lamcalc::*;
+
 mod lang;
 use lang::*;
 
 mod shape;
 use shape::*;
-
-mod ast;
-use ast::*;
 
 mod syntax;
 use syntax::*;
