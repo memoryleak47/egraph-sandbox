@@ -26,7 +26,7 @@ impl Realization for Expr {
     }
 
     fn find_eq(&self, other: &Self, steps: u32) -> bool {
-        let mut eg = EG::new(());
+        let mut eg = EG::new(Varbound);
 
         let i1 = eg.add_expr(&self.0);
         let i2 = eg.add_expr(&other.0);

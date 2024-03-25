@@ -1,12 +1,12 @@
 use crate::*;
 
-pub fn beta_reduction() -> Rewrite<ENode, ()> {
+pub fn beta_reduction() -> Rewrite<ENode, Varbound> {
     rewrite!("beta-reduction"; "(app (lam ?b) ?t)" => { BetaReduction })
 }
 
 struct BetaReduction;
 
-impl Applier<ENode, ()> for BetaReduction {
+impl Applier<ENode, Varbound> for BetaReduction {
     fn apply_one(&self, eg: &mut EG, id: Id, subst: &Subst, _pat: Option<&PatternAst<ENode>>, _rule_name: Symbol) -> Vec<Id> {
         let b: Var = "?b".parse().unwrap();
         let t: Var = "?t".parse().unwrap();
@@ -21,23 +21,8 @@ impl Applier<ENode, ()> for BetaReduction {
     }
 }
 
-// TODO This is a hack.
-fn calc_num_vars(eg: &EG) -> u32 {
-    let mut out = 0;
-    for c in eg.classes() {
-        for x in c.iter() {
-            if let ENode::Var(i) = x {
-                out = (i+1).max(out);
-            }
-        }
-    }
-
-    out
-}
-
 fn beta_substitution(b: Id, t: Id, eg: &mut EG) -> Id {
     let mut ctxt = &mut Ctxt::default();
-    ctxt.num_vars = calc_num_vars(eg);
 
     let out = beta_subst_impl(b, 0, t, eg, ctxt);
 
@@ -56,18 +41,12 @@ struct Ctxt {
     // (t, offset, min_free) -> t[i := i+offset, i >= min_free]
     shift_map: HashMap<(Id, u32, u32), Id>,
 
-    // The number of de bruijn indices used in the EGraph.
-    // Used as upper bounds for some things.
-    num_vars: u32,
-
     // Unions whose execution is deferred to the end of this algorithm.
     future_unions: Vec<(Id, Id)>,
 }
 
-// subst_map[b, x] = b[x := t]
-// shift_map[b, x] = b[shifted by x]
 fn beta_subst_impl(b: Id, x: u32, t: Id, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
-    if x > ctxt.num_vars {
+    if x > eg[b].data+1 { // TODO re-consider this check.
         return b;
     }
 
@@ -123,7 +102,7 @@ fn shift(t: Id, offset: u32, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
 }
 
 fn shift_impl(t: Id, offset: u32, min_free: u32, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
-    if min_free > ctxt.num_vars {
+    if min_free > eg[t].data+1 { // TODO re-consider this check.
         return t;
     }
 

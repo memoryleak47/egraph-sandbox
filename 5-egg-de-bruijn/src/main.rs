@@ -13,6 +13,9 @@ use translate::*;
 mod tst;
 use tst::*;
 
+mod varbound;
+use varbound::*;
+
 use std::collections::{HashSet, HashMap};
 
 define_language! {
@@ -24,13 +27,11 @@ define_language! {
     }
 }
 
-
-pub type EG = EGraph<ENode, ()>;
+pub type EG = EGraph<ENode, Varbound>;
 
 fn main() {
-    let l = "(lam x (lam a x))";
-    let r = "(lam z z)";
-    let s = format!("(app {l} {r})");
+    let s = "(lam f (lam arg arg))";
+    let s = app(y(), String::from(s));
     let s = named_to_de_bruijn(&s);
     let s: RecExpr<ENode> = s.parse().unwrap();
 
