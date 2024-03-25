@@ -32,7 +32,7 @@ fn main() {
     let s: RecExpr<ENode> = s.parse().unwrap();
 
     let rewrites = [beta_reduction()];
-    let runner = Runner::default().with_iter_limit(10).with_expr(&s).run(&rewrites);
+    let runner = Runner::default().with_iter_limit(2).with_expr(&s).run(&rewrites);
 
     let mut extr = Extractor::new(&runner.egraph, MyAstSize);
     let (_, out) = extr.find_best(runner.roots[0]);

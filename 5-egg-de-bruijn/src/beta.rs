@@ -22,51 +22,59 @@ impl Applier<ENode, ()> for BetaReduction {
 }
 
 fn beta_substitution(b: Id, t: Id, eg: &mut EG) -> Id {
-    let mut future_unions = Vec::new();
-    let out = beta_subst_impl(b, 0, t, eg, &mut Default::default(), &mut Default::default(), &mut future_unions);
+    let mut ctxt = &mut Ctxt::default();
+    let out = beta_subst_impl(b, 0, t, eg, ctxt);
 
-    for (x, y) in future_unions {
-        eg.union(x, y);
+    for (x, y) in &ctxt.future_unions {
+        eg.union(*x, *y);
     }
 
     out
 }
 
+#[derive(Default)]
+struct Ctxt {
+    subst_map: HashMap<(Id, u32), Id>,
+    shift_map: HashMap<(Id, u32), Id>,
+    // TODO add: max_var_map: HashMap<Id, u32>,
+    future_unions: Vec<(Id, Id)>,
+}
+
 // subst_map[b, x] = b[x := t]
 // shift_map[b, x] = b[shifted by x]
-fn beta_subst_impl(b: Id, x: u32, t: Id, eg: &mut EG, subst_map: &mut HashMap<(Id, u32), Id>, shift_map: &mut HashMap<(Id, u32), Id>, future_unions: &mut Vec<(Id, Id)>) -> Id {
-    if let Some(out) = subst_map.get(&(b, x)) {
+fn beta_subst_impl(b: Id, x: u32, t: Id, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
+    if let Some(out) = ctxt.subst_map.get(&(b, x)) {
         return *out;
     }
 
     let new = alloc_eclass(eg);
-    subst_map.insert((b, x), new);
+    ctxt.subst_map.insert((b, x), new);
 
     for enode in eg[b].nodes.clone() {
         if matches!(enode, ENode::Placeholder(_)) { continue; }
 
-        let elem = beta_subst_enode(enode, x, t, eg, subst_map, shift_map, future_unions);
-        future_unions.push((new, elem));
+        let elem = beta_subst_enode(enode, x, t, eg, ctxt);
+        ctxt.future_unions.push((new, elem));
     }
 
     new
 }
 
-fn beta_subst_enode(b: ENode, x: u32, t: Id, eg: &mut EG, subst_map: &mut HashMap<(Id, u32), Id>, shift_map: &mut HashMap<(Id, u32), Id>, future_unions: &mut Vec<(Id, Id)>) -> Id {
+fn beta_subst_enode(b: ENode, x: u32, t: Id, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
     match b {
         ENode::Lam(b) => {
-            let b = beta_subst_impl(b, x+1, t, eg, subst_map, shift_map, future_unions);
+            let b = beta_subst_impl(b, x+1, t, eg, ctxt);
             eg.add(ENode::Lam(b))
         },
         ENode::App([l, r]) => {
-            let l = beta_subst_impl(l, x, t, eg, subst_map, shift_map, future_unions);
-            let r = beta_subst_impl(r, x, t, eg, subst_map, shift_map, future_unions);
+            let l = beta_subst_impl(l, x, t, eg, ctxt);
+            let r = beta_subst_impl(r, x, t, eg, ctxt);
 
             eg.add(ENode::App([l, r]))
         },
         ENode::Var(i) => {
             if i == x {
-                shift(x, t, eg, shift_map, future_unions)
+                shift(x, t, eg, ctxt)
             } else if i < x {
                 // It's a "local" reference. Keep it unchanged.
                 eg.add(ENode::Var(i))
@@ -82,33 +90,33 @@ fn beta_subst_enode(b: ENode, x: u32, t: Id, eg: &mut EG, subst_map: &mut HashMa
 }
 
 // shifts all variables in t by x.
-fn shift(x: u32, t: Id, eg: &mut EG, shift_map: &mut HashMap<(Id, u32), Id>, future_unions: &mut Vec<(Id, Id)>) -> Id {
-    if let Some(out) = shift_map.get(&(t, x)) {
+fn shift(x: u32, t: Id, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
+    if let Some(out) = ctxt.shift_map.get(&(t, x)) {
         return *out;
     }
 
     let out = alloc_eclass(eg);
-    shift_map.insert((t, x), out);
+    ctxt.shift_map.insert((t, x), out);
 
     for enode in eg[t].nodes.clone() {
         if matches!(enode, ENode::Placeholder(_)) { continue; }
 
-        let elem = shift_enode(x, enode, eg, shift_map, future_unions);
-        future_unions.push((elem, out));
+        let elem = shift_enode(x, enode, eg, ctxt);
+        ctxt.future_unions.push((elem, out));
     }
 
     out
 }
 
-fn shift_enode(x: u32, t: ENode, eg: &mut EG, shift_map: &mut HashMap<(Id, u32), Id>, future_unions: &mut Vec<(Id, Id)>) -> Id {
+fn shift_enode(x: u32, t: ENode, eg: &mut EG, ctxt: &mut Ctxt) -> Id {
     match t {
         ENode::App([l, r]) => {
-            let l = shift(x, l, eg, shift_map, future_unions);
-            let r = shift(x, r, eg, shift_map, future_unions);
+            let l = shift(x, l, eg, ctxt);
+            let r = shift(x, r, eg, ctxt);
             eg.add(ENode::App([l, r]))
         },
         ENode::Lam(b) => {
-            let b = shift(x, b, eg, shift_map, future_unions);
+            let b = shift(x, b, eg, ctxt);
             eg.add(ENode::Lam(b))
         },
         ENode::Var(i) => {
