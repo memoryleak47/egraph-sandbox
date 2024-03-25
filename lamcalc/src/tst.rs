@@ -78,18 +78,6 @@ macro_rules! unpack_tests {
         }
 
         #[test]
-        fn test_add() {
-            let s = app(app(add(), num(0)), num(1));
-            check_simplify::<$R>(&s, 5);
-        }
-
-        #[test]
-        fn test_add_incomplete() {
-            let s = app(app(add(), num(2)), num(3));
-            check_simplify_incomplete::<$R>(&s, 5);
-        }
-
-        #[test]
         fn test_inf_loop() {
             let p = "(app (lam x0 (app x0 x0)) (lam x1 (app x1 x1)))";
             let out = simplify::<$R>(p, 3);
@@ -104,6 +92,24 @@ macro_rules! unpack_tests {
 
             let out = simplify::<$R>(&s, 30);
             assert_alpha_eq(&out, "(lam x x)");
+        }
+
+        #[test]
+        fn test_add00() {
+            let s = app(app(add(), num(0)), num(0));
+            check_simplify::<$R>(&s, 5);
+        }
+
+        #[test]
+        fn test_add01() {
+            let s = app(app(add(), num(0)), num(1));
+            check_simplify::<$R>(&s, 5);
+        }
+
+        #[test]
+        fn test_add23_incomplete() {
+            let s = app(app(add(), num(2)), num(3));
+            check_simplify_incomplete::<$R>(&s, 5);
         }
 
         #[test]
