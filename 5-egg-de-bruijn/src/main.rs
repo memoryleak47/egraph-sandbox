@@ -11,6 +11,7 @@ mod translate;
 use translate::*;
 
 mod tst;
+use tst::*;
 
 use std::collections::{HashSet, HashMap};
 
