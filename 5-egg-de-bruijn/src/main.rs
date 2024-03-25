@@ -27,9 +27,7 @@ define_language! {
 pub type EG = EGraph<ENode, ()>;
 
 fn main() {
-    let mut eg = EG::new(());
-    let s = "(lam x x)";
-    let s = format!("(app {} {})", s, s);
+    let s = "(lam x (app (lam y (lam z z)) x))";
     let s = named_to_de_bruijn(&s);
     let s: RecExpr<ENode> = s.parse().unwrap();
 
@@ -40,4 +38,5 @@ fn main() {
     let (_, out) = extr.find_best(runner.roots[0]);
 
     dbg!(out.to_string());
+
 }
