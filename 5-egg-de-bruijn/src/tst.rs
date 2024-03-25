@@ -1,10 +1,10 @@
 use crate::*;
 
-struct Expr(RecExpr<ENode>);
+pub struct Expr(RecExpr<ENode>);
 
 impl Realization for Expr {
     fn to_ast_string(&self) -> String {
-        todo!()
+        de_bruijn_to_named(&self.0.to_string())
     }
 
     fn from_ast(ast: &Ast) -> Self {
