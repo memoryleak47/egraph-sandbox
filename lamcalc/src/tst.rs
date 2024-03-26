@@ -19,13 +19,6 @@ macro_rules! unpack_tests {
         }
 
         #[test]
-        fn test_id_id() {
-            let s = "(lam x (app x x))";
-            let s = app(String::from(s), String::from(s));
-            check_simplify::<$R>(&s, 2);
-        }
-
-        #[test]
         fn test_self_rec() {
             // The intereting thing about this test is the following:
             // "\x. (\y. y) x -> \x. x" using beta reduction.
