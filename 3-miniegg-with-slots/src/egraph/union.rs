@@ -150,17 +150,31 @@ impl EGraph {
             let norm = self.normalize_enode_by_unionfind(&node);
             self.raw_remove_from_class(i, node.shape());
 
+            // Check whether `norm` makes a Slot redundant.
+            let class_slots = self.classes[&i].slots.clone();
+            let norm_slots = norm.slots();
+            if !class_slots.is_subset(&norm_slots) {
+                let l = AppliedId::new(i, SlotMap::identity(&class_slots));
+
+                let sub = &class_slots & &norm_slots;
+
+                // We union `i` with an empty EClass that is just missing a slot.
+                // TODO do we want disjoint slot-names between the classes?
+                let tmp = self.alloc_eclass(&sub);
+                let r = AppliedId::new(tmp, SlotMap::identity(&sub));
+                future_unions.push((l, r));
+            }
+
             // Check whether `norm` collides with something:
-            if let Some(_) = self.lookup(&norm) {
-                todo!(); // TODO
+            if let Some(app_id) = self.lookup(&norm) {
+                // If there is a collision, we don't add it directly.
+                // Instead, we union it together.
+                let l = AppliedId::new(i, SlotMap::identity(&class_slots));
+                let r = app_id;
+                future_unions.push((l, r));
+            } else {
+                self.raw_add_to_class(i, norm.shape());
             }
-
-            // Check whether `norm` makes a Slot be redundant.
-            if !self.classes[&i].slots.is_subset(&norm.slots()) {
-                todo!(); // TODO
-            }
-
-            self.raw_add_to_class(i, norm.shape());
         }
     }
 
