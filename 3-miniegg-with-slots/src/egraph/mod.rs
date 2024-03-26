@@ -108,6 +108,11 @@ impl EGraph {
         // And also checks that each Shape comes up in at most one EClass!
         let mut hashcons = HashMap::new();
         let mut usages = HashMap::new();
+
+        for (i, _) in &self.classes {
+            usages.insert(*i, HashSet::default());
+        }
+
         for (i, c) in &self.classes {
             for sh in c.nodes.keys() {
                 assert!(!hashcons.contains_key(sh));
