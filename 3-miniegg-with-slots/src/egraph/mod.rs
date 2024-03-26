@@ -15,6 +15,10 @@ pub struct EClass {
     // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
     // Should not contain Slot(0).
     slots: HashSet<Slot>,
+
+    // Shows which Shapes refer to this EClass (and also stores where this Shape is stored).
+    // Each (Shape, Id) from the HashSet needs to also be part of the hashcons.
+    usages: HashSet<(Shape, Id)>,
 }
 
 // invariants:
@@ -35,10 +39,6 @@ pub struct EGraph {
 
     // For each shape contained in the EGraph, maps to the EClass that contains it.
     hashcons: HashMap<Shape, Id>,
-
-    // For each Id shows which Shapes refer it (and also stores where this Shape is stored).
-    // Each (Shape, Id) from the HashSet needs to also be part of the hashcons.
-    usages: HashMap<Id, HashSet<(Shape, Id)>>,
 }
 
 impl EGraph {
@@ -47,7 +47,6 @@ impl EGraph {
             unionfind: Default::default(),
             classes: Default::default(),
             hashcons: Default::default(),
-            usages: Default::default(),
         }
     }
 
@@ -123,7 +122,9 @@ impl EGraph {
         }
 
         assert_eq!(hashcons, self.hashcons);
-        assert_eq!(usages, self.usages);
+        for (i, c) in &self.classes {
+            assert_eq!(usages[&i], c.usages);
+        }
 
         // check that self.classes contains exactly these classes which point to themselves in the unionfind.
         let all: HashSet<&Id> = &self.unionfind.keys().collect::<HashSet<_>>() | &self.classes.keys().collect::<HashSet<_>>();

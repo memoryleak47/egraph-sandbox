@@ -64,15 +64,7 @@ impl EGraph {
         let id = self.alloc_eclass(&fresh_slots);
 
         let (sh, bij) = fresh_enode.shape();
-        let class_ref = self.classes.get_mut(&id).unwrap();
-        class_ref.nodes.insert(sh.clone(), bij);
-
-        self.hashcons.insert(sh.clone(), id);
-        for ref_id in sh.ids() {
-            self.usages.entry(ref_id)
-                       .or_insert(HashSet::new())
-                       .insert((sh.clone(), id));
-        }
+        self.raw_add_to_class(id, (sh.clone(), bij));
 
         AppliedId::new(id, fresh_to_old)
     }
@@ -107,10 +99,28 @@ impl EGraph {
         let c = EClass {
             nodes: HashMap::new(),
             slots: slots.clone(),
+            usages: HashSet::new(),
         };
         self.classes.insert(c_id, c);
         self.unionfind.insert(c_id, identity_app_id.clone());
 
         c_id
     }
+
+    pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
+        self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij);
+        self.hashcons.insert(sh.clone(), id);
+        for ref_id in sh.ids() {
+            self.classes.get_mut(&ref_id).unwrap().usages.insert((sh.clone(), id));
+        }
+    }
+
+    pub(in crate::egraph) fn raw_remove_from_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
+        self.classes.get_mut(&id).unwrap().nodes.remove(&sh);
+        self.hashcons.remove(&sh);
+        for ref_id in sh.ids() {
+            self.classes.get_mut(&ref_id).unwrap().usages.remove(&(sh.clone(), id));
+        }
+    }
+
 }

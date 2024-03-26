@@ -143,11 +143,10 @@ impl EGraph {
             self.raw_add_to_class(to, (sh, out_bij));
         }
 
-        let from_class = self.classes.remove(&from);
-        let usages = self.usages.remove(&from);
+        let from_class = self.classes.remove(&from).unwrap();
 
         // 3. fix all ENodes that reference `from`.
-        for u in usages {
+        for u in from_class.usages {
             todo!();
         }
     }
@@ -163,22 +162,6 @@ impl EGraph {
                 new_nodes.insert(sh, bij);
             }
             self.classes.get_mut(&i).unwrap().nodes = new_nodes;
-        }
-    }
-
-    fn raw_add_to_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
-        self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij);
-        self.hashcons.insert(sh.clone(), id);
-        for ref_id in sh.ids() {
-            self.usages.entry(ref_id).or_insert(HashSet::new()).insert((sh.clone(), id));
-        }
-    }
-
-    fn raw_remove_from_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
-        self.classes.get_mut(&id).unwrap().nodes.remove(&sh);
-        self.hashcons.remove(&sh);
-        for ref_id in sh.ids() {
-            self.usages.entry(ref_id).or_insert(HashSet::new()).remove(&(sh.clone(), id));
         }
     }
 }
