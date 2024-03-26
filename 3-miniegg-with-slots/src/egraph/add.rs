@@ -107,21 +107,21 @@ impl EGraph {
         c_id
     }
 
-    // TODO check whether it is collision free.
     pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
-        self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij);
-        self.hashcons.insert(sh.clone(), id);
+        assert!(self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij).is_none());
+        assert!(self.hashcons.insert(sh.clone(), id).is_none());
         for ref_id in sh.ids() {
-            self.classes.get_mut(&ref_id).unwrap().usages.insert((sh.clone(), id));
+            let usages = &mut self.classes.get_mut(&ref_id).unwrap().usages;
+            assert!(!usages.insert((sh.clone(), id)));
         }
     }
 
-    // TODO check whether it was even contained.
     pub(in crate::egraph) fn raw_remove_from_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
-        self.classes.get_mut(&id).unwrap().nodes.remove(&sh);
-        self.hashcons.remove(&sh);
+        assert!(self.classes.get_mut(&id).unwrap().nodes.remove(&sh).is_some());
+        assert!(self.hashcons.remove(&sh).is_some());
         for ref_id in sh.ids() {
-            self.classes.get_mut(&ref_id).unwrap().usages.remove(&(sh.clone(), id));
+            let usages = &mut self.classes.get_mut(&ref_id).unwrap().usages;
+            assert!(usages.remove(&(sh.clone(), id)));
         }
     }
 

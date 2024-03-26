@@ -34,4 +34,13 @@ use std::collections::{BTreeMap, BTreeSet};
 pub type HashMap<K, V> = BTreeMap<K, V>;
 pub type HashSet<T> = BTreeSet<T>;
 
-fn main() {}
+fn main() {
+    let a = String::from("(lam x x)");
+    let a = app(a.clone(), a);
+
+    let mut eg = EGraph::new();
+    let re = RecExpr::parse(&a);
+    eg.add_expr(re);
+
+    rewrite_step(&mut eg);
+}

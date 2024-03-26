@@ -143,7 +143,7 @@ impl EGraph {
             self.raw_add_to_class(to, (sh, out_bij));
         }
 
-        let from_class = self.classes.remove(&from).unwrap();
+        let from_class = self.classes.get(&from).unwrap().clone();
 
         // 3. fix all ENodes that reference `from`.
         for (node, i) in from_class.usages {
@@ -176,6 +176,8 @@ impl EGraph {
                 self.raw_add_to_class(i, norm.shape());
             }
         }
+
+        assert!(self.classes.remove(&from).is_some());
     }
 
     // normalizes all ENodes that come up in the EGraph using the unionfind.
