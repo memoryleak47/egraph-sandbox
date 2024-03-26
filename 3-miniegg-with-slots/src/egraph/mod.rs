@@ -32,6 +32,13 @@ pub struct EGraph {
 
     // only ids with unionfind[x].id = x are contained.
     classes: HashMap<Id, EClass>,
+
+    // For each shape contained in the EGraph, maps to the EClass that contains it.
+    hashcons: HashMap<Shape, Id>,
+
+    // For each Id shows which Shapes refer it (and also stores where this Shape is stored).
+    // Each (Shape, Id) from the HashSet needs to also be part of the hashcons.
+    usages: HashMap<Id, HashSet<(Shape, Id)>>,
 }
 
 impl EGraph {
@@ -39,6 +46,8 @@ impl EGraph {
         EGraph {
             unionfind: Default::default(),
             classes: Default::default(),
+            hashcons: Default::default(),
+            usages: Default::default(),
         }
     }
 
@@ -96,15 +105,31 @@ impl EGraph {
     }
 
     pub fn inv(&self) {
-        // check that each shape comes up in only one eclass.
-        let mut shapemap = HashMap::new();
+        // Checks whether the hashcons / usages are correct.
+        // And also checks that each Shape comes up in at most one EClass!
+        let mut hashcons = HashMap::new();
+        let mut usages = HashMap::new();
         for (i, c) in &self.classes {
             for sh in c.nodes.keys() {
-                assert!(!shapemap.contains_key(&sh));
+                assert!(!hashcons.contains_key(sh));
+                hashcons.insert(sh.clone(), *i);
 
-                shapemap.insert(sh, i);
+                let ref_ids = match sh {
+                    ENode::App(l, r) => vec![l.id, r.id],
+                    ENode::Lam(_, b) => vec![b.id],
+                    ENode::Var(_) => vec![],
+                };
+
+                for ref_id in ref_ids {
+                    usages.entry(ref_id)
+                          .or_insert(HashSet::new())
+                          .insert((sh.clone(), *i));
+                }
             }
         }
+
+        assert_eq!(hashcons, self.hashcons);
+        assert_eq!(usages, self.usages);
 
         // check that self.classes contains exactly these classes which point to themselves in the unionfind.
         let all: HashSet<&Id> = &self.unionfind.keys().collect::<HashSet<_>>() | &self.classes.keys().collect::<HashSet<_>>();
