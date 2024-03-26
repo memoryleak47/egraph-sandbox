@@ -71,7 +71,7 @@ impl EGraph {
                 let c = self.alloc_eclass(&node_slots);
 
                 let identity = SlotMap::identity(&node_slots);
-                self.merge_into_eclass(id, c, &identity);
+                // self.merge_into_eclass(id, c, &identity);
                 changed = true;
             }
 
@@ -118,19 +118,14 @@ impl EGraph {
         // X = slots(from)
         // Y = slots(to)
         // map :: X -> Y
+
+        // 1. add unionfind entry 'from -> to'.
         self.unionfind.insert(from, AppliedId::new(to, map.inverse()));
         self.fix_unionfind();
 
-        let from_usages = self.usages.remove(&from);
-
-        // move enodes over.
-        let from_class = self.classes.remove(&from).unwrap();
-        let to_ref = self.classes.get_mut(&to).unwrap();
-        for (sh, bij) in from_class.nodes {
-            let a = sh.apply_slotmap(bij); // probably necessary for self-referencing EClasses.
-            let a = self.normalize_by_unionfind(a);
-            let (sh, bij) = a.shape();
-
+        // 2. move enodes from 'from' to 'to'.
+        let from_enodes = self.classes.get_mut(&from).unwrap().nodes.clone();
+        for (sh, bij) in from_enodes {
             // SH = slots(sh)
             // bij :: SH -> X
 
@@ -144,24 +139,15 @@ impl EGraph {
                 }
             }
 
-            to_ref.nodes.insert(sh, out_bij);
-
-            // override hashcons:
-            // TODO make this correct.
-            if let Some(other) = self.hashcons.insert(sh.clone(), to) {
-                future_unions.push((todo!(), todo!()));
-            }
-
-            // TODO this too.
-            for ref_id in sh.ids() {
-                let u = self.usages.get_mut(&ref_id).unwrap();
-                u.retain(|(_, i)| i != from);
-                u.insert((sh.clone(), to));
-            }
+            self.raw_remove_from_class(from, (sh.clone(), bij.clone()));
+            self.raw_add_to_class(to, (sh, out_bij));
         }
 
-        // fixup usages.
-        for u in from_usages {
+        let from_class = self.classes.remove(&from);
+        let usages = self.usages.remove(&from);
+
+        // 3. fix all ENodes that reference `from`.
+        for u in usages {
             todo!();
         }
     }
@@ -177,6 +163,22 @@ impl EGraph {
                 new_nodes.insert(sh, bij);
             }
             self.classes.get_mut(&i).unwrap().nodes = new_nodes;
+        }
+    }
+
+    fn raw_add_to_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
+        self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij);
+        self.hashcons.insert(sh.clone(), id);
+        for ref_id in sh.ids() {
+            self.usages.entry(ref_id).or_insert(HashSet::new()).insert((sh.clone(), id));
+        }
+    }
+
+    fn raw_remove_from_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
+        self.classes.get_mut(&id).unwrap().nodes.remove(&sh);
+        self.hashcons.remove(&sh);
+        for ref_id in sh.ids() {
+            self.usages.entry(ref_id).or_insert(HashSet::new()).remove(&(sh.clone(), id));
         }
     }
 }
