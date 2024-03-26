@@ -107,12 +107,13 @@ impl EGraph {
         c_id
     }
 
+    // adds (sh, bij) to the eclass `id`.
     pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
         assert!(self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij).is_none());
         assert!(self.hashcons.insert(sh.clone(), id).is_none());
         for ref_id in sh.ids() {
             let usages = &mut self.classes.get_mut(&ref_id).unwrap().usages;
-            assert!(!usages.insert((sh.clone(), id)));
+            usages.insert((sh.clone(), id));
         }
     }
 
@@ -121,7 +122,7 @@ impl EGraph {
         assert!(self.hashcons.remove(&sh).is_some());
         for ref_id in sh.ids() {
             let usages = &mut self.classes.get_mut(&ref_id).unwrap().usages;
-            assert!(usages.remove(&(sh.clone(), id)));
+            usages.remove(&(sh.clone(), id));
         }
     }
 

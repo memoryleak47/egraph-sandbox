@@ -40,7 +40,10 @@ fn main() {
 
     let mut eg = EGraph::new();
     let re = RecExpr::parse(&a);
-    eg.add_expr(re);
+    let i = eg.add_expr(re);
 
     rewrite_step(&mut eg);
+
+    let out = extract(i, &eg);
+    dbg!(&out);
 }
