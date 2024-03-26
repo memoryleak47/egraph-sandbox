@@ -113,7 +113,7 @@ impl EGraph {
         assert!(self.hashcons.insert(sh.clone(), id).is_none());
         for ref_id in sh.ids() {
             let usages = &mut self.classes.get_mut(&ref_id).unwrap().usages;
-            usages.insert((sh.clone(), id));
+            usages.insert(sh.clone());
         }
     }
 
@@ -122,7 +122,7 @@ impl EGraph {
         assert!(self.hashcons.remove(&sh).is_some());
         for ref_id in sh.ids() {
             let usages = &mut self.classes.get_mut(&ref_id).unwrap().usages;
-            usages.remove(&(sh.clone(), id));
+            usages.remove(&sh);
         }
     }
 

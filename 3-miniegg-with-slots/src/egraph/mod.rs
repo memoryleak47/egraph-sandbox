@@ -16,9 +16,8 @@ pub struct EClass {
     // Should not contain Slot(0).
     slots: HashSet<Slot>,
 
-    // Shows which Shapes refer to this EClass (and also stores where this Shape is stored).
-    // Each (Shape, Id) from the HashSet needs to also be part of the hashcons.
-    usages: HashSet<(Shape, Id)>,
+    // Shows which Shapes refer to this EClass.
+    usages: HashSet<Shape>,
 }
 
 // invariants:
@@ -119,9 +118,8 @@ impl EGraph {
                 hashcons.insert(sh.clone(), *i);
 
                 for ref_id in sh.ids() {
-                    usages.entry(ref_id)
-                          .or_insert(HashSet::new())
-                          .insert((sh.clone(), *i));
+                    usages.get_mut(&ref_id).unwrap()
+                          .insert(sh.clone());
                 }
             }
         }

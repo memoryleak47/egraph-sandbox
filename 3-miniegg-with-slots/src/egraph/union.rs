@@ -83,13 +83,17 @@ impl EGraph {
         let from_class = self.classes.get(&from).unwrap().clone();
 
         // 3. fix all ENodes that reference `from`.
-        for (node, i) in from_class.usages {
-            let norm = self.normalize_enode_by_unionfind(&node);
-            self.raw_remove_from_class(i, node.shape());
+        for sh in from_class.usages {
+            let i = self.hashcons[&sh];
+            let bij = self.classes[&i].nodes[&sh].clone();
+            self.raw_remove_from_class(i, (sh.clone(), bij.clone()));
+            let n = sh.apply_slotmap(&bij);
+            let norm = self.normalize_enode_by_unionfind(&n);
+            let (norm_sh, norm_bij) = norm.shape();
 
             // Check whether `norm` makes a Slot redundant.
             let class_slots = self.classes[&i].slots.clone();
-            let norm_slots = norm.slots();
+            let norm_slots = n.slots();
             if !class_slots.is_subset(&norm_slots) {
                 let l = AppliedId::new(i, SlotMap::identity(&class_slots));
 
