@@ -65,7 +65,14 @@ impl EGraph {
 
         let (sh, bij) = fresh_enode.shape();
         let class_ref = self.classes.get_mut(&id).unwrap();
-        class_ref.nodes.insert(sh, bij);
+        class_ref.nodes.insert(sh.clone(), bij);
+
+        self.hashcons.insert(sh.clone(), id);
+        for ref_id in sh.ids() {
+            self.usages.entry(ref_id)
+                       .or_insert(HashSet::new())
+                       .insert((sh.clone(), id));
+        }
 
         AppliedId::new(id, fresh_to_old)
     }

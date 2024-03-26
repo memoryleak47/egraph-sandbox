@@ -114,13 +114,7 @@ impl EGraph {
                 assert!(!hashcons.contains_key(sh));
                 hashcons.insert(sh.clone(), *i);
 
-                let ref_ids = match sh {
-                    ENode::App(l, r) => vec![l.id, r.id],
-                    ENode::Lam(_, b) => vec![b.id],
-                    ENode::Var(_) => vec![],
-                };
-
-                for ref_id in ref_ids {
+                for ref_id in sh.ids() {
                     usages.entry(ref_id)
                           .or_insert(HashSet::new())
                           .insert((sh.clone(), *i));
