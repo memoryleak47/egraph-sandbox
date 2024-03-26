@@ -25,13 +25,14 @@ impl EGraph {
         let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect();
         let c_id = self.alloc_eclass(&slots);
 
+        let mut future_unions = Vec::new();
         for lr in [l, r] {
-            self.merge_into_eclass(lr.id, c_id, &lr.m);
+            self.merge_into_eclass(lr.id, c_id, &lr.m, &mut future_unions);
         }
 
-        // rebuild the egraph invariants
-        self.fix_new_redundant_slots();
-        self.fix_shape_collisions();
+        for (x, y) in future_unions {
+            self.union(x, y);
+        }
     }
 
     fn fix_unionfind(&mut self) {
@@ -49,7 +50,7 @@ impl EGraph {
     }
 
     // Checks whether an EClass has an ENode not using all of its Slots. If yes, declare the missing slot "redundant".
-    fn fix_new_redundant_slots(&mut self) {
+    fn __fix_new_redundant_slots(&mut self) {
         loop {
             let mut changed = false;
 
@@ -79,7 +80,7 @@ impl EGraph {
     }
 
     // Checks whether two EClasses share a Shape, and if yes: unions them.
-    fn fix_shape_collisions(&mut self) {
+    fn __fix_shape_collisions(&mut self) {
         while let Some((i1, i2, sh)) = find_shape_collision(self) {
             // X = slots(sh)
             // bij1 :: X -> slots(i1)
@@ -111,19 +112,25 @@ impl EGraph {
     }
 
     // merges the EClass `from` into `to`. This deprecates the EClass `from`.
-    // This does not do any cleanups!
+    // TODO update unionfind, hashcons, usages, also normalize all ENodes! Redundant slots!
     // map :: slots(from) -> slots(to)
-    fn merge_into_eclass(&mut self, from: Id, to: Id, map: &SlotMap) {
+    fn merge_into_eclass(&mut self, from: Id, to: Id, map: &SlotMap, future_unions: &mut Vec<(AppliedId, AppliedId)>) {
         // X = slots(from)
         // Y = slots(to)
         // map :: X -> Y
         self.unionfind.insert(from, AppliedId::new(to, map.inverse()));
         self.fix_unionfind();
 
+        let from_usages = self.usages.remove(&from);
+
         // move enodes over.
         let from_class = self.classes.remove(&from).unwrap();
         let to_ref = self.classes.get_mut(&to).unwrap();
         for (sh, bij) in from_class.nodes {
+            let a = sh.apply_slotmap(bij); // probably necessary for self-referencing EClasses.
+            let a = self.normalize_by_unionfind(a);
+            let (sh, bij) = a.shape();
+
             // SH = slots(sh)
             // bij :: SH -> X
 
@@ -138,13 +145,29 @@ impl EGraph {
             }
 
             to_ref.nodes.insert(sh, out_bij);
+
+            // override hashcons:
+            // TODO make this correct.
+            if let Some(other) = self.hashcons.insert(sh.clone(), to) {
+                future_unions.push((todo!(), todo!()));
+            }
+
+            // TODO this too.
+            for ref_id in sh.ids() {
+                let u = self.usages.get_mut(&ref_id).unwrap();
+                u.retain(|(_, i)| i != from);
+                u.insert((sh.clone(), to));
+            }
         }
 
-        self.normalize_enode_usages();
+        // fixup usages.
+        for u in from_usages {
+            todo!();
+        }
     }
 
     // normalizes all ENodes that come up in the EGraph using the unionfind.
-    fn normalize_enode_usages(&mut self) {
+    fn __normalize_enode_usages(&mut self) {
         for (i, c) in self.classes.clone() {
             let mut new_nodes = HashMap::new();
             for (sh, bij) in c.nodes {
