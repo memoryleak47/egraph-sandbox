@@ -73,27 +73,24 @@ impl EGraph {
     pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
         let n = self.normalize_enode_by_unionfind(n);
         let (shape, n_bij) = n.shape();
+        let i = self.hashcons.get(&shape)?;
+        let c = &self.classes[i];
+        let cn_bij = c.nodes.get(&shape).unwrap();
 
-        for (i, c) in &self.classes {
-            if let Some(cn_bij) = c.nodes.get(&shape) {
-                // X = shape.slots()
-                // Y = n.slots()
-                // Z = c.slots()
-                // n_bij :: X -> Y
-                // cn_bij :: X -> Z
-                // out :: Z -> Y
-                let out = cn_bij.inverse().compose(&n_bij);
+        // X = shape.slots()
+        // Y = n.slots()
+        // Z = c.slots()
+        // n_bij :: X -> Y
+        // cn_bij :: X -> Z
+        // out :: Z -> Y
+        let out = cn_bij.inverse().compose(&n_bij);
 
-                let app_id = AppliedId::new(
-                    *i,
-                    out,
-                );
+        let app_id = AppliedId::new(
+            *i,
+            out,
+        );
 
-                return Some(app_id);
-            }
-        }
-
-        None
+        Some(app_id)
     }
 
     // TODO this should return an AppliedId. Then it can internally allocate fresh slot names.
