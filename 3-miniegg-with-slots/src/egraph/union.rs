@@ -146,8 +146,21 @@ impl EGraph {
         let from_class = self.classes.remove(&from).unwrap();
 
         // 3. fix all ENodes that reference `from`.
-        for u in from_class.usages {
-            todo!();
+        for (node, i) in from_class.usages {
+            let norm = self.normalize_enode_by_unionfind(&node);
+            self.raw_remove_from_class(i, node.shape());
+
+            // Check whether `norm` collides with something:
+            if let Some(_) = self.lookup(&norm) {
+                todo!(); // TODO
+            }
+
+            // Check whether `norm` makes a Slot be redundant.
+            if !self.classes[&i].slots.is_subset(&norm.slots()) {
+                todo!(); // TODO
+            }
+
+            self.raw_add_to_class(i, norm.shape());
         }
     }
 

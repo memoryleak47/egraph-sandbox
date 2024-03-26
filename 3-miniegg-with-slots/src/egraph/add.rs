@@ -107,6 +107,7 @@ impl EGraph {
         c_id
     }
 
+    // TODO check whether it is collision free.
     pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
         self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij);
         self.hashcons.insert(sh.clone(), id);
@@ -115,6 +116,7 @@ impl EGraph {
         }
     }
 
+    // TODO check whether it was even contained.
     pub(in crate::egraph) fn raw_remove_from_class(&mut self, id: Id, (sh, bij): (Shape, Bijection)) {
         self.classes.get_mut(&id).unwrap().nodes.remove(&sh);
         self.hashcons.remove(&sh);
