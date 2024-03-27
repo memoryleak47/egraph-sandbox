@@ -10,15 +10,32 @@ use cost::*;
 struct Expr(RecExpr<Lambda>);
 
 impl Realization for Expr {
-    // TODO
     fn to_ast_string(&self) -> String {
-        self.0.to_string()
+        let mut strings = Vec::new();
+        for n in self.0.as_ref() {
+            strings.push(match n {
+                Lambda::Lambda([x, b]) => format!("(lam {} {})", &strings[usize::from(*x)], &strings[usize::from(*b)]),
+                Lambda::App([l, r]) => format!("(app {} {})", &strings[usize::from(*l)], &strings[usize::from(*r)]),
+                Lambda::Var(v) => format!("{}", &strings[usize::from(*v)]),
+                Lambda::Symbol(s) => format!("{}", s),
+                _ => panic!(),
+            });
+        }
+
+        strings.pop().unwrap()
     }
 
-    // TODO
     fn from_ast(a: &Ast) -> Self {
-        let re: RecExpr<Lambda> = a.to_string().parse().unwrap();
-        Self(re)
+        let re: RecExpr<Lambda> = to_string(a).parse().unwrap();
+        return Self(re);
+
+        fn to_string(a: &Ast) -> String {
+            match a {
+                Ast::Var(x) => format!("(var {})", x),
+                Ast::Lam(x, b) => format!("(lam {} {})", &x, to_string(&*b)),
+                Ast::App(l, r) => format!("(app {} {})", to_string(&*l), to_string(&*r)),
+            }
+        }
     }
     
     fn simplify(&self, steps: u32) -> Self {
@@ -46,4 +63,12 @@ impl Realization for Expr {
 
 unpack_tests!(Expr);
 
-fn main() {}
+fn main() {
+    let p = "(lam x (lam y
+        (app
+            (lam z (app x z))
+        y)
+    ))";
+    let o = simplify::<Expr>(p, 14);
+    dbg!(o);
+}

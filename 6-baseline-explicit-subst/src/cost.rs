@@ -43,8 +43,9 @@ impl CostFunction<Lambda> for RestrictedAstSize {
     fn cost<C>(&mut self, t: &Lambda, mut costs: C) -> MyCost where C: FnMut(Id) -> MyCost {
         match t {
             Lambda::Lambda([_, b]) => add(costs(*b), MyCost::Finite(1)),
-            Lambda::Var(_) => MyCost::Finite(1), // TODO is this a monotonicity problem?
+            Lambda::Var(i) => add(costs(*i), MyCost::Finite(1)),
             Lambda::App([l, r]) => add1(costs(*l), costs(*r)),
+            Lambda::Symbol(_) => MyCost::Finite(0),
             _ => MyCost::Infinite,
         }
     }
