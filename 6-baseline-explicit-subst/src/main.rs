@@ -61,6 +61,8 @@ impl Realization for Expr {
     }
 }
 
+// TODO it requires more steps, but still gets everything done! Impressive.
+// The test suite should respect that somehow.
 unpack_tests!(Expr);
 
 fn main() {
