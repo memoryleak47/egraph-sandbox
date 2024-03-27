@@ -57,7 +57,7 @@ fn tokenize(s: &str) -> Vec<Token> {
     };
 
     for ch in s.chars() {
-        if ch.is_alphanumeric() {
+        if ch.is_alphanumeric() || ch == '_' {
             if current_string.is_none() {
                 current_string = Some(String::new());
             }
