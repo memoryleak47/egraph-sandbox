@@ -4,6 +4,9 @@ use egg::*;
 mod lambda;
 use lambda::*;
 
+mod cost;
+use cost::*;
+
 struct Expr(RecExpr<Lambda>);
 
 impl Realization for Expr {
@@ -22,7 +25,7 @@ impl Realization for Expr {
         let rewrites = rules();
         let runner = Runner::default().with_iter_limit(steps as usize).with_expr(&self.0).run(&rewrites);
 
-        let extr = Extractor::new(&runner.egraph, AstSize);
+        let extr = Extractor::new(&runner.egraph, RestrictedAstSize);
         let (_, out) = extr.find_best(runner.roots[0]);
 
         Self(out)
