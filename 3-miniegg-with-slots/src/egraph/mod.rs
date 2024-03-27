@@ -102,6 +102,11 @@ impl EGraph {
         self.enodes(i.id).into_iter().map(|x| x.apply_slotmap(&i.m)).collect()
     }
 
+    // number of enodes in the egraph.
+    pub fn total_size(&self) -> usize {
+        self.hashcons.len()
+    }
+
     pub fn inv(&self) {
         // Checks whether the hashcons / usages are correct.
         // And also checks that each Shape comes up in at most one EClass!
