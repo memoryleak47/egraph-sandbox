@@ -2,9 +2,9 @@ use crate::*;
 
 // candidate for beta reduction.
 // Both ENodes are computed by "sh.apply_slotmap(bij)", where (sh, bij) in EClass::nodes from their respective classes.
-struct Candidate {
-    app: ENode,
-    lam: ENode,
+pub struct Candidate {
+    pub app: ENode,
+    pub lam: ENode,
 }
 
 // applies rewrites (only beta-reduction) for all applicable situations.
@@ -31,7 +31,7 @@ pub fn rewrite_step(eg: &mut EGraph) {
     }
 }
 
-fn candidates(eg: &EGraph) -> Vec<Candidate> {
+pub fn candidates(eg: &EGraph) -> Vec<Candidate> {
     // find all lambdas:
     let mut lambdas: HashMap<Id, Vec<ENode>> = Default::default();
     for c in eg.ids() {

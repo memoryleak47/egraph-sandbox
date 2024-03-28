@@ -26,6 +26,9 @@ use rewrite::*;
 mod subst;
 use subst::*;
 
+mod small_step;
+use small_step::*;
+
 mod tst;
 
 use std::collections::{BTreeMap, BTreeSet};
