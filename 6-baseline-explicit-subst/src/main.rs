@@ -40,7 +40,7 @@ impl Realization for Expr {
     
     fn simplify(&self, steps: u32) -> Self {
         let rewrites = rules();
-        let runner = Runner::default().with_iter_limit(steps as usize).with_expr(&self.0).run(&rewrites);
+        let runner = Runner::default().with_iter_limit(steps as usize).with_scheduler(SimpleScheduler).with_expr(&self.0).run(&rewrites);
 
         let extr = Extractor::new(&runner.egraph, RestrictedAstSize);
         let (_, out) = extr.find_best(runner.roots[0]);
@@ -55,7 +55,7 @@ impl Realization for Expr {
         let i1 = eg.add_expr(&self.0);
         let i2 = eg.add_expr(&other.0);
         
-        let runner = Runner::default().with_iter_limit(steps as usize).with_egraph(eg).run(&rewrites);
+        let runner = Runner::default().with_iter_limit(steps as usize).with_scheduler(SimpleScheduler).with_egraph(eg).run(&rewrites);
 
         runner.egraph.find(i1) == runner.egraph.find(i2)
     }
