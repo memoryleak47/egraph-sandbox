@@ -9,7 +9,7 @@ pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
     // this is a terribly slow algorithm.
 
     // maps eclass id to their optimal RecExpr.
-    let mut map: HashMap<Id, RecExpr> = HashMap::new();
+    let mut map: HashMap<Id, RecExpr> = HashMap::default();
 
     for _ in 0..eg.ids().len() {
         for id in eg.ids() {

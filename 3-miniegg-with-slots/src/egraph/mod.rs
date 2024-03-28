@@ -110,8 +110,8 @@ impl EGraph {
     pub fn inv(&self) {
         // Checks whether the hashcons / usages are correct.
         // And also checks that each Shape comes up in at most one EClass!
-        let mut hashcons = HashMap::new();
-        let mut usages = HashMap::new();
+        let mut hashcons = HashMap::default();
+        let mut usages = HashMap::default();
 
         for (i, _) in &self.classes {
             usages.insert(*i, HashSet::default());
@@ -168,7 +168,7 @@ impl EGraph {
 
                 match real {
                     ENode::Var(x) => {
-                        assert_eq!(&HashSet::from([x]), &c.slots)
+                        assert_eq!(&singleton_set(x), &c.slots)
                     },
                     ENode::App(l, r) => {
                         inv_internal_applied_id(self, &l);

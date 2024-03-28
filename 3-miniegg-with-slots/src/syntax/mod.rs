@@ -51,7 +51,7 @@ fn translate(ast_node: AstNode, v: &[TranslateData]) -> TranslateData {
             let lam_slot = Slot::fresh();
 
             let mut slotmap = SlotMap::new();
-            let mut name_map = HashMap::new();
+            let mut name_map = HashMap::default();
 
             if let Some(xb_slot) = b_data.name_map.get(&x) {
                 slotmap.insert(*xb_slot, lam_slot);
@@ -78,7 +78,7 @@ fn translate(ast_node: AstNode, v: &[TranslateData]) -> TranslateData {
 
             let free_vars: HashSet<String> = l_data.name_map.keys().chain(r_data.name_map.keys()).cloned().collect();
 
-            let mut name_map = HashMap::new();
+            let mut name_map = HashMap::default();
             let mut slotmap_l = SlotMap::new();
             let mut slotmap_r = SlotMap::new();
 
@@ -99,7 +99,7 @@ fn translate(ast_node: AstNode, v: &[TranslateData]) -> TranslateData {
         AstNode::Var(x) => {
             let s = Slot::fresh();
             let enode = ENode::Var(s);
-            let mut name_map = HashMap::new();
+            let mut name_map = HashMap::default();
             name_map.insert(x, s);
 
             TranslateData { enode, name_map }

@@ -31,22 +31,11 @@ use small_step::*;
 
 mod tst;
 
-use std::collections::{BTreeMap, BTreeSet};
-// TODO maybe choose an actual HashMap that is deterministic.
-// Tree Maps are logarithmic in most operations, whereas hashmaps are typically O(1).
-pub type HashMap<K, V> = BTreeMap<K, V>;
-pub type HashSet<T> = BTreeSet<T>;
+pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
+pub type HashSet<T> = fnv::FnvHashSet<T>;
 
 fn main() {
-    let a = String::from("(lam x x)");
-    let a = app(a.clone(), a);
+    let s = app(app(add(), num(0)), num(1));
+    check_simplify::<RecExpr>(&s, 5);
 
-    let mut eg = EGraph::new();
-    let re = RecExpr::parse(&a);
-    let i = eg.add_expr(re);
-
-    rewrite_step(&mut eg);
-
-    let out = extract(i, &eg);
-    dbg!(&out);
 }

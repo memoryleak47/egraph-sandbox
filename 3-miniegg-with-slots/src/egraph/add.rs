@@ -97,9 +97,9 @@ impl EGraph {
         let c_id = Id(self.unionfind.len()); // Pick the next unused Id.
         let identity_app_id = AppliedId::new(c_id, SlotMap::identity(slots));
         let c = EClass {
-            nodes: HashMap::new(),
+            nodes: HashMap::default(),
             slots: slots.clone(),
-            usages: HashSet::new(),
+            usages: HashSet::default(),
         };
         self.classes.insert(c_id, c);
         self.unionfind.insert(c_id, identity_app_id.clone());

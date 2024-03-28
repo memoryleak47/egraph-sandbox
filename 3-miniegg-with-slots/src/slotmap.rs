@@ -70,7 +70,7 @@ impl SlotMap {
     }
 
     pub fn is_bijection(&self) -> bool {
-        let mut found = HashSet::new();
+        let mut found = HashSet::default();
 
         for (_, x) in self.iter() {
             if found.contains(&x) {
@@ -154,7 +154,7 @@ impl SlotMap {
         assert_eq!(&self.map, &sorted);
 
         // left-uniqueness.
-        let mut found = HashSet::new();
+        let mut found = HashSet::default();
         for &(x, _) in self.map.iter() {
             assert!(!found.contains(&x));
             found.insert(x);

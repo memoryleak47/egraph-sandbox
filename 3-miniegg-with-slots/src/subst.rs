@@ -21,7 +21,7 @@ pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId 
 
 // TODO do I need this? If yes, why?
 fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
-    let large = &(&b.slots() | &t.slots()) | &HashSet::from([x]);
+    let large = &(&b.slots() | &t.slots()) | &singleton_set(x);
 
     // m :: Fresh -> Large
     let m = SlotMap::bijection_from_fresh_to(&large);
@@ -99,7 +99,7 @@ fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGr
         }
     };
 
-    let correct = &(&enode.slots() - &HashSet::from([x])) | &t.slots();
+    let correct = &(&enode.slots() - &singleton_set(x)) | &t.slots();
     assert_eq!(out.slots(), correct);
 
     out
@@ -164,7 +164,7 @@ fn map_lookup(b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, map: &mut 
     // add to map, if necessary
     if new_class {
         // max_slots = X
-        let max_slots = &(&b.slots() - &HashSet::from([x])) | &t.slots();
+        let max_slots = &(&b.slots() - &singleton_set(x)) | &t.slots();
         let fresh = SlotMap::bijection_from_fresh_to(&max_slots);
         let slots = fresh.keys();
 
@@ -208,4 +208,8 @@ fn map_lookup(b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, map: &mut 
         true => Err(app_id),
         false => Ok(app_id),
     }
+}
+
+pub fn singleton_set<T: Eq + std::hash::Hash>(t: T) -> HashSet<T> {
+    [t].into_iter().collect()
 }
