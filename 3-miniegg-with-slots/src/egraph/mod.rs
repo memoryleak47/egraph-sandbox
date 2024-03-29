@@ -122,6 +122,8 @@ impl EGraph {
 
     // Generates fresh slots for redundant slots.
     pub fn enodes_applied(&self, i: &AppliedId) -> HashSet<ENode> {
+        let i = self.normalize_applied_id_by_unionfind(i.clone());
+
         let mut out = HashSet::default();
         for x in self.enodes(i.id) {
             let red = &x.slots() - &i.m.keys();
@@ -131,7 +133,7 @@ impl EGraph {
         }
 
         for x in &out {
-            assert_eq!(&self.lookup(x).unwrap(), i);
+            assert_eq!(self.lookup(x).unwrap(), i);
         }
 
         out

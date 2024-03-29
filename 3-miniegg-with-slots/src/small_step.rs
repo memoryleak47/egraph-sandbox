@@ -25,8 +25,7 @@ pub fn rewrite_small_step(eg: &mut EGraph) {
 
         for b_node in eg.enodes_applied(&b) {
             let new = step(x_root, t.clone(), &b_node, eg);
-            let did = eg.union(new, app_id.clone());
-            if did { return; } // TODO fix this. This is currently necessary.
+            eg.union(new, app_id.clone());
         }
     }
 }
