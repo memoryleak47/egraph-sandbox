@@ -3,17 +3,18 @@ use crate::*;
 impl EGraph {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // TODO get references here instead!
-    pub fn union(&mut self, l: AppliedId, r: AppliedId) {
+    // returns whether it actually did something.
+    pub fn union(&mut self, l: AppliedId, r: AppliedId) -> bool {
         // normalize inputs
         let l = self.normalize_applied_id_by_unionfind(l);
         let r = self.normalize_applied_id_by_unionfind(r);
 
         // early return, if union should not be made.
-        if l == r { return; }
+        if l == r { return false; }
 
         if l.id == r.id {
             eprintln!("We reject self-unions for now!");
-            return;
+            return false;
         };
 
         // make the slots fresh.
@@ -33,6 +34,8 @@ impl EGraph {
         for (x, y) in future_unions {
             self.union(x, y);
         }
+
+        return true;
     }
 
     fn fix_unionfind(&mut self) {

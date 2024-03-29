@@ -36,7 +36,8 @@ pub fn rewrite_small_step(eg: &mut EGraph) {
             assert!(b_node.slots().is_subset(&l0));
 
             let new = step(x_root, t.clone(), &b_node, eg);
-            eg.union(new, app_id.clone());
+            let did = eg.union(new, app_id.clone());
+            if did { return; } // TODO fix this. This is currently necessary.
         }
     }
 }
