@@ -93,7 +93,7 @@ impl EGraph {
 
             // Check whether `norm` makes a Slot redundant.
             let class_slots = self.classes[&i].slots.clone();
-            let norm_slots = n.slots();
+            let norm_slots = norm.slots();
             if !class_slots.is_subset(&norm_slots) {
                 let l = AppliedId::new(i, SlotMap::identity(&class_slots));
 
