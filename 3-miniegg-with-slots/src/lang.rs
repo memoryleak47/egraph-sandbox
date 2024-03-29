@@ -144,11 +144,21 @@ impl AppliedId {
 
 impl Slot {
     pub fn fresh() -> Self {
-        use std::sync::atomic::*;
+        use std::cell::RefCell;
 
-        // starting with 1 might prevent Slot(0) collisions with Lam variables.
-        static CTR: AtomicUsize = AtomicUsize::new(1);
-        let u = CTR.fetch_add(1, Ordering::SeqCst);
+        // We choose ThreadLocal here, so that tests (that run in parallel threads) don't interfere.
+        // There were situations, where different Slot-names did affect hashmap ordering, and with that actually changed the output of the algorithm.
+        // Using this, all tests should run deterministically.
+
+        thread_local! {
+            // starting with 1 might prevent Slot(0) collisions with Lam variables.
+            static CTR: RefCell<usize> = RefCell::new(1);
+        }
+
+        let u = CTR.with_borrow(|v| *v);
+
+        CTR.with_borrow_mut(|v| *v += 1);
+
         Slot(u)
     }
 }
