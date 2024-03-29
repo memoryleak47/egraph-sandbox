@@ -88,7 +88,7 @@ impl SlotMap {
     }
 
     pub fn compose(&self, other: &SlotMap) -> SlotMap {
-        assert_eq!(self.values(), other.keys());
+        assert_eq!(self.values(), other.keys(), "SlotMap::compose() failed!");
 
         self.compose_partial(other)
     }

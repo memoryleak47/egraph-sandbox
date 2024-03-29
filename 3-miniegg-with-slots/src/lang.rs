@@ -44,7 +44,7 @@ impl ENode {
         }
     }
 
-    pub fn apply_slotmap(&self, m: &SlotMap) -> ENode {
+    pub fn apply_slotmap_partial(&self, m: &SlotMap) -> ENode {
         match self {
             ENode::Lam(x, i) => {
                 if m.contains_key(*x) {
@@ -61,11 +61,16 @@ impl ENode {
 
                 assert!(m.is_bijection()); // if this fails, then probably multiple things point to x now - because someone didn't rename enough stuff.
 
-                ENode::Lam(*x, i.apply_slotmap(&m))
+                ENode::Lam(*x, i.apply_slotmap_partial(&m))
             },
-            ENode::App(i1, i2) => ENode::App(i1.apply_slotmap(&m), i2.apply_slotmap(&m)),
+            ENode::App(i1, i2) => ENode::App(i1.apply_slotmap_partial(&m), i2.apply_slotmap_partial(&m)),
             ENode::Var(x) => ENode::Var(m[*x]),
         }
+    }
+
+    pub fn apply_slotmap(&self, m: &SlotMap) -> ENode {
+        assert!(m.keys().is_superset(&self.slots()), "ENode::apply_slotmap: The SlotMap doesn't map all free slots!");
+        self.apply_slotmap_partial(m)
     }
 
     pub fn slot_occurences(&self) -> Vec<Slot> {
@@ -96,12 +101,6 @@ impl ENode {
             ENode::Var(_) => vec![],
         }
     }
-
-    // self == other, while being blind for the ENode::Lam(_) slot-name and also being blind for free slots not contained in "exposed".
-    // free slots not contained in exposed are conceptually "redundant slots" within some EClass.
-    pub fn equal_within_exposed(&self, other: &ENode, exposed: &HashSet<Slot>) -> bool {
-        todo!()
-    }
 }
 
 // sorts as_set(v) by their first usage in v.
@@ -127,9 +126,14 @@ impl AppliedId {
     }
 
     pub fn apply_slotmap(&self, m: &SlotMap) -> AppliedId {
+        assert!(m.keys().is_superset(&self.slots()), "AppliedId::apply_slotmap: The SlotMap doesn't map all free slots!");
+        self.apply_slotmap_partial(m)
+    }
+
+    pub fn apply_slotmap_partial(&self, m: &SlotMap) -> AppliedId {
         AppliedId::new(
             self.id,
-            self.m.compose_partial(m), // TODO do we need/want this to be partial?
+            self.m.compose_partial(m),
         )
     }
 
