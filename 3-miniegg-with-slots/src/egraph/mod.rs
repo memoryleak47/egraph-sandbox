@@ -57,6 +57,7 @@ impl EGraph {
         enode.map_applied_ids(|x| self.normalize_applied_id_by_unionfind(x))
     }
 
+    #[track_caller]
     pub fn mk_applied_id(&self, i: Id, m: SlotMap) -> AppliedId {
         let app_id = AppliedId::new(i, m);
 
@@ -65,6 +66,7 @@ impl EGraph {
         app_id
     }
 
+    #[track_caller]
     pub fn check_applied_id(&self, app_id: &AppliedId) {
         let app_id = self.normalize_applied_id_by_unionfind_unchecked(app_id.clone());
 
