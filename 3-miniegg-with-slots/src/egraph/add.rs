@@ -84,10 +84,16 @@ impl EGraph {
         // out :: Z -> Y
         let out = cn_bij.inverse().compose(&n_bij);
 
+        // Note that ENodes in an EClass can have redundant slots.
+        // They shouldn't come up in the AppliedId.
+        let out = out.iter().filter(|(x, y)| c.slots.contains(x)).collect();
+
         let app_id = AppliedId::new(
             *i,
             out,
         );
+
+        assert_eq!(&c.slots, &app_id.m.keys());
 
         Some(app_id)
     }
