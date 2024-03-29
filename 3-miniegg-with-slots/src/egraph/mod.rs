@@ -192,4 +192,17 @@ impl EGraph {
             assert_eq!(&app_id.m.keys(), &eg.classes[&app_id.id].slots);
         }
     }
+
+    pub fn dump(&self) {
+        println!("");
+        for (i, c) in &self.classes {
+            let slot_str = c.slots.iter().map(|x| format!("s{}", x.0)).collect::<Vec<_>>().join(", ");
+            println!("{:?}({}):", i, &slot_str);
+            for (sh, bij) in &c.nodes {
+                let n = sh.apply_slotmap(bij);
+                println!(" - {:?}", n);
+            }
+        }
+        println!("");
+    }
 }
