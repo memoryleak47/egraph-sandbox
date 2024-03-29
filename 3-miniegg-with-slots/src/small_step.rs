@@ -22,15 +22,15 @@ pub fn rewrite_small_step(eg: &mut EGraph) {
             let redundants = &b_node.slots() - &b.m.keys();
             let fresh_redundants_map = SlotMap::bijection_from_fresh_to(&redundants);
             let fresh_redundants = fresh_redundants_map.keys();
-            let keep_fresh = SlotMap::identity(&fresh_redundants);
 
             // map redundants to their new L0 names.
-            let b_node = b_node.apply_slotmap(&fresh_redundants_map.inverse().union(&SlotMap::identity(&b.m.keys())));
-
-            let b_node = b_node.apply_slotmap(&b.m.union(&keep_fresh));
+            let b_map1 = fresh_redundants_map.inverse();
             let mut l_m = l.m.clone();
             l_m.insert(x, x_root);
-            let b_node = b_node.apply_slotmap(&l_m.union(&keep_fresh));
+            let b_map2 = b.m.compose_partial(&l_m);
+
+            let b_map = b_map1.union(&b_map2);
+            let b_node = b_node.apply_slotmap(&b_map);
 
             let l0 = &(&singleton_set(x_root) | &app_id.slots()) | &fresh_redundants;
             assert!(b_node.slots().is_subset(&l0));
