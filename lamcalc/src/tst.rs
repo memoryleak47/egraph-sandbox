@@ -2,7 +2,7 @@ use crate::*;
 
 #[macro_export]
 macro_rules! unpack_tests {
-    ($R:ident) => {
+    ($R:ty) => {
         #[test]
         fn test_cannot_simplify() {
             let s = [
