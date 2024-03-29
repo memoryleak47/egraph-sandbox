@@ -118,7 +118,5 @@ impl EGraph {
                 self.raw_add_to_class(i, norm.shape());
             }
         }
-
-        assert!(self.classes.remove(&from).is_some());
     }
 }

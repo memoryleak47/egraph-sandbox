@@ -24,7 +24,9 @@ pub struct EClass {
 // 1. If two ENodes (that are in the EGraph) have equal .shape(), they have to be in the same eclass.
 // 2. enode.slots() is always a superset of c.slots, if enode is within the eclass c.
 //    if ENode::Lam(si) = enode, then we require i to not be in c.slots.
+//    In practice, si will always be Slot(0).
 // 3. AppliedId::m is always a bijection. (eg. c1(s0, s1, s0) is illegal!)
+//    AppliedId::m also always has the same keys as the class expects slots.
 // 4. Slot(0) should not be in EClass::slots of any class.
 #[derive(Debug)]
 pub struct EGraph {
@@ -33,7 +35,8 @@ pub struct EGraph {
     // Each Id i that is an output of the unionfind itself has unionfind[i] = (i, identity()).
     unionfind: HashMap<Id, AppliedId>,
 
-    // only ids with unionfind[x].id = x are contained.
+    // if a class does't have unionfind[x].id = x, then it doesn't contain nodes / usages.
+    // It's "shallow" if you will.
     classes: HashMap<Id, EClass>,
 
     // For each shape contained in the EGraph, maps to the EClass that contains it.
@@ -174,16 +177,19 @@ impl EGraph {
         }
 
         // check that self.classes contains exactly these classes which point to themselves in the unionfind.
-        let all: HashSet<&Id> = &self.unionfind.keys().collect::<HashSet<_>>() | &self.classes.keys().collect::<HashSet<_>>();
+        let all: HashSet<&Id> = &(&self.unionfind.keys().collect::<HashSet<_>>() | &self.unionfind.values().map(|x| &x.id).collect::<HashSet<_>>()) | &self.classes.keys().collect::<HashSet<_>>();
         for i in all {
-            let alive1 = self.unionfind[i].id == *i;
-            let alive2 = self.classes.contains_key(i);
-            assert_eq!(alive1, alive2);
+            let alive = self.classes[i].is_alive();
+            let alive2 = self.unionfind[i].id == *i;
+            assert_eq!(alive, alive2);
 
             // if they point to themselves, they should do it using the identity.
-            if alive1 {
+            if alive {
                 let slots = &self.classes[i].slots;
                 assert_eq!(self.unionfind[i].m, SlotMap::identity(slots));
+            } else {
+                assert!(self.classes[i].nodes.is_empty());
+                assert!(self.classes[i].usages.is_empty());
             }
         }
 
@@ -235,6 +241,8 @@ impl EGraph {
     pub fn dump(&self) {
         println!("");
         for (i, c) in &self.classes {
+            if !c.is_alive() { continue; }
+
             let slot_str = c.slots.iter().map(|x| format!("s{}", x.0)).collect::<Vec<_>>().join(", ");
             println!("{:?}({}):", i, &slot_str);
             for (sh, bij) in &c.nodes {
@@ -243,5 +251,11 @@ impl EGraph {
             }
         }
         println!("");
+    }
+}
+
+impl EClass {
+    fn is_alive(&self) -> bool {
+        !self.nodes.is_empty()
     }
 }
