@@ -13,28 +13,17 @@ pub fn rewrite_small_step(eg: &mut EGraph) {
         let ENode::Lam(x, b) = cand.lam.clone() else { panic!() };
         assert_eq!(x, Slot(0));
 
+        // b.m :: slots(b.id) -> L1
+        // l.m :: slots(l.id) -> L0 (and thus L1 -> L0)
+
         // The L0-equivalent of x.
         let x_root = Slot::fresh();
 
-        for b_node in &eg.enodes(b.id) {
-            // b.m :: slots(b.id) -> L1
-            // l.m :: slots(l.id) -> L0 (and thus L1 -> L0)
-            let redundants = &b_node.slots() - &b.m.keys();
-            let fresh_redundants_map = SlotMap::bijection_from_fresh_to(&redundants);
-            let fresh_redundants = fresh_redundants_map.keys();
+        let mut l_m = l.m.clone();
+        l_m.insert(x, x_root);
+        let b = b.apply_slotmap(&l_m);
 
-            // map redundants to their new L0 names.
-            let b_map1 = fresh_redundants_map.inverse();
-            let mut l_m = l.m.clone();
-            l_m.insert(x, x_root);
-            let b_map2 = b.m.compose_partial(&l_m);
-
-            let b_map = b_map1.union(&b_map2);
-            let b_node = b_node.apply_slotmap(&b_map);
-
-            let l0 = &(&singleton_set(x_root) | &app_id.slots()) | &fresh_redundants;
-            assert!(b_node.slots().is_subset(&l0));
-
+        for b_node in eg.enodes_applied(&b) {
             let new = step(x_root, t.clone(), &b_node, eg);
             let did = eg.union(new, app_id.clone());
             if did { return; } // TODO fix this. This is currently necessary.
