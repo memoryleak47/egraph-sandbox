@@ -57,6 +57,20 @@ impl EGraph {
         enode.map_applied_ids(|x| self.normalize_applied_id_by_unionfind(x))
     }
 
+    pub fn mk_applied_id(&self, i: Id, m: SlotMap) -> AppliedId {
+        let app_id = AppliedId::new(i, m);
+
+        self.check_applied_id(&app_id);
+
+        app_id
+    }
+
+    pub fn check_applied_id(&self, app_id: &AppliedId) {
+        let app_id = self.normalize_applied_id_by_unionfind_unchecked(app_id.clone());
+
+        assert_eq!(self.classes[&app_id.id].slots, app_id.m.keys());
+    }
+
     // normalize i.id
     //
     // Example 1:
@@ -65,6 +79,12 @@ impl EGraph {
     // Example 2:
     // 'find(c1(s3, s7, s8)) = c2(s8, s7)', where 'c1(s0, s1, s2) -> c2(s2, s1)' in unionfind,
     pub fn normalize_applied_id_by_unionfind(&self, i: AppliedId) -> AppliedId {
+        let app_id = self.normalize_applied_id_by_unionfind_unchecked(i);
+        self.check_applied_id(&app_id);
+        app_id
+    }
+
+    fn normalize_applied_id_by_unionfind_unchecked(&self, i: AppliedId) -> AppliedId {
         let a = &self.unionfind[&i.id];
 
         // I = self.slots(i.id);
