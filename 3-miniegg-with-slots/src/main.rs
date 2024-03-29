@@ -35,7 +35,6 @@ pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;
 
 fn main() {
-    let s = app(app(add(), num(0)), num(1));
-    check_simplify::<RecExpr>(&s, 5);
-
+    let p = "(lam x (lam z (app (lam y z) x)))";
+    check_simplify::<RecExpr>(p, 10);
 }
