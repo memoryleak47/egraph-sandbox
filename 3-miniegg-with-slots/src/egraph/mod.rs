@@ -120,10 +120,21 @@ impl EGraph {
         self.classes[&i].nodes.iter().map(|(x, y)| x.apply_slotmap(y)).collect()
     }
 
-    // TODO what does this do, if there are redundant slots?
-    // It would crash, right?
+    // Generates fresh slots for redundant slots.
     pub fn enodes_applied(&self, i: &AppliedId) -> HashSet<ENode> {
-        self.enodes(i.id).into_iter().map(|x| x.apply_slotmap(&i.m)).collect()
+        let mut out = HashSet::default();
+        for x in self.enodes(i.id) {
+            let red = &x.slots() - &i.m.keys();
+            let fbij = SlotMap::bijection_from_fresh_to(&red);
+            let m = fbij.inverse().union(&i.m);
+            out.insert(x.apply_slotmap(&m));
+        }
+
+        for x in &out {
+            assert_eq!(&self.lookup(x).unwrap(), i);
+        }
+
+        out
     }
 
     // number of enodes in the egraph.
