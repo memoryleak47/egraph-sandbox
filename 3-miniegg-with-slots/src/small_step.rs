@@ -50,10 +50,10 @@ fn step(x: Slot, t: AppliedId, b: &ENode, eg: &mut EGraph) -> AppliedId {
     match b {
         ENode::Var(_) => t,
         ENode::App(l, r) => {
-            let mut pack = |b: &AppliedId| {
-                let a = eg.add(ENode::Lam(x, b.clone()));
-                let out = eg.add(ENode::App(a, t.clone()));
-                out
+            let mut pack = |lr: &AppliedId| {
+                let a1 = eg.add(ENode::Lam(x, lr.clone()));
+                let a2 = eg.add(ENode::App(a1, t.clone()));
+                a2
             };
             let l = pack(l);
             let r = pack(r);

@@ -36,6 +36,7 @@ pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;
 
 fn main() {
-    let p = "(lam x (lam z (app (lam y z) x)))";
+    let p = "(lam x (lam y (app (lam z (app x z)) y)))";
+    let p2 = "(lam x (lam y (app x y)))";
     check_simplify::<Expr<SmallStep>>(p, 10);
 }
