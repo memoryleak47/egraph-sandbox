@@ -15,6 +15,7 @@ pub fn rewrite_small_step(eg: &mut EGraph) {
     }
 }
 
+// TODO
 fn step(x: Slot, t: AppliedId, b: &ENode, eg: &mut EGraph) -> AppliedId {
     match b {
         ENode::Var(y) => {
@@ -25,10 +26,20 @@ fn step(x: Slot, t: AppliedId, b: &ENode, eg: &mut EGraph) -> AppliedId {
             }
         },
         ENode::App(l, r) => {
-            todo!()
+            let mut pack = |b: &AppliedId| {
+                let a = eg.add(ENode::Lam(x, b.clone()));
+                let out = eg.add(ENode::App(a, t.clone()));
+                out
+            };
+            let l = pack(l);
+            let r = pack(r);
+            eg.add(ENode::App(l, r))
         },
         ENode::Lam(y, bb) => {
-            todo!()
+            let a1 = eg.add(ENode::Lam(x, bb.clone()));
+            let a2 = eg.add(ENode::App(a1, t.clone()));
+            let a3 = eg.add(ENode::Lam(*y, a2));
+            a3
         },
     }
 }
