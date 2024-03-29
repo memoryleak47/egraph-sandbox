@@ -115,6 +115,8 @@ impl EGraph {
                        .collect()
     }
 
+    // TODO For non-normalized inputs i, the slots in the output will definitely be wrong.
+    // if x in enodes(i), then I'd expect x.slots() superset slots(i).
     pub fn enodes(&self, i: Id) -> HashSet<ENode> {
         let i = self.unionfind[&i].id;
         self.classes[&i].nodes.iter().map(|(x, y)| x.apply_slotmap(y)).collect()
