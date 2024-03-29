@@ -107,8 +107,7 @@ impl EGraph {
             usages: HashSet::default(),
         };
         self.classes.insert(c_id, c);
-        let identity_app_id = AppliedId::new(c_id, SlotMap::identity(slots));
-        self.unionfind.insert(c_id, identity_app_id.clone());
+        self.unionfind.insert(c_id, self.mk_identity_applied_id(c_id));
 
         c_id
     }

@@ -185,8 +185,7 @@ impl EGraph {
 
             // if they point to themselves, they should do it using the identity.
             if alive {
-                let slots = &self.classes[i].slots;
-                assert_eq!(self.unionfind[i].m, SlotMap::identity(slots));
+                assert_eq!(self.unionfind[i], self.mk_identity_applied_id(*i));
             } else {
                 assert!(self.classes[i].nodes.is_empty());
                 assert!(self.classes[i].usages.is_empty());

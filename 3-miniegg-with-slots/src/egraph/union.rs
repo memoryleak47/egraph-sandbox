@@ -100,7 +100,7 @@ impl EGraph {
             let class_slots = self.classes[&i].slots.clone();
             let norm_slots = norm.slots();
             if !class_slots.is_subset(&norm_slots) {
-                let l = self.mk_applied_id(i, SlotMap::identity(&class_slots));
+                let l = self.mk_identity_applied_id(i);
 
                 let sub = &class_slots & &norm_slots;
 
@@ -113,7 +113,7 @@ impl EGraph {
             if let Some(app_id) = self.lookup(&norm) {
                 // If there is a collision, we don't add it directly.
                 // Instead, we union it together.
-                let l = self.mk_applied_id(i, SlotMap::identity(&class_slots));
+                let l = self.mk_identity_applied_id(i);
                 let r = app_id;
                 future_unions.push((l, r));
             } else {
