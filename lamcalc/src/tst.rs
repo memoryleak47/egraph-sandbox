@@ -78,6 +78,13 @@ macro_rules! unpack_tests {
         }
 
         #[test]
+        fn test_redundant_slot2() {
+            // y is unused, and hence x is effectively redundant.
+            let p = "(lam x (lam z (app (lam y z) x)))";
+            check_simplify::<$R>(p, 10);
+        }
+
+        #[test]
         fn test_inf_loop() {
             let p = "(app (lam x0 (app x0 x0)) (lam x1 (app x1 x1)))";
             let out = simplify::<$R>(p, 3);
