@@ -133,12 +133,13 @@ impl SlotMap {
     }
 
     // will panic, if the maps are incompatible.
+    #[track_caller]
     pub fn union(&self, other: &SlotMap) -> Self {
         let mut out = self.clone();
 
         for (x, y) in other.iter() {
             if let Some(z) = out.get(x) {
-                assert_eq!(y, z, "SlotMap::union: The SlotMaps disagree!");
+                assert_eq!(y, z, "SlotMap::union: The SlotMaps disagree! {:?} -> {:?} / {:?}", x, z, y);
             }
             out.insert(x, y);
         }
