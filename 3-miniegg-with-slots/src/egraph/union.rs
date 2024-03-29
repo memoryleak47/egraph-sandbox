@@ -100,9 +100,7 @@ impl EGraph {
                 let sub = &class_slots & &norm_slots;
 
                 // We union `i` with an empty EClass that is just missing a slot.
-                // TODO do we want disjoint slot-names between the classes?
-                let tmp = self.alloc_eclass(&sub);
-                let r = AppliedId::new(tmp, SlotMap::identity(&sub));
+                let r = self.alloc_eclass_fresh(&sub);
                 future_unions.push((l, r));
             }
 
