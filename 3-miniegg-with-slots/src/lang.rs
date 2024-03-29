@@ -120,9 +120,13 @@ pub fn as_set(v: Vec<Slot>) -> HashSet<Slot> {
 
 impl AppliedId {
     pub fn new(id: Id, m: SlotMap) -> Self {
-        assert!(m.is_bijection());
+        let s = AppliedId { id, m };
+        s.check();
+        s
+    }
 
-        AppliedId { id, m }
+    pub fn check(&self) {
+        assert!(self.m.is_bijection());
     }
 
     pub fn apply_slotmap(&self, m: &SlotMap) -> AppliedId {

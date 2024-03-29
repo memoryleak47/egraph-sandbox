@@ -71,8 +71,7 @@ impl EGraph {
 
     #[track_caller]
     pub fn check_applied_id(&self, app_id: &AppliedId) {
-        let app_id = self.normalize_applied_id_by_unionfind_unchecked(app_id.clone());
-
+        app_id.check();
         assert_eq!(self.classes[&app_id.id].slots, app_id.m.keys());
     }
 
