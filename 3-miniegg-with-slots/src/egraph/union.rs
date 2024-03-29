@@ -18,17 +18,19 @@ impl EGraph {
         };
 
         // make the slots fresh.
-        let all_slots = l.slots().union(&r.slots()).copied().collect();
+        let all_slots = &l.slots() | &r.slots();
         let fresh_map = SlotMap::bijection_from_fresh_to(&all_slots).inverse();
         let l = l.apply_slotmap(&fresh_map);
         let r = r.apply_slotmap(&fresh_map);
 
-        let slots: HashSet<Slot> = l.slots().intersection(&r.slots()).copied().collect();
+        let slots = &l.slots() & &r.slots();
         let c_id = self.alloc_eclass(&slots);
 
         let mut future_unions = Vec::new();
         for lr in [l, r] {
-            self.merge_into_eclass(lr.id, c_id, &lr.m, &mut future_unions);
+            // We need to filter the ones out that are newly "redundant".
+            let lr_m = lr.m.iter().filter(|(x, y)| slots.contains(y)).collect();
+            self.merge_into_eclass(lr.id, c_id, &lr_m, &mut future_unions);
         }
 
         for (x, y) in future_unions {
