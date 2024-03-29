@@ -48,7 +48,7 @@ impl EGraph {
     // self.add(x) = y implies that x.slots() is a superset of y.slots().
     // x.slots() - y.slots() are redundant slots.
     pub fn add(&mut self, enode: ENode) -> AppliedId {
-        let enode = self.normalize_enode_by_unionfind(&enode);
+        let enode = self.find_enode(&enode);
 
         if let Some(x) = self.lookup(&enode) {
             return x;
@@ -70,7 +70,7 @@ impl EGraph {
     }
 
     pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
-        let n = self.normalize_enode_by_unionfind(n);
+        let n = self.find_enode(n);
         let (shape, n_bij) = n.shape();
         let i = self.hashcons.get(&shape)?;
         let c = &self.classes[i];

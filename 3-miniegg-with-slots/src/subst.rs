@@ -4,8 +4,8 @@ use crate::*;
 // out has slots (slots(b) - {x}) | slots(t).
 // I presume that slots(t) is allowed to contain x.
 pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId {
-    let b = eg.normalize_applied_id_by_unionfind(b);
-    let t = eg.normalize_applied_id_by_unionfind(t);
+    let b = eg.find_applied_id(b);
+    let t = eg.find_applied_id(t);
 
     // Is it necessary to do the unions in the end? Can it not be done "directly"?
     let mut union_cmds = vec![];
@@ -15,7 +15,7 @@ pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId 
         eg.union(x, y);
     }
 
-    let out = eg.normalize_applied_id_by_unionfind(out);
+    let out = eg.find_applied_id(out);
     out
 }
 

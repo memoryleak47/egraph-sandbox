@@ -4,7 +4,7 @@ use crate::*;
 // This is hence equivalent to AST size.
 // `i` is not allowed to have free variables, hence prefer `Id` over `AppliedId`.
 pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
-    let i = eg.normalize_id_by_unionfind(i);
+    let i = eg.find_id(i);
 
     // this is a terribly slow algorithm.
 

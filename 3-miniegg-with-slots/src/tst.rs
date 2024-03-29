@@ -40,7 +40,7 @@ impl<T> Realization for Expr<T> where T: RewriteStep {
             T::rewrite_step(&mut eg);
             eg.inv();
 
-            if eg.normalize_id_by_unionfind(i1) == eg.normalize_id_by_unionfind(i2) {
+            if eg.find_id(i1) == eg.find_id(i2) {
                 return true;
             }
         }

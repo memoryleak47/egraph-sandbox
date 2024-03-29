@@ -56,8 +56,8 @@ impl EGraph {
         self.classes[&id].slots.clone()
     }
 
-    pub fn normalize_enode_by_unionfind(&self, enode: &ENode) -> ENode {
-        enode.map_applied_ids(|x| self.normalize_applied_id_by_unionfind(x))
+    pub fn find_enode(&self, enode: &ENode) -> ENode {
+        enode.map_applied_ids(|x| self.find_applied_id(x))
     }
 
     #[track_caller]
@@ -67,6 +67,11 @@ impl EGraph {
         self.check_applied_id(&app_id);
 
         app_id
+    }
+
+    #[track_caller]
+    pub fn mk_identity_applied_id(&self, i: Id) -> AppliedId {
+        self.mk_applied_id(i, SlotMap::identity(&self.classes[&i].slots))
     }
 
     #[track_caller]
@@ -82,13 +87,7 @@ impl EGraph {
     //
     // Example 2:
     // 'find(c1(s3, s7, s8)) = c2(s8, s7)', where 'c1(s0, s1, s2) -> c2(s2, s1)' in unionfind,
-    pub fn normalize_applied_id_by_unionfind(&self, i: AppliedId) -> AppliedId {
-        let app_id = self.normalize_applied_id_by_unionfind_unchecked(i);
-        self.check_applied_id(&app_id);
-        app_id
-    }
-
-    fn normalize_applied_id_by_unionfind_unchecked(&self, i: AppliedId) -> AppliedId {
+    pub fn find_applied_id(&self, i: AppliedId) -> AppliedId {
         let a = &self.unionfind[&i.id];
 
         // I = self.slots(i.id);
@@ -97,14 +96,16 @@ impl EGraph {
         // a.m   :: A -> I
         // out.m :: A -> X
 
-        AppliedId::new(
+        self.mk_applied_id(
             a.id,
             a.m.compose_partial(&i.m), // This is partial if `i.id` had redundant slots.
         )
     }
 
-    pub fn normalize_id_by_unionfind(&self, i: Id) -> Id {
+    pub fn find_id(&self, i: Id) -> Id {
         let i = self.unionfind[&i].id;
+        // TODO what's the usecase for this?
+        // Don't we want a consistent AppliedId API?
         assert!(self.classes[&i].slots.is_empty());
 
         i
@@ -126,7 +127,7 @@ impl EGraph {
 
     // Generates fresh slots for redundant slots.
     pub fn enodes_applied(&self, i: &AppliedId) -> HashSet<ENode> {
-        let i = self.normalize_applied_id_by_unionfind(i.clone());
+        let i = self.find_applied_id(i.clone());
 
         let mut out = HashSet::default();
         for x in self.enodes(i.id) {
@@ -229,7 +230,7 @@ impl EGraph {
 
         fn inv_internal_applied_id(eg: &EGraph, app_id: &AppliedId) {
             // 1. the app_id needs to be normalized!
-            let y = eg.normalize_applied_id_by_unionfind(app_id.clone());
+            let y = eg.find_applied_id(app_id.clone());
             assert_eq!(app_id, &y);
 
             // 2. It needs to have exactly the same slots as the underlying EClass.

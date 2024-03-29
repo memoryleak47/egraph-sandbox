@@ -6,8 +6,8 @@ impl EGraph {
     // returns whether it actually did something.
     pub fn union(&mut self, l: AppliedId, r: AppliedId) -> bool {
         // normalize inputs
-        let l = self.normalize_applied_id_by_unionfind(l);
-        let r = self.normalize_applied_id_by_unionfind(r);
+        let l = self.find_applied_id(l);
+        let r = self.find_applied_id(r);
 
         // early return, if union should not be made.
         if l == r { return false; }
@@ -41,10 +41,10 @@ impl EGraph {
     }
 
     fn fix_unionfind(&mut self) {
-        // recursively applies normalize_applied_id_by_unionfind() until convergence.
+        // recursively applies find_applied_id() until convergence.
         let full_find = |mut x: AppliedId| {
             loop {
-                let y = self.normalize_applied_id_by_unionfind(x.clone());
+                let y = self.find_applied_id(x.clone());
                 if x == y { return x; }
                 x = y;
             }
@@ -93,7 +93,7 @@ impl EGraph {
             let bij = self.classes[&i].nodes[&sh].clone();
             self.raw_remove_from_class(i, (sh.clone(), bij.clone()));
             let n = sh.apply_slotmap(&bij);
-            let norm = self.normalize_enode_by_unionfind(&n);
+            let norm = self.find_enode(&n);
             let (norm_sh, norm_bij) = norm.shape();
 
             // Check whether `norm` makes a Slot redundant.
