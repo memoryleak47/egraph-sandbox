@@ -68,6 +68,7 @@ impl ENode {
         }
     }
 
+    #[track_caller]
     pub fn apply_slotmap(&self, m: &SlotMap) -> ENode {
         assert!(m.keys().is_superset(&self.slots()), "ENode::apply_slotmap: The SlotMap doesn't map all free slots!");
         self.apply_slotmap_partial(m)
