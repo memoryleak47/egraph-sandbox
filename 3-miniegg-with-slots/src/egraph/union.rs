@@ -30,37 +30,22 @@ impl EGraph {
         let slots = &l.slots() & &r.slots();
         let c_id = self.alloc_eclass(&slots);
 
-        let mut future_unions = Vec::new();
         for lr in [l, r] {
             // We need to filter the ones out that are newly "redundant".
             let lr_m = lr.m.iter().filter(|(x, y)| slots.contains(y)).collect();
-            self.merge_into_eclass(lr.id, c_id, &lr_m, &mut future_unions);
-        }
-
-        for (x, y) in future_unions {
-            self.union_internal(x, y);
+            self.merge_into_eclass(lr.id, c_id, &lr_m);
         }
 
         return true;
     }
 
-    fn fix_unionfind(&mut self) {
-        // recursively applies find_applied_id() until convergence.
-        let full_find = |mut x: AppliedId| {
-            loop {
-                let y = self.find_applied_id(x.clone());
-                if x == y { return x; }
-                x = y;
-            }
-        };
-        self.unionfind = self.unionfind.iter()
-                        .map(|(x, y)| (*x, full_find(y.clone())))
-                        .collect();
-    }
-
     // merges the EClass `from` into `to`. This deprecates the EClass `from`.
     // map :: slots(from) -> slots(to)
-    fn merge_into_eclass(&mut self, from: Id, to: Id, map: &SlotMap, future_unions: &mut Vec<(AppliedId, AppliedId)>) {
+    fn merge_into_eclass(&mut self, from: Id, to: Id, map: &SlotMap) {
+        // Should hold here: self.inv();
+
+        let mut future_unions = Vec::new();
+
         // X = slots(from)
         // Y = slots(to)
         // map :: X -> Y
@@ -127,5 +112,25 @@ impl EGraph {
                 self.raw_add_to_class(i, norm.shape());
             }
         }
+
+        for (x, y) in future_unions {
+            self.union_internal(x, y);
+        }
+
+        // Should hold here: self.inv();
+    }
+
+    fn fix_unionfind(&mut self) {
+        // recursively applies find_applied_id() until convergence.
+        let full_find = |mut x: AppliedId| {
+            loop {
+                let y = self.find_applied_id(x.clone());
+                if x == y { return x; }
+                x = y;
+            }
+        };
+        self.unionfind = self.unionfind.iter()
+                        .map(|(x, y)| (*x, full_find(y.clone())))
+                        .collect();
     }
 }
