@@ -104,19 +104,19 @@ macro_rules! unpack_tests {
         #[test]
         fn test_add00() {
             let s = app(app(add(), num(0)), num(0));
-            check_simplify::<$R>(&s, 30);
+            check_simplify::<$R>(&s, 16);
         }
 
         #[test]
         fn test_add01() {
             let s = app(app(add(), num(0)), num(1));
-            check_simplify::<$R>(&s, 30);
+            check_simplify::<$R>(&s, 16);
         }
 
         #[test]
         fn test_add23_incomplete() {
             let s = app(app(add(), num(2)), num(3));
-            check_simplify_incomplete::<$R>(&s, 30);
+            check_simplify_incomplete::<$R>(&s, 15);
         }
 
         #[test]
