@@ -5,6 +5,10 @@ impl EGraph {
     // TODO get references here instead!
     // returns whether it actually did something.
     pub fn union(&mut self, l: AppliedId, r: AppliedId) -> bool {
+        self.union_internal(l, r)
+    }
+
+    pub(in crate::egraph) fn union_internal(&mut self, l: AppliedId, r: AppliedId) -> bool {
         // normalize inputs
         let l = self.find_applied_id(l);
         let r = self.find_applied_id(r);
@@ -34,7 +38,7 @@ impl EGraph {
         }
 
         for (x, y) in future_unions {
-            self.union(x, y);
+            self.union_internal(x, y);
         }
 
         return true;
@@ -110,7 +114,7 @@ impl EGraph {
             }
 
             // Check whether `norm` collides with something:
-            if let Some(app_id) = self.lookup(&norm) {
+            if let Some(app_id) = self.lookup_internal(&norm) {
                 // If there is a collision, we don't add it directly.
                 // Instead, we union it together.
                 let l = self.mk_identity_applied_id(i);

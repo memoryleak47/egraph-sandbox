@@ -45,9 +45,13 @@ impl EGraph {
         res.id
     }
 
+    pub fn add(&mut self, enode: ENode) -> AppliedId {
+        self.add_internal(enode)
+    }
+
     // self.add(x) = y implies that x.slots() is a superset of y.slots().
     // x.slots() - y.slots() are redundant slots.
-    pub fn add(&mut self, enode: ENode) -> AppliedId {
+    pub(in crate::egraph) fn add_internal(&mut self, enode: ENode) -> AppliedId {
         let enode = self.find_enode(&enode);
 
         if let Some(x) = self.lookup(&enode) {
@@ -70,6 +74,10 @@ impl EGraph {
     }
 
     pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
+        self.lookup_internal(n)
+    }
+
+    pub(in crate::egraph) fn lookup_internal(&self, n: &ENode) -> Option<AppliedId> {
         let n = self.find_enode(n);
         let (shape, n_bij) = n.shape();
         let i = self.hashcons.get(&shape)?;
