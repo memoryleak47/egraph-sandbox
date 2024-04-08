@@ -65,6 +65,9 @@ impl EGraph {
         // Y = slots(to)
         // map :: X -> Y
 
+        assert!(map.keys().is_subset(&self.classes[&from].slots));
+        assert_eq!(self.classes[&to].slots, map.values());
+
         // 1. add unionfind entry 'from -> to'.
         self.unionfind.insert(from, self.mk_applied_id(to, map.inverse()));
         self.fix_unionfind();
