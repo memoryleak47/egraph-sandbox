@@ -97,7 +97,7 @@ macro_rules! unpack_tests {
             let p = "(lam f (lam arg arg))";
             let s = app(y(), String::from(p));
 
-            let out = simplify::<$R>(&s, 30);
+            let out = simplify::<$R>(&s, 7);
             assert_alpha_eq(&out, "(lam x x)");
         }
 
