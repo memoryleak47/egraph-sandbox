@@ -98,6 +98,10 @@ impl EGraph {
 
                 // We union `i` with an empty EClass that is just missing a slot.
                 let r = self.alloc_eclass_fresh(&sub);
+
+                // TODO This is a dangerous solution.
+                // The invariant that each e-class.slots subset e-node.slots doesn't hold until the corresponding future_union is handled.
+                // In other words, we call union_internal, even though the e-graphs invariants are not upheld.
                 future_unions.push((l, r));
             }
 
