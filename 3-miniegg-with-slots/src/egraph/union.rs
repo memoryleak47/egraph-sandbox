@@ -73,7 +73,7 @@ impl EGraph {
         self.fix_unionfind();
 
         // 2. move enodes from 'from' to 'to'.
-        let from_enodes = self.classes.get_mut(&from).unwrap().nodes.clone();
+        let from_enodes = self.classes.get(&from).unwrap().nodes.clone();
         for (sh, bij) in from_enodes {
             // SH = slots(sh)
             // bij :: SH -> X
