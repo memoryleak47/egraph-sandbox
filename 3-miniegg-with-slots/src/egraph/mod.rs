@@ -179,12 +179,8 @@ impl EGraph {
         // check that self.classes contains exactly these classes which point to themselves in the unionfind.
         let all: HashSet<&Id> = &(&self.unionfind.keys().collect::<HashSet<_>>() | &self.unionfind.values().map(|x| &x.id).collect::<HashSet<_>>()) | &self.classes.keys().collect::<HashSet<_>>();
         for i in all {
-            let alive = self.classes[i].is_alive();
-            let alive2 = self.unionfind[i].id == *i;
-            assert_eq!(alive, alive2);
-
             // if they point to themselves, they should do it using the identity.
-            if alive {
+            if self.is_alive(*i) {
                 assert_eq!(self.unionfind[i], self.mk_identity_applied_id(*i));
             } else {
                 assert!(self.classes[i].nodes.is_empty());
@@ -237,10 +233,14 @@ impl EGraph {
         }
     }
 
+    fn is_alive(&self, i: Id) -> bool {
+        self.unionfind[&i].id == i
+    }
+
     pub fn dump(&self) {
         println!("");
         for (i, c) in &self.classes {
-            if !c.is_alive() { continue; }
+            if !self.is_alive(*i) { continue; }
 
             let slot_str = c.slots.iter().map(|x| format!("s{}", x.0)).collect::<Vec<_>>().join(", ");
             println!("{:?}({}):", i, &slot_str);
@@ -250,11 +250,5 @@ impl EGraph {
             }
         }
         println!("");
-    }
-}
-
-impl EClass {
-    fn is_alive(&self) -> bool {
-        !self.nodes.is_empty()
     }
 }
