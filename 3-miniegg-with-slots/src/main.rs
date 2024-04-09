@@ -6,8 +6,11 @@ use types::*;
 mod lang;
 use lang::*;
 
-mod lambda;
-use lambda::*;
+mod i_lambda;
+use i_lambda::*;
+
+mod i_let;
+use i_let::*;
 
 mod syntax;
 use syntax::*;
