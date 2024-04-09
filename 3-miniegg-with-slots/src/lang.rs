@@ -22,6 +22,8 @@ pub trait Language: Debug + Clone + Hash + Eq {
     fn applied_id_occurences_mut(&mut self) -> Vec<&mut AppliedId>;
 
 
+    // generated methods:
+
     fn all_slot_occurences(&self) -> Vec<Slot> {
         self.clone().all_slot_occurences_mut().into_iter().map(|x| x.clone()).collect()
     }
@@ -32,6 +34,39 @@ pub trait Language: Debug + Clone + Hash + Eq {
 
     fn applied_id_occurences(&self) -> Vec<AppliedId> {
         self.clone().applied_id_occurences_mut().into_iter().map(|x| x.clone()).collect()
+    }
+
+    fn map_applied_ids(&self, f: impl Fn(AppliedId) -> AppliedId) -> Self {
+        let mut c = self.clone();
+        for x in c.applied_id_occurences_mut() {
+            *x = f(x.clone());
+        }
+        c
+    }
+
+    fn apply_slotmap_partial(&self, m: &SlotMap) -> Self {
+        let mut c = self.clone();
+        for x in c.public_slot_occurences_mut() {
+            *x = m[*x];
+        }
+        c
+    }
+
+    #[track_caller]
+    fn apply_slotmap(&self, m: &SlotMap) -> Self {
+        assert!(m.keys().is_superset(&self.slots()), "Language::apply_slotmap: The SlotMap doesn't map all free slots!");
+        self.apply_slotmap_partial(m)
+    }
+
+    fn slot_occurences(&self) -> Vec<Slot> {
+        self.public_slot_occurences()
+    }
+
+    fn slot_order(&self) -> Vec<Slot> { firsts(self.slot_occurences()) }
+    fn slots(&self) -> HashSet<Slot> { as_set(self.slot_occurences()) }
+
+    fn ids(&self) -> Vec<Id> {
+        self.applied_id_occurences().into_iter().map(|x| x.id).collect()
     }
 }
 
@@ -108,75 +143,6 @@ impl Language for ENode {
 #[derive(Clone, Debug)]
 pub struct RecExpr {
     pub node_dag: Vec<ENode>,
-}
-
-impl ENode {
-    pub fn map_applied_ids(&self, f: impl Fn(AppliedId) -> AppliedId) -> ENode {
-        match self {
-            ENode::Lam(x, i) => ENode::Lam(*x, f(i.clone())),
-            ENode::App(i1, i2) => ENode::App(f(i1.clone()), f(i2.clone())),
-            ENode::Var(x) => ENode::Var(*x),
-        }
-    }
-
-    pub fn apply_slotmap_partial(&self, m: &SlotMap) -> ENode {
-        match self {
-            ENode::Lam(x, i) => {
-                if m.contains_key(*x) {
-                    panic!("apply_slotmap applied in lambda trying to rename its Lam variable.");
-                }
-                if m.values().contains(x) {
-                    panic!("apply_slotmap applied in lambda trying to rename *to* its Lam variable.");
-                }
-
-                let mut m = m.clone();
-                // removing x causes a "missing entry" problem.
-                // in order to keep x "unchanged" we insert x -> x.
-                m.insert(*x, *x);
-
-                assert!(m.is_bijection()); // if this fails, then probably multiple things point to x now - because someone didn't rename enough stuff.
-
-                ENode::Lam(*x, i.apply_slotmap_partial(&m))
-            },
-            ENode::App(i1, i2) => ENode::App(i1.apply_slotmap_partial(&m), i2.apply_slotmap_partial(&m)),
-            ENode::Var(x) => ENode::Var(m[*x]),
-        }
-    }
-
-    #[track_caller]
-    pub fn apply_slotmap(&self, m: &SlotMap) -> ENode {
-        assert!(m.keys().is_superset(&self.slots()), "ENode::apply_slotmap: The SlotMap doesn't map all free slots!");
-        self.apply_slotmap_partial(m)
-    }
-
-    pub fn slot_occurences(&self) -> Vec<Slot> {
-        let mut v = Vec::new();
-        match self {
-            ENode::Lam(s, r) => {
-                v.extend(r.m.values().into_iter().filter(|x| x != s));
-            },
-            ENode::App(l, r) => {
-                v.extend(l.m.values());
-                v.extend(r.m.values());
-            }
-            ENode::Var(s) => {
-                v.push(*s);
-            },
-        };
-
-        v
-    }
-
-    pub fn slot_order(&self) -> Vec<Slot> { firsts(self.slot_occurences()) }
-    pub fn slots(&self) -> HashSet<Slot> { as_set(self.slot_occurences()) }
-
-    pub fn ids(&self) -> Vec<Id> {
-        match self {
-            ENode::App(l, r) => vec![l.id, r.id],
-            ENode::Lam(_, b) => vec![b.id],
-            ENode::Var(_) => vec![],
-        }
-    }
 }
 
 // sorts as_set(v) by their first usage in v.
