@@ -53,6 +53,11 @@ impl SlotMap {
         self.map.iter().copied()
     }
 
+    // ordered by their keys!
+    pub fn values_mut(&mut self) -> impl Iterator<Item=&mut Slot> + '_ {
+        self.map.iter_mut().map(|(_, y)| y)
+    }
+
     pub fn keys(&self) -> HashSet<Slot> { self.iter().map(|(x, _)| x).collect() }
     pub fn values(&self) -> HashSet<Slot> { self.iter().map(|(_, y)| y).collect() }
     pub fn keys_vec(&self) -> Vec<Slot> { self.iter().map(|(x, _)| x).collect() }
