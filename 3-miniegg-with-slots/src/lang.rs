@@ -13,6 +13,19 @@ pub struct Id(pub usize);
 // A slot is "flexible" if it's free or lambda.
 pub struct Slot(pub usize);
 
+pub trait Language: Debug + Clone + Hash + Eq {
+    fn discr(&self) -> u32;
+
+    fn all_slots(&self) -> Vec<Slot>;
+    fn all_slots_mut(&mut self) -> Vec<&mut Slot>;
+
+    fn public_slots(&self) -> Vec<Slot>;
+    fn public_slots_mut(&mut self) -> Vec<&mut Slot>;
+
+    fn applied_ids(&self) -> Vec<AppliedId>;
+    fn applied_ids_mut(&mut self) -> Vec<&mut AppliedId>;
+}
+
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AppliedId {
     pub id: Id,
