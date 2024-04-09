@@ -1,7 +1,13 @@
 use lamcalc::*;
 
+mod types;
+use types::*;
+
 mod lang;
 use lang::*;
+
+mod lambda;
+use lambda::*;
 
 mod syntax;
 use syntax::*;
