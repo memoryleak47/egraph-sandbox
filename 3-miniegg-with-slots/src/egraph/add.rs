@@ -1,8 +1,8 @@
 use crate::*;
 
-impl EGraph {
+impl<L: Language> EGraph<L> {
     // returns Id instead of AppliedId, as the re isn't allowed to have free variables.
-    pub fn add_expr(&mut self, re: RecExpr) -> Id {
+    pub fn add_expr(&mut self, re: RecExpr<L>) -> Id {
         // re[i] should be "conceptually equivalent" to v[i].
         let mut v: Vec<AppliedId> = Vec::new();
 
@@ -45,13 +45,13 @@ impl EGraph {
         res.id
     }
 
-    pub fn add(&mut self, enode: ENode) -> AppliedId {
+    pub fn add(&mut self, enode: L) -> AppliedId {
         self.add_internal(enode)
     }
 
     // self.add(x) = y implies that x.slots() is a superset of y.slots().
     // x.slots() - y.slots() are redundant slots.
-    pub(in crate::egraph) fn add_internal(&mut self, enode: ENode) -> AppliedId {
+    pub(in crate::egraph) fn add_internal(&mut self, enode: L) -> AppliedId {
         let enode = self.find_enode(&enode);
 
         if let Some(x) = self.lookup(&enode) {
@@ -73,11 +73,11 @@ impl EGraph {
         self.mk_applied_id(id, fresh_to_old)
     }
 
-    pub fn lookup(&self, n: &ENode) -> Option<AppliedId> {
+    pub fn lookup(&self, n: &L) -> Option<AppliedId> {
         self.lookup_internal(n)
     }
 
-    pub(in crate::egraph) fn lookup_internal(&self, n: &ENode) -> Option<AppliedId> {
+    pub(in crate::egraph) fn lookup_internal(&self, n: &L) -> Option<AppliedId> {
         let n = self.find_enode(n);
         let (shape, n_bij) = n.shape();
         let i = self.hashcons.get(&shape)?;
@@ -128,7 +128,7 @@ impl EGraph {
     }
 
     // adds (sh, bij) to the eclass `id`.
-    pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (ENode, Bijection)) {
+    pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (L, Bijection)) {
         assert!(self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij).is_none());
         assert!(self.hashcons.insert(sh.clone(), id).is_none());
         for ref_id in sh.ids() {
@@ -137,7 +137,7 @@ impl EGraph {
         }
     }
 
-    pub(in crate::egraph) fn raw_remove_from_class(&mut self, id: Id, (sh, bij): (ENode, Bijection)) {
+    pub(in crate::egraph) fn raw_remove_from_class(&mut self, id: Id, (sh, bij): (L, Bijection)) {
         assert!(self.classes.get_mut(&id).unwrap().nodes.remove(&sh).is_some());
         assert!(self.hashcons.remove(&sh).is_some());
         for ref_id in sh.ids() {

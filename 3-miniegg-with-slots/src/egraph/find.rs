@@ -1,7 +1,7 @@
 use crate::*;
 
-impl EGraph {
-    pub fn find_enode(&self, enode: &ENode) -> ENode {
+impl<L: Language> EGraph<L> {
+    pub fn find_enode(&self, enode: &L) -> L {
         enode.map_applied_ids(|x| self.find_applied_id(x))
     }
 

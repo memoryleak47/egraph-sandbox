@@ -1,10 +1,10 @@
 use crate::*;
 
 pub trait RewriteStep {
-    fn rewrite_step(eg: &mut EGraph);
+    fn rewrite_step(eg: &mut EGraph<ENode>);
 }
 
-pub struct Expr<T: RewriteStep>(RecExpr, std::marker::PhantomData<T>);
+pub struct Expr<T: RewriteStep>(RecExpr<ENode>, std::marker::PhantomData<T>);
 
 impl<T> Realization for Expr<T> where T: RewriteStep {
     fn to_ast_string(&self) -> String {
@@ -16,7 +16,7 @@ impl<T> Realization for Expr<T> where T: RewriteStep {
     }
 
     fn simplify(&self, steps: u32) -> Self {
-        let mut eg = EGraph::new();
+        let mut eg = EGraph::<ENode>::new();
         let i = eg.add_expr(self.0.clone());
 
         eg.inv();
@@ -30,7 +30,7 @@ impl<T> Realization for Expr<T> where T: RewriteStep {
     }
 
     fn find_eq(&self, other: &Self, steps: u32) -> bool {
-        let mut eg = EGraph::new();
+        let mut eg = EGraph::<ENode>::new();
 
         let i1 = eg.add_expr(self.0.clone());
         let i2 = eg.add_expr(other.0.clone());
@@ -56,7 +56,7 @@ mod big_step {
     pub struct BigStep;
 
     impl RewriteStep for BigStep {
-        fn rewrite_step(eg: &mut EGraph) {
+        fn rewrite_step(eg: &mut EGraph<ENode>) {
             rewrite_step(eg)
         }
     }
@@ -72,7 +72,7 @@ mod small_step {
     pub struct SmallStep;
 
     impl RewriteStep for SmallStep {
-        fn rewrite_step(eg: &mut EGraph) {
+        fn rewrite_step(eg: &mut EGraph<ENode>) {
             rewrite_small_step(eg)
         }
     }

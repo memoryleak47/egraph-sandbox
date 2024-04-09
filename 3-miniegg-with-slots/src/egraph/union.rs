@@ -1,6 +1,6 @@
 use crate::*;
 
-impl EGraph {
+impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // TODO get references here instead!
     // returns whether it actually did something.

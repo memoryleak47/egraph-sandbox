@@ -24,8 +24,8 @@ pub struct AppliedId {
 }
 
 #[derive(Clone, Debug)]
-pub struct RecExpr {
-    pub node_dag: Vec<ENode>,
+pub struct RecExpr<L: Language> {
+    pub node_dag: Vec<L>,
 }
 
 

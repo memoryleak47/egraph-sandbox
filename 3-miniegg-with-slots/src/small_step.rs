@@ -1,6 +1,6 @@
 use crate::*;
 
-pub fn rewrite_small_step(eg: &mut EGraph) {
+pub fn rewrite_small_step(eg: &mut EGraph<ENode>) {
     for cand in candidates(eg) {
         let app_id = eg.lookup(&cand.app).unwrap();
 
@@ -31,7 +31,7 @@ pub fn rewrite_small_step(eg: &mut EGraph) {
 }
 
 // everything here has L0 slot-names.
-fn step(x: Slot, t: AppliedId, b: &ENode, eg: &mut EGraph) -> AppliedId {
+fn step(x: Slot, t: AppliedId, b: &ENode, eg: &mut EGraph<ENode>) -> AppliedId {
     if !b.slots().contains(&x) {
         return eg.lookup(b).unwrap();
     }

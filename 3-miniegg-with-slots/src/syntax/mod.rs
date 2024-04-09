@@ -5,7 +5,7 @@ use ast_list::*;
 
 ///// parse
 
-impl RecExpr {
+impl RecExpr<ENode> {
     pub fn parse(s: &str) -> Self {
         let ast = parse_ast(s);
 
@@ -109,7 +109,7 @@ fn translate(ast_node: AstNode, v: &[TranslateData]) -> TranslateData {
 
 ///// to_string
 
-impl RecExpr {
+impl RecExpr<ENode> {
     pub fn to_string(&self) -> String {
         let mut name_id = 0;
         let mut namegen = || {

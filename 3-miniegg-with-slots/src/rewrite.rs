@@ -8,7 +8,7 @@ pub struct Candidate {
 }
 
 // applies rewrites (only beta-reduction) for all applicable situations.
-pub fn rewrite_step(eg: &mut EGraph) {
+pub fn rewrite_step(eg: &mut EGraph<ENode>) {
     for cand in candidates(eg) {
         let app_id = eg.lookup(&cand.app).unwrap();
 
@@ -31,7 +31,7 @@ pub fn rewrite_step(eg: &mut EGraph) {
     }
 }
 
-pub fn candidates(eg: &EGraph) -> Vec<Candidate> {
+pub fn candidates(eg: &EGraph<ENode>) -> Vec<Candidate> {
     // find all lambdas:
     let mut lambdas: HashMap<Id, Vec<ENode>> = Default::default();
     for c in eg.ids() {

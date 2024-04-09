@@ -3,13 +3,13 @@ use crate::*;
 // our cost function is RecExpr::node_dag.len(), and we build every RecExpr s.t. each element of the node DAG is used exactly once.
 // This is hence equivalent to AST size.
 // `i` is not allowed to have free variables, hence prefer `Id` over `AppliedId`.
-pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
+pub fn extract(i: Id, eg: &EGraph<ENode>) -> RecExpr<ENode> {
     let i = eg.find_id(i);
 
     // this is a terribly slow algorithm.
 
     // maps eclass id to their optimal RecExpr.
-    let mut map: HashMap<Id, RecExpr> = HashMap::default();
+    let mut map: HashMap<Id, RecExpr<ENode>> = HashMap::default();
 
     for _ in 0..eg.ids().len() {
         for id in eg.ids() {
@@ -32,7 +32,7 @@ pub fn extract(i: Id, eg: &EGraph) -> RecExpr {
     map.remove(&i).unwrap()
 }
 
-fn extract_step(enode: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr>) -> Option<RecExpr> {
+fn extract_step(enode: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr<ENode>>) -> Option<RecExpr<ENode>> {
     match enode {
         ENode::Var(x) => {
             let re = RecExpr { node_dag: vec![ENode::Var(x)] };
@@ -86,8 +86,8 @@ fn extract_step(enode: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr>) -> Opt
 // a simple lookup of `map[a]`, but wait! `a` is an AppliedId instead of a simple Id.
 // Hence we need to do some renaming.
 // if Some(re) = db_impl(a, ..), then re.last().slots() = a.slots()
-fn db_impl(a: AppliedId, map: &HashMap<Id, RecExpr>) -> Option<RecExpr> {
-    let mut re: RecExpr = map.get(&a.id)?.clone();
+fn db_impl(a: AppliedId, map: &HashMap<Id, RecExpr<ENode>>) -> Option<RecExpr<ENode>> {
+    let mut re: RecExpr<ENode> = map.get(&a.id)?.clone();
     let b: &mut ENode = re.node_dag.last_mut().unwrap();
 
     // a.slots() == A

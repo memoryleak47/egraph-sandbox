@@ -3,7 +3,7 @@ use crate::*;
 // returns an eclass containing b[x := t]
 // out has slots (slots(b) - {x}) | slots(t).
 // I presume that slots(t) is allowed to contain x.
-pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId {
+pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph<ENode>) -> AppliedId {
     let b = eg.find_applied_id(b);
     let t = eg.find_applied_id(t);
 
@@ -20,7 +20,7 @@ pub fn subst(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph) -> AppliedId 
 }
 
 // TODO do I need this? If yes, why?
-fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
+fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph<ENode>, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
     let large = &(&b.slots() | &t.slots()) | &singleton_set(x);
 
     // m :: Fresh -> Large
@@ -40,7 +40,7 @@ fn subst_impl(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, union_cmds: 
     out.apply_slotmap(&m)
 }
 
-fn subst_impl2(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
+fn subst_impl2(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph<ENode>, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
     if !b.slots().contains(&x) { // trivial-substitution-check.
         return b;
     }
@@ -68,7 +68,7 @@ fn subst_impl2(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph, union_cmds:
 // we return an eclass containing `enode[x := t]`
 //
 // The resulting AppliedId has slots "(slots(enode) - {x}) | slots(t)"
-fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
+fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph<ENode>, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
     let out = match enode.clone() {
         ENode::Var(x2) => {
             // We know that b.slots().contains(x) as if would otherwise have been filtered out in the trivial-substitution-check.
@@ -140,7 +140,7 @@ type Map = HashMap<Key, Value>;
 // Ok(app_id) means that it was already in the map, and nothing needs to be done.
 // Err(app_id) means that it was not yet in the map, but a new entry was added for it. Go and union stuff to it!
 // Either way slots(app_id) == (slots(b) - {x}) | slots(t).
-fn map_lookup(b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph, map: &mut Map) -> Result<AppliedId, AppliedId> {
+fn map_lookup(b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph<ENode>, map: &mut Map) -> Result<AppliedId, AppliedId> {
     assert!(b.slots().contains(&x));
 
     // b.m :: slots(b.id) -> X

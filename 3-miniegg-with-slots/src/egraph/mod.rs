@@ -10,17 +10,17 @@ mod union;
 pub use union::*;
 
 #[derive(Clone, Debug)]
-pub struct EClass {
+pub struct EClass<L: Language> {
     // The set of equivalent ENodes that make up this eclass.
     // for (sh, bij) in nodes; sh.apply_slotmap(bij) represents the actual ENode.
-    nodes: HashMap<ENode, Bijection>,
+    nodes: HashMap<L, Bijection>,
 
     // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
     // Should not contain Slot(0).
     slots: HashSet<Slot>,
 
     // Shows which Shapes refer to this EClass.
-    usages: HashSet<ENode>,
+    usages: HashSet<L>,
 }
 
 // invariants:
@@ -32,7 +32,7 @@ pub struct EClass {
 //    AppliedId::m also always has the same keys as the class expects slots.
 // 4. Slot(0) should not be in EClass::slots of any class.
 #[derive(Debug)]
-pub struct EGraph {
+pub struct EGraph<L: Language> {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
     // normalizes the eclass.
     // Each Id i that is an output of the unionfind itself has unionfind[i] = (i, identity()).
@@ -40,13 +40,13 @@ pub struct EGraph {
 
     // if a class does't have unionfind[x].id = x, then it doesn't contain nodes / usages.
     // It's "shallow" if you will.
-    classes: HashMap<Id, EClass>,
+    classes: HashMap<Id, EClass<L>>,
 
     // For each shape contained in the EGraph, maps to the EClass that contains it.
-    hashcons: HashMap<ENode, Id>,
+    hashcons: HashMap<L, Id>,
 }
 
-impl EGraph {
+impl<L: Language> EGraph<L> {
     pub fn new() -> Self {
         EGraph {
             unionfind: Default::default(),
@@ -88,13 +88,13 @@ impl EGraph {
 
     // TODO For non-normalized inputs i, the slots in the output will definitely be wrong.
     // if x in enodes(i), then I'd expect x.slots() superset slots(i).
-    pub fn enodes(&self, i: Id) -> HashSet<ENode> {
+    pub fn enodes(&self, i: Id) -> HashSet<L> {
         let i = self.unionfind[&i].id;
         self.classes[&i].nodes.iter().map(|(x, y)| x.apply_slotmap(y)).collect()
     }
 
     // Generates fresh slots for redundant slots.
-    pub fn enodes_applied(&self, i: &AppliedId) -> HashSet<ENode> {
+    pub fn enodes_applied(&self, i: &AppliedId) -> HashSet<L> {
         let i = self.find_applied_id(i.clone());
 
         let mut out = HashSet::default();
@@ -163,7 +163,7 @@ impl EGraph {
 
         // Check that the Unionfind has valid AppliedIds.
         for (_, app_id) in &self.unionfind {
-            inv_internal_applied_id(self, app_id);
+            inv_internal_applied_id::<L>(self, app_id);
         }
 
         // Check that all ENodes are valid.
@@ -174,24 +174,11 @@ impl EGraph {
 
                 assert_eq!((sh.clone(), bij.clone()), real.shape());
 
-                match real {
-                    ENode::Var(x) => {
-                        assert_eq!(&singleton_set(x), &c.slots)
-                    },
-                    ENode::App(l, r) => {
-                        inv_internal_applied_id(self, &l);
-                        inv_internal_applied_id(self, &r);
-                    }
-                    ENode::Lam(x, b) => {
-                        assert_eq!(x, Slot(0));
-
-                        inv_internal_applied_id(self, &b);
-                    }
-                }
+                // TODO check whether the e-nodes are actually legal! i.e. whether they reference e-classes with the correct set of slots.
             }
         }
 
-        fn inv_internal_applied_id(eg: &EGraph, app_id: &AppliedId) {
+        fn inv_internal_applied_id<L: Language>(eg: &EGraph<L>, app_id: &AppliedId) {
             // 1. the app_id needs to be normalized!
             let y = eg.find_applied_id(app_id.clone());
             assert_eq!(app_id, &y);
