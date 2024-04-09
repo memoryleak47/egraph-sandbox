@@ -174,7 +174,9 @@ impl<L: Language> EGraph<L> {
 
                 assert_eq!((sh.clone(), bij.clone()), real.shape());
 
-                // TODO check whether the e-nodes are actually legal! i.e. whether they reference e-classes with the correct set of slots.
+                for x in real.applied_id_occurences() {
+                    inv_internal_applied_id::<L>(self, &x);
+                }
             }
         }
 
