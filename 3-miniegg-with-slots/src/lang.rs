@@ -68,6 +68,35 @@ pub trait Language: Debug + Clone + Hash + Eq {
     fn ids(&self) -> Vec<Id> {
         self.applied_id_occurences().into_iter().map(|x| x.id).collect()
     }
+
+    // let n.shape() = (sh, bij); then
+    // - sh.apply_slotmap(bij) is equivalent to n (excluding lambda variable renames)
+    // - bij.slots() == n.slots(). Note that these would also include redundant slots.
+    // - sh is the lexicographically lowest equivalent version of n, reachable by bijective renaming of slots (including redundant ones).
+    fn shape(&self) -> (Self, Bijection) {
+        let mut c = self.clone();
+        let mut m = SlotMap::new();
+        let mut i = 0;
+
+        for x in c.all_slot_occurences_mut() {
+            let x_val = *x;
+            if !m.contains_key(x_val) {
+                let new_slot = Slot(i);
+                i += 1;
+
+                m.insert(x_val, new_slot);
+            }
+
+            *x = m[x_val];
+        }
+
+        let m = m.inverse();
+
+        let public = c.slots();
+        let m: SlotMap = m.iter().filter(|(x, _)| public.contains(x)).collect();
+
+        (c, m)
+    }
 }
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]

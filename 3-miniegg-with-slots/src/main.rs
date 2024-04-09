@@ -3,9 +3,6 @@ use lamcalc::*;
 mod lang;
 use lang::*;
 
-mod shape;
-use shape::*;
-
 mod syntax;
 use syntax::*;
 

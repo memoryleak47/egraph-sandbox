@@ -13,14 +13,14 @@ pub use union::*;
 pub struct EClass {
     // The set of equivalent ENodes that make up this eclass.
     // for (sh, bij) in nodes; sh.apply_slotmap(bij) represents the actual ENode.
-    nodes: HashMap<Shape, Bijection>,
+    nodes: HashMap<ENode, Bijection>,
 
     // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
     // Should not contain Slot(0).
     slots: HashSet<Slot>,
 
     // Shows which Shapes refer to this EClass.
-    usages: HashSet<Shape>,
+    usages: HashSet<ENode>,
 }
 
 // invariants:
@@ -43,7 +43,7 @@ pub struct EGraph {
     classes: HashMap<Id, EClass>,
 
     // For each shape contained in the EGraph, maps to the EClass that contains it.
-    hashcons: HashMap<Shape, Id>,
+    hashcons: HashMap<ENode, Id>,
 }
 
 impl EGraph {
