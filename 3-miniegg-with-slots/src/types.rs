@@ -28,6 +28,27 @@ pub struct RecExpr<L: Language> {
     pub node_dag: Vec<L>,
 }
 
+impl<L: Language> RecExpr<L> {
+    pub fn empty() -> Self {
+        RecExpr { node_dag: Vec::new() }
+    }
+
+    pub fn push(&mut self, l: L) {
+        self.node_dag.push(l);
+    }
+
+    pub fn head_id(&self) -> Id {
+        Id(self.node_dag.len() - 1)
+    }
+
+    pub fn extend(&mut self, other: RecExpr<L>) {
+        let n = self.node_dag.len();
+        let shift = |x: AppliedId| -> AppliedId {
+            AppliedId::new(Id(x.id.0 + n), x.m)
+        };
+        self.node_dag.extend(other.node_dag.iter().map(|x: &L| x.map_applied_ids(shift)));
+    }
+}
 
 impl AppliedId {
     pub fn new(id: Id, m: SlotMap) -> Self {

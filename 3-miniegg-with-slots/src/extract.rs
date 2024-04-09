@@ -14,8 +14,7 @@ pub fn extract(i: Id, eg: &EGraph<ENode>) -> RecExpr<ENode> {
     for _ in 0..eg.ids().len() {
         for id in eg.ids() {
             for n in eg.enodes(id) {
-                let db = |a| db_impl(a, &map);
-                if let Some(re) = extract_step(n, &db) {
+                if let Some(re) = extract_step(n, &map) {
                     // ENodes can have redundant nodes, hence it's "superset" instead of "equality".
                     assert!(re.node_dag.last().unwrap().slots().is_superset(&eg.slots(id)));
 
@@ -32,71 +31,15 @@ pub fn extract(i: Id, eg: &EGraph<ENode>) -> RecExpr<ENode> {
     map.remove(&i).unwrap()
 }
 
-fn extract_step(enode: ENode, db: &impl Fn(AppliedId) -> Option<RecExpr<ENode>>) -> Option<RecExpr<ENode>> {
-    match enode {
-        ENode::Var(x) => {
-            let re = RecExpr { node_dag: vec![ENode::Var(x)] };
-
-            Some(re)
-        },
-        ENode::Lam(x_old, b_old) => {
-            // rename x_old to a fresh name. Otherwise it might collide with other s0 lambdas later on.
-            let x = Slot::fresh();
-            let mut m = SlotMap::identity(&b_old.slots());
-            m.insert(x_old, x);
-            let b = b_old.apply_slotmap(&m);
-
-
-            let mut re = db(b)?;
-            let last = Id(re.node_dag.len() - 1);
-            let last_slots = re.node_dag.last().unwrap().slots(); // TODO correct?
-            let last = AppliedId::new(last, SlotMap::identity(&last_slots));
-
-            let enode = ENode::Lam(x, last);
-            re.node_dag.push(enode);
-
-            Some(re)
-        },
-        ENode::App(l, r) => {
-            let l = db(l)?;
-            let r = db(r)?;
-            let last1 = Id(l.node_dag.len() - 1);
-            let last1_slots = l.node_dag.last().unwrap().slots(); // TODO correct?
-            let last1 = AppliedId::new(last1, SlotMap::identity(&last1_slots));
-
-            let n = l.node_dag.len();
-            let shift_n = |x: AppliedId| AppliedId::new(Id(x.id.0 + n), x.m);
-            let r = r.node_dag.iter()
-                              .map(|enode| enode.map_applied_ids(shift_n));
-            let mut re = l;
-            re.node_dag.extend(r);
-
-            let last2 = Id(re.node_dag.len() - 1);
-            let last2_slots = re.node_dag.last().unwrap().slots(); // TODO correct?
-            let last2 = AppliedId::new(last2, SlotMap::identity(&last2_slots));
-
-            let enode = ENode::App(last1, last2);
-            re.node_dag.push(enode);
-
-            Some(re)
-        },
+fn extract_step(enode: ENode, map: &HashMap<Id, RecExpr<ENode>>) -> Option<RecExpr<ENode>> {
+    let mut c = enode.clone();
+    let mut re = RecExpr::empty();
+    for x in c.applied_id_occurences_mut() {
+        let re2 = map.get(&x.id)?.clone();
+        re.extend(re2);
+        x.id = re.head_id();
     }
-}
-
-// a simple lookup of `map[a]`, but wait! `a` is an AppliedId instead of a simple Id.
-// Hence we need to do some renaming.
-// if Some(re) = db_impl(a, ..), then re.last().slots() = a.slots()
-fn db_impl(a: AppliedId, map: &HashMap<Id, RecExpr<ENode>>) -> Option<RecExpr<ENode>> {
-    let mut re: RecExpr<ENode> = map.get(&a.id)?.clone();
-    let b: &mut ENode = re.node_dag.last_mut().unwrap();
-
-    // a.slots() == A
-    // re.slots() == b.slots() == eg.slots(a.id) == B
-    // a.m :: B -> A
-
-    *b = b.apply_slotmap(&a.m);
-
-    assert_eq!(b.slots(), a.slots());
+    re.push(c);
 
     Some(re)
 }
