@@ -1,5 +1,19 @@
 use crate::*;
 
+use std::marker::PhantomData;
+
+trait CostFn<L: Language> {
+    fn cost<C>(enode: &L, costs: C) -> u64 where C: Fn(Id) -> u64;
+}
+
+struct AstSize<L: Language>(PhantomData<L>);
+
+impl<L: Language> CostFn<L> for AstSize<L> {
+    fn cost<C>(enode: &L, costs: C) -> u64 where C: Fn(Id) -> u64 {
+        enode.applied_id_occurences().iter().map(|x| costs(x.id)).sum::<u64>() + 1
+    }
+}
+
 // our cost function is RecExpr::node_dag.len(), and we build every RecExpr s.t. each element of the node DAG is used exactly once.
 // This is hence equivalent to AST size.
 // `i` is not allowed to have free variables, hence prefer `Id` over `AppliedId`.
