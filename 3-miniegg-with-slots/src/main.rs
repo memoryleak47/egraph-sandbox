@@ -57,7 +57,11 @@ fn translate(re: RecExpr<ENode>) -> RecExpr<LetENode> {
 }
 
 fn main() {
-    let p = "(app (lam x x) (lam y y))";
+    let p = "(lam x (lam y
+        (app
+            (lam z (app x z))
+        y)
+    ))";
     let re = RecExpr::<ENode>::parse(p);
     let re = translate(re);
     let mut eg = EGraph::new();
