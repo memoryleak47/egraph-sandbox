@@ -3,6 +3,8 @@ use crate::*;
 mod rewrite;
 pub use rewrite::*;
 
+mod tst;
+
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LetENode {
     Lam(Slot, AppliedId),
