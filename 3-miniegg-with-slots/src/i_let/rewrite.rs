@@ -35,37 +35,43 @@ fn beta_to_let(eg: &mut EGraph<LetENode>) {
 }
 
 fn propagate_let(eg: &mut EGraph<LetENode>) {
-    // TODO find all Let E-nodes and iterate over their children to propagate it.
-}
-
-// everything here has L0 slot-names.
-/*
-fn step(x: Slot, t: AppliedId, b: &ENode, eg: &mut EGraph<ENode>) -> AppliedId {
-    if !b.slots().contains(&x) {
-        return eg.lookup(b).unwrap();
-    }
-
-    match b {
-        ENode::Var(_) => t,
-        ENode::App(l, r) => {
-            let mut pack = |lr: &AppliedId| {
-                let a1 = eg.add(ENode::Lam(x, lr.clone()));
-                let a2 = eg.add(ENode::App(a1, t.clone()));
-                a2
-            };
-            let l = pack(l);
-            let r = pack(r);
-            eg.add(ENode::App(l, r))
-        },
-        ENode::Lam(y, bb) => {
-            let a1 = eg.add(ENode::Lam(x, bb.clone()));
-            let a2 = eg.add(ENode::App(a1, t.clone()));
-            let a3 = eg.add(ENode::Lam(*y, a2));
-            a3
-        },
+    for c in eg.ids() {
+        for enode in eg.enodes(c) {
+            let id = eg.lookup(&enode).unwrap();
+            if let LetENode::Let(x, t, b) = &enode {
+                for b2 in eg.enodes_applied(b) {
+                    if let Some(new) = propagate_let_step(*x, t.clone(), b2, eg) {
+                        eg.union(new, id.clone());
+                    }
+                }
+            }
+        }
     }
 }
-*/
+
+fn propagate_let_step(x: Slot, t: AppliedId, b: LetENode, eg: &mut EGraph<LetENode>) -> Option<AppliedId> {
+    if !b.slots().contains(&x) { // TODO does the base case also do this?
+        return Some(eg.lookup(&b).unwrap());
+    }
+
+    let out = match b {
+        LetENode::Var(_) => t,
+        LetENode::App(l, r) => {
+            // TODO there needs to be some slot-renaming, right?
+            let l = eg.add(LetENode::Let(x, t.clone(), l));
+            let r = eg.add(LetENode::Let(x, t.clone(), r));
+            eg.add(LetENode::App(l, r))
+        },
+        LetENode::Lam(y, bb) => {
+            let a1 = eg.add(LetENode::Let(x, t, bb.clone()));
+            let a2 = eg.add(LetENode::Lam(y, a1));
+            a2
+        },
+        LetENode::Let(..) => return None,
+    };
+
+    Some(out)
+}
 
 // candidate for beta reduction.
 // Both ENodes are computed by "sh.apply_slotmap(bij)", where (sh, bij) in EClass::nodes from their respective classes.
