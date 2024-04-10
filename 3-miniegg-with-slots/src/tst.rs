@@ -25,7 +25,7 @@ impl<T> Realization for Expr<T> where T: RewriteStep {
             eg.inv();
         }
 
-        let re = extract(i, &eg);
+        let re = ast_size_extract(i, &eg);
         Self(re, std::marker::PhantomData::<T>)
     }
 

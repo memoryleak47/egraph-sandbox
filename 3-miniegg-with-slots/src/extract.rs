@@ -14,10 +14,23 @@ impl<L: Language> CostFn<L> for AstSize<L> {
     }
 }
 
+fn rec_cost<L: Language, CF: CostFn<L>>(re: &RecExpr<L>) -> u64 {
+    let mut costs = Vec::new();
+    for x in &re.node_dag {
+        let c = CF::cost(x, |i| costs[i.0]);
+        costs.push(c);
+    }
+    costs.pop().unwrap()
+}
+
+pub fn ast_size_extract<L: Language>(i: Id, eg: &EGraph<L>) -> RecExpr<L> {
+    extract::<L, AstSize<L>>(i, eg)
+}
+
 // our cost function is RecExpr::node_dag.len(), and we build every RecExpr s.t. each element of the node DAG is used exactly once.
 // This is hence equivalent to AST size.
 // `i` is not allowed to have free variables, hence prefer `Id` over `AppliedId`.
-pub fn extract<L: Language>(i: Id, eg: &EGraph<L>) -> RecExpr<L> {
+pub fn extract<L: Language, CF: CostFn<L>>(i: Id, eg: &EGraph<L>) -> RecExpr<L> {
     let i = eg.find_id(i);
 
     // this is a terribly slow algorithm.
@@ -32,8 +45,8 @@ pub fn extract<L: Language>(i: Id, eg: &EGraph<L>) -> RecExpr<L> {
                     // ENodes can have redundant nodes, hence it's "superset" instead of "equality".
                     assert!(re.node_dag.last().unwrap().slots().is_superset(&eg.slots(id)));
 
-                    let new_cost = re.node_dag.len();
-                    let current_cost = map.get(&id).map(|x| x.node_dag.len()).unwrap_or(usize::MAX);
+                    let new_cost = rec_cost::<L, CF>(&re);
+                    let current_cost = map.get(&id).map(|x| rec_cost::<L, CF>(&x)).unwrap_or(u64::MAX);
                     if new_cost < current_cost {
                         map.insert(id, re);
                     }

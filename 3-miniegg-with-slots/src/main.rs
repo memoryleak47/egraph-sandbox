@@ -68,6 +68,6 @@ fn main() {
     let i = eg.add_expr(re);
     rewrite_let(&mut eg);
     rewrite_let(&mut eg);
-    let out_re = extract(i, &eg);
+    let out_re = ast_size_extract(i, &eg);
     dbg!(out_re);
 }

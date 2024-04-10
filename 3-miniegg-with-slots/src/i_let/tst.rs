@@ -23,7 +23,7 @@ impl Realization for LetExpr {
             eg.inv();
         }
 
-        let re = extract(i, &eg);
+        let re = ast_size_extract(i, &eg);
         Self(re)
     }
 
