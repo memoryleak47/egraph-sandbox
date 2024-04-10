@@ -43,8 +43,26 @@ use std::fmt::Debug;
 pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;
 
+fn translate(re: RecExpr<ENode>) -> RecExpr<LetENode> {
+    let mut out = RecExpr::empty();
+    for x in re.node_dag {
+        let x = match x {
+            ENode::Var(x) => LetENode::Var(x),
+            ENode::App(l, r) => LetENode::App(l, r),
+            ENode::Lam(x, b) => LetENode::Lam(x, b),
+        };
+        out.push(x);
+    }
+    out
+}
+
 fn main() {
-    let p = "(lam x (lam y (app (lam z (app x z)) y)))";
-    let p2 = "(lam x (lam y (app x y)))";
-    check_simplify::<Expr<SmallStep>>(p, 10);
+    let p = "(app (lam x x) (lam y y))";
+    let re = RecExpr::<ENode>::parse(p);
+    let re = translate(re);
+    let mut eg = EGraph::new();
+    let i = eg.add_expr(re);
+    rewrite_let(&mut eg);
+    let out_re = extract(i, &eg);
+    dbg!(out_re);
 }
