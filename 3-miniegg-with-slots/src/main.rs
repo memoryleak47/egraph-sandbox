@@ -63,6 +63,7 @@ fn main() {
     let mut eg = EGraph::new();
     let i = eg.add_expr(re);
     rewrite_let(&mut eg);
+    rewrite_let(&mut eg);
     let out_re = extract(i, &eg);
     dbg!(out_re);
 }

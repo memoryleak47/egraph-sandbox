@@ -50,7 +50,7 @@ impl Debug for LetENode {
             LetENode::Lam(s, b) => write!(f, "(lam {s:?} {b:?})"),
             LetENode::App(l, r) => write!(f, "(app {l:?} {r:?})"),
             LetENode::Var(s) => write!(f, "{s:?}"),
-            LetENode::Let(x, t, b) => write!(f, "(let {x:?} {t:?} {b:?}"),
+            LetENode::Let(x, t, b) => write!(f, "(let {x:?} {t:?} {b:?})"),
         }
     }
 }
