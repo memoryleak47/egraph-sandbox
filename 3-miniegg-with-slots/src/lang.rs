@@ -42,6 +42,8 @@ pub trait Language: Debug + Clone + Hash + Eq {
         c
     }
 
+    // TODO m.values() might collide with your private slot names.
+    // Should we rename our private slots to be safe?
     fn apply_slotmap_partial(&self, m: &SlotMap) -> Self {
         let mut c = self.clone();
         for x in c.public_slot_occurences_mut() {
