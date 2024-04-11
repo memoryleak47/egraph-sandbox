@@ -3,6 +3,9 @@ use crate::*;
 mod rewrite;
 pub use rewrite::*;
 
+mod my_cost;
+pub use my_cost::*;
+
 mod tst;
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]

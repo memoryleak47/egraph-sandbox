@@ -78,21 +78,3 @@ fn from_let(re: &RecExpr<LetENode>) -> RecExpr<ENode> {
 }
 
 lamcalc::unpack_tests!(LetExpr);
-
-
-struct AstSizeNoLet;
-
-impl CostFn<LetENode> for AstSizeNoLet {
-    fn cost<C>(enode: &LetENode, costs: C) -> u64 where C: Fn(Id) -> u64 {
-        if let LetENode::Let(..) = enode {
-            u64::MAX
-        } else {
-            let mut s: u64 = 1;
-            for x in enode.applied_id_occurences() {
-                s = s.saturating_add(costs(x.id));
-            }
-            s
-        }
-    }
-}
-
