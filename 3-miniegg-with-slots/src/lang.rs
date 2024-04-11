@@ -55,7 +55,8 @@ pub trait Language: Debug + Clone + Hash + Eq {
         for x in c.public_slot_occurences_mut() {
             let y = m[*x];
 
-            assert!(!prv.contains(x));
+            // If y collides with a private slot, we have a problem.
+            assert!(!prv.contains(&y));
 
             *x = y;
         }
