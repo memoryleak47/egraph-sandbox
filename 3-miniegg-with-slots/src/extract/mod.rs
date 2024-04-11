@@ -30,9 +30,12 @@ pub fn extract<L: Language, CF: CostFunction<L>>(i: Id, eg: &EGraph<L>) -> RecEx
     }
 
     while let Some(WithOrdRev(enode, c)) = queue.pop() {
+        let i = eg.lookup(&enode).unwrap();
+        if map.contains_key(&i.id) {
+            continue;
+        }
         let map_fn = |i| map[&i].0.clone();
         let re = extract_step(enode.clone(), &map_fn);
-        let i = eg.lookup(&enode).unwrap();
         map.insert(i.id, WithOrdRev(re, c));
 
         for x in eg.usages(i.id).clone() {

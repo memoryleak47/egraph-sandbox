@@ -3,7 +3,7 @@ use crate::*;
 use std::marker::PhantomData;
 
 pub trait CostFunction<L: Language> {
-    type Cost: Ord + Clone;
+    type Cost: Ord + Clone + Debug;
     fn cost<C>(enode: &L, costs: C) -> Self::Cost where C: Fn(Id) -> Self::Cost;
 }
 
