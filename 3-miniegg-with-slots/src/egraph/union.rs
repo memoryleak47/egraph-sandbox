@@ -54,8 +54,7 @@ impl<L: Language> EGraph<L> {
         assert_eq!(self.classes[&to].slots, map.values());
 
         // 1. add unionfind entry 'from -> to'.
-        self.unionfind.insert(from, self.mk_applied_id(to, map.inverse()));
-        self.fix_unionfind();
+        self.unionfind.set(from, self.mk_applied_id(to, map.inverse()));
 
         // 2. move enodes from 'from' to 'to'.
         let from_enodes = self.classes.get(&from).unwrap().nodes.clone();
@@ -122,19 +121,5 @@ impl<L: Language> EGraph<L> {
         }
 
         // Should hold here: self.inv();
-    }
-
-    fn fix_unionfind(&mut self) {
-        // recursively applies find_applied_id() until convergence.
-        let full_find = |mut x: AppliedId| {
-            loop {
-                let y = self.find_applied_id(x.clone());
-                if x == y { return x; }
-                x = y;
-            }
-        };
-        self.unionfind = self.unionfind.iter()
-                        .map(|(x, y)| (*x, full_find(y.clone())))
-                        .collect();
     }
 }

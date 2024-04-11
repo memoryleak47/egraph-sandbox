@@ -115,7 +115,7 @@ impl<L: Language> EGraph<L> {
             usages: HashSet::default(),
         };
         self.classes.insert(c_id, c);
-        self.unionfind.insert(c_id, self.mk_identity_applied_id(c_id));
+        self.unionfind.set(c_id, self.mk_identity_applied_id(c_id));
 
         c_id
     }

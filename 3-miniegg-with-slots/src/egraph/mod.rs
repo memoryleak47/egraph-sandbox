@@ -36,7 +36,7 @@ pub struct EGraph<L: Language> {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
     // normalizes the eclass.
     // Each Id i that is an output of the unionfind itself has unionfind[i] = (i, identity()).
-    unionfind: HashMap<Id, AppliedId>,
+    unionfind: Unionfind,
 
     // if a class does't have unionfind[x].id = x, then it doesn't contain nodes / usages.
     // It's "shallow" if you will.
@@ -81,15 +81,15 @@ impl<L: Language> EGraph<L> {
 
     pub fn ids(&self) -> Vec<Id> {
         self.unionfind.iter()
-                       .filter(|(x, y)| x == &&y.id)
-                       .map(|(x, _)| *x)
+                       .filter(|(x, y)| x == &y.id)
+                       .map(|(x, _)| x)
                        .collect()
     }
 
     // TODO For non-normalized inputs i, the slots in the output will definitely be wrong.
     // if x in enodes(i), then I'd expect x.slots() superset slots(i).
     pub fn enodes(&self, i: Id) -> HashSet<L> {
-        let i = self.unionfind[&i].id;
+        let i = self.find_id(i);
         self.classes[&i].nodes.iter().map(|(x, y)| x.apply_slotmap(y)).collect()
     }
 
@@ -148,14 +148,17 @@ impl<L: Language> EGraph<L> {
         }
 
         // check that self.classes contains exactly these classes which point to themselves in the unionfind.
-        let all: HashSet<&Id> = &(&self.unionfind.keys().collect::<HashSet<_>>() | &self.unionfind.values().map(|x| &x.id).collect::<HashSet<_>>()) | &self.classes.keys().collect::<HashSet<_>>();
+        let all_keys = self.unionfind.iter().map(|(x, _)| x).collect::<HashSet<_>>();
+        let all_values = self.unionfind.iter().map(|(_, x)| x.id).collect::<HashSet<_>>();
+        let all_classes = self.classes.keys().copied().collect::<HashSet<_>>();
+        let all: HashSet<Id> = &(&all_keys | &all_values) | &all_classes;
         for i in all {
             // if they point to themselves, they should do it using the identity.
-            if self.is_alive(*i) {
-                assert_eq!(self.unionfind[i], self.mk_identity_applied_id(*i));
+            if self.is_alive(i) {
+                assert_eq!(self.unionfind.get(i), self.mk_identity_applied_id(i));
             } else {
-                assert!(self.classes[i].nodes.is_empty());
-                assert!(self.classes[i].usages.is_empty());
+                assert!(self.classes[&i].nodes.is_empty());
+                assert!(self.classes[&i].usages.is_empty());
             }
         }
 
@@ -165,8 +168,8 @@ impl<L: Language> EGraph<L> {
         }
 
         // Check that the Unionfind has valid AppliedIds.
-        for (_, app_id) in &self.unionfind {
-            inv_internal_applied_id::<L>(self, app_id);
+        for (_, app_id) in self.unionfind.iter() {
+            inv_internal_applied_id::<L>(self, &app_id);
         }
 
         // Check that all ENodes are valid.
@@ -194,7 +197,7 @@ impl<L: Language> EGraph<L> {
     }
 
     fn is_alive(&self, i: Id) -> bool {
-        self.unionfind[&i].id == i
+        self.find_id(i) == i
     }
 
     pub fn dump(&self) {
