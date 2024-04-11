@@ -2,7 +2,7 @@ use crate::*;
 
 use std::marker::PhantomData;
 
-struct LetExpr(RecExpr<LetENode>);
+pub struct LetExpr(RecExpr<LetENode>);
 
 impl Realization for LetExpr {
     fn to_ast_string(&self) -> String {

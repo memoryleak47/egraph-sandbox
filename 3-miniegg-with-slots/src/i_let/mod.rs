@@ -7,6 +7,7 @@ mod my_cost;
 pub use my_cost::*;
 
 mod tst;
+pub use tst::*;
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LetENode {
