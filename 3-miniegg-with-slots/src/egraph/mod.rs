@@ -211,4 +211,16 @@ impl<L: Language> EGraph<L> {
         }
         println!("");
     }
+
+    // The resulting e-nodes are written as they exist in the e-class.
+    pub fn usages(&self, i: Id) -> Vec<L> {
+        let mut out = Vec::new();
+        for x in &self.classes[&i].usages {
+            let j = self.lookup(x).unwrap().id;
+            let bij = &self.classes[&j].nodes[&x];
+            let x = x.apply_slotmap(bij);
+            out.push(x);
+        }
+        out
+    }
 }

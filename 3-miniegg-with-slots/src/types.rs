@@ -23,7 +23,7 @@ pub struct AppliedId {
     pub m: SlotMap,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RecExpr<L: Language> {
     pub node_dag: Vec<L>,
 }
