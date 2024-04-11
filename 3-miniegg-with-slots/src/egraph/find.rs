@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 #[derive(Default, Debug)]
 pub(in crate::egraph) struct Unionfind {
-    // I could use a `Cell` instead of Mutex for single-threaded settings, if Mutex is too slow.
+    // "map: HashMap<Id, Cell<AppliedId>>" is probably the optimal single-threaded choice.
     map: Mutex<HashMap<Id, AppliedId>>,
 }
 
