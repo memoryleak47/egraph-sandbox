@@ -11,6 +11,13 @@ pub trait Language: Debug + Clone + Hash + Eq {
 
     // generated methods:
 
+    fn private_slot_occurences_mut(&mut self) -> Vec<&mut Slot> {
+        let public = self.public_slot_occurences();
+        let mut out = self.all_slot_occurences_mut();
+        out.retain(|x| !public.contains(x));
+        out
+    }
+
     fn all_slot_occurences(&self) -> Vec<Slot> {
         self.clone().all_slot_occurences_mut().into_iter().map(|x| x.clone()).collect()
     }
@@ -21,6 +28,10 @@ pub trait Language: Debug + Clone + Hash + Eq {
 
     fn applied_id_occurences(&self) -> Vec<AppliedId> {
         self.clone().applied_id_occurences_mut().into_iter().map(|x| x.clone()).collect()
+    }
+
+    fn private_slot_occurences(&mut self) -> Vec<Slot> {
+        self.clone().private_slot_occurences_mut().into_iter().map(|x| x.clone()).collect()
     }
 
     fn map_applied_ids(&self, f: impl Fn(AppliedId) -> AppliedId) -> Self {
@@ -83,6 +94,16 @@ pub trait Language: Debug + Clone + Hash + Eq {
         let m: SlotMap = m.iter().filter(|(x, _)| public.contains(x)).collect();
 
         (c, m)
+    }
+
+    fn refresh_private(&self) -> Self {
+        let mut c = self.clone();
+        let prv: HashSet<Slot> = c.private_slot_occurences().into_iter().collect();
+        let fresh = SlotMap::bijection_from_fresh_to(&prv).inverse();
+        for x in c.private_slot_occurences_mut() {
+            *x = fresh[*x];
+        }
+        c
     }
 }
 

@@ -99,6 +99,9 @@ impl<L: Language> EGraph<L> {
 
         let mut out = HashSet::default();
         for x in self.enodes(i.id) {
+            // This is necessary, as i.slots() might collide with the private slots of our e-nodes.
+            let x = x.refresh_private();
+
             let red = &x.slots() - &i.m.keys();
             let fbij = SlotMap::bijection_from_fresh_to(&red);
             let m = fbij.inverse().union(&i.m);
