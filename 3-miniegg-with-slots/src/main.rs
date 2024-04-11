@@ -57,6 +57,6 @@ fn translate(re: RecExpr<ENode>) -> RecExpr<LetENode> {
 }
 
 fn main() {
-    let s = app(app(add(), num(0)), num(1));
-    check_simplify::<LetExpr>(&s, 16);
+    let s = app(app(add(), num(2)), num(2));
+    check_simplify::<LetExpr>(&s, 22);
 }

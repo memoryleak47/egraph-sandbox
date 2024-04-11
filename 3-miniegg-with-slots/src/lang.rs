@@ -30,8 +30,12 @@ pub trait Language: Debug + Clone + Hash + Eq {
         self.clone().applied_id_occurences_mut().into_iter().map(|x| x.clone()).collect()
     }
 
-    fn private_slot_occurences(&mut self) -> Vec<Slot> {
+    fn private_slot_occurences(&self) -> Vec<Slot> {
         self.clone().private_slot_occurences_mut().into_iter().map(|x| x.clone()).collect()
+    }
+
+    fn private_slots(&self) -> HashSet<Slot> {
+        self.private_slot_occurences().into_iter().collect()
     }
 
     fn map_applied_ids(&self, f: impl Fn(AppliedId) -> AppliedId) -> Self {
@@ -45,9 +49,15 @@ pub trait Language: Debug + Clone + Hash + Eq {
     // TODO m.values() might collide with your private slot names.
     // Should we rename our private slots to be safe?
     fn apply_slotmap_partial(&self, m: &SlotMap) -> Self {
+        let prv = self.private_slots();
+
         let mut c = self.clone();
         for x in c.public_slot_occurences_mut() {
-            *x = m[*x];
+            let y = m[*x];
+
+            assert!(!prv.contains(x));
+
+            *x = y;
         }
         c
     }
