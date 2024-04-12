@@ -22,6 +22,7 @@ pub fn simplify<R: Realization>(s: &str, steps: u32) -> String {
     s
 }
 
+// TODO the smallest term isn't necessarily the beta-NF.
 pub fn check_simplify<R: Realization>(p: &str, steps: u32) {
     let out1 = simplify::<R>(p, steps);
     let out2 = run(p);
