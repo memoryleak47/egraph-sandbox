@@ -1,5 +1,8 @@
+import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
+
+matplotlib.rcParams.update({'font.size': 14})
 
 def load(fname):
     l = []
@@ -20,4 +23,4 @@ plt.plot(baseline, label="Baseline")
 plt.xlabel('# of iterations')
 plt.ylabel('# of e-nodes')
 plt.legend()
-plt.show()
+plt.savefig("plot.svg")
