@@ -40,7 +40,20 @@ impl Realization for Expr {
     
     fn simplify(&self, steps: u32) -> Self {
         let rewrites = rules();
-        let runner = Runner::default().with_iter_limit(steps as usize).with_scheduler(SimpleScheduler).with_expr(&self.0).run(&rewrites);
+
+        let h = |r: &mut Runner<_, _>| {
+            // println!("{}", r.egraph.total_size());
+            Ok(())
+        };
+        let runner = Runner::default()
+                                    .with_iter_limit(steps as usize)
+                                    .with_scheduler(SimpleScheduler)
+                                    .with_node_limit(10000000000000)
+                                    .with_time_limit(std::time::Duration::from_secs(60*60))
+                                    .with_expr(&self.0)
+                                    .with_hook(h)
+                                    .run(&rewrites);
+        // println!("last: {}", runner.egraph.total_size());
 
         let extr = Extractor::new(&runner.egraph, RestrictedAstSize);
         let (_, out) = extr.find_best(runner.roots[0]);
@@ -55,7 +68,18 @@ impl Realization for Expr {
         let i1 = eg.add_expr(&self.0);
         let i2 = eg.add_expr(&other.0);
         
-        let runner = Runner::default().with_iter_limit(steps as usize).with_scheduler(SimpleScheduler).with_egraph(eg).run(&rewrites);
+        let h = |r: &mut Runner<_, _>| {
+            // println!("{}", r.egraph.total_size());
+            Ok(())
+        };
+        let runner = Runner::default()
+                                    .with_iter_limit(steps as usize)
+                                    .with_scheduler(SimpleScheduler)
+                                    .with_node_limit(10000000000000)
+                                    .with_time_limit(std::time::Duration::from_secs(60*60))
+                                    .with_egraph(eg)
+                                    .with_hook(h)
+                                    .run(&rewrites);
 
         runner.egraph.find(i1) == runner.egraph.find(i2)
     }
@@ -66,11 +90,7 @@ impl Realization for Expr {
 unpack_tests!(Expr);
 
 fn main() {
-    let p = "(lam x (lam y
-        (app
-            (lam z (app x z))
-        y)
-    ))";
-    let o = simplify::<Expr>(p, 14);
-    dbg!(o);
+    let s = app(app(add(), num(2)), num(2));
+    check_simplify::<Expr>(&s, 24);
+
 }

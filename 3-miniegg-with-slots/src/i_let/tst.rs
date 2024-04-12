@@ -20,8 +20,10 @@ impl Realization for LetExpr {
         let i = eg.add_expr(self.0.clone());
 
         eg.inv();
+        // println!("{}", eg.total_size());
         for _ in 0..steps {
             rewrite_let(&mut eg);
+            // println!("{}", eg.total_size());
             eg.inv();
         }
 
