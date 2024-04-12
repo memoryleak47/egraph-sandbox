@@ -66,13 +66,27 @@ fn is_not_same_var(v1: Var, v2: Var) -> impl Fn(&mut EGraph, Id, &Subst) -> bool
     move |egraph, _, subst| egraph.find(subst[v1]) != egraph.find(subst[v2])
 }
 
+fn is_nonfree_in(v: Var, b: Var) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    move |eg, _, subst| {
+        let v = subst[v];
+        let b = subst[b];
+        !eg[b].data.free.contains(&v)
+    }
+}
+
 pub fn rules() -> Vec<Rewrite<Lambda, LambdaAnalysis>> {
     vec![
         rw!("beta";     "(app (lam ?v ?body) ?e)" => "(let ?v ?e ?body)"),
         rw!("let-app";  "(let ?v ?e (app ?a ?b))" => "(app (let ?v ?e ?a) (let ?v ?e ?b))"),
         rw!("let-var-same"; "(let ?v1 ?e (var ?v1))" => "?e"),
-        rw!("let-var-diff"; "(let ?v1 ?e (var ?v2))" => "(var ?v2)"
-            if is_not_same_var(var("?v1"), var("?v2"))),
+
+        // rw!("let-var-diff"; "(let ?v1 ?e (var ?v2))" => "(var ?v2)"
+        //    if is_not_same_var(var("?v1"), var("?v2"))),
+
+        // NOTE: I changed "let-var-diff" to "my-let-free" as it is more efficient.
+        rw!("my-let-free"; "(let ?v ?e ?b)" => "?b"
+            if is_nonfree_in(var("?v"), var("?b"))),
+
         rw!("let-lam-same"; "(let ?v1 ?e (lam ?v1 ?body))" => "(lam ?v1 ?body)"),
         rw!("let-lam-diff";
             "(let ?v1 ?e (lam ?v2 ?body))" =>
