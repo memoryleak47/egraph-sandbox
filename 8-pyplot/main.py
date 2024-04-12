@@ -22,5 +22,9 @@ plt.xlabel('# of iterations')
 plt.ylabel('# of e-nodes')
 plt.legend()
 plt.axis([0, 25, 0, 10000])
+plt.annotate('☒: 2950801', xy=(19, 10000))
+plt.annotate('☑: 706', xy=(22, 706))
+
+
 plt.show()
 plt.savefig("plot.svg")
