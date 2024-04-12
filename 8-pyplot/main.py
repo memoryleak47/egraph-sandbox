@@ -10,8 +10,6 @@ def load(fname):
         for x in f:
             x = int(x.strip())
             l.append(x)
-    if "baseline" in fname:
-        l = l[:20]
     return l
 
 slotted = load("slotted.data")
@@ -23,4 +21,6 @@ plt.plot(baseline, label="Baseline")
 plt.xlabel('# of iterations')
 plt.ylabel('# of e-nodes')
 plt.legend()
+plt.axis([0, 25, 0, 10000])
+plt.show()
 plt.savefig("plot.svg")
