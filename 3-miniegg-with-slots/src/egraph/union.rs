@@ -39,24 +39,8 @@ impl<L: Language> EGraph<L> {
         return true;
     }
 
-    // merges the EClass `from` into `to`. This deprecates the EClass `from`.
-    // map :: slots(from) -> slots(to)
-    fn merge_into_eclass(&mut self, from: Id, to: Id, map: &SlotMap) {
-        // Should hold here: self.check();
-
-        let mut future_unions = Vec::new();
-
-        // X = slots(from)
-        // Y = slots(to)
-        // map :: X -> Y
-
-        assert!(map.keys().is_subset(&self.classes[&from].slots));
-        assert_eq!(self.classes[&to].slots, map.values());
-
-        // 1. add unionfind entry 'from -> to'.
-        self.unionfind.set(from, self.mk_applied_id(to, map.inverse()));
-
-        // 2. move enodes from 'from' to 'to'.
+    // moves all e-nodes from `from` to `to`.
+    fn move_enodes(&mut self, from: Id, to: Id, map: &SlotMap) {
         let from_enodes = self.classes.get(&from).unwrap().nodes.clone();
         for (sh, bij) in from_enodes {
             // SH = slots(sh)
@@ -75,10 +59,30 @@ impl<L: Language> EGraph<L> {
             self.raw_remove_from_class(from, (sh.clone(), bij.clone()));
             self.raw_add_to_class(to, (sh, out_bij));
         }
+    }
 
-        let from_class = self.classes.get(&from).unwrap().clone();
+    // merges the EClass `from` into `to`. This deprecates the EClass `from`.
+    // map :: slots(from) -> slots(to)
+    fn merge_into_eclass(&mut self, from: Id, to: Id, map: &SlotMap) {
+        // Should hold here: self.check();
+
+        let mut future_unions = Vec::new();
+
+        // X = slots(from)
+        // Y = slots(to)
+        // map :: X -> Y
+
+        assert!(map.keys().is_subset(&self.classes[&from].slots));
+        assert_eq!(self.classes[&to].slots, map.values());
+
+        // 1. add unionfind entry 'from -> to'.
+        self.unionfind.set(from, self.mk_applied_id(to, map.inverse()));
+
+        // 2. move enodes from 'from' to 'to'.
+        self.move_enodes(from, to, map);
 
         // 3. fix all ENodes that reference `from`.
+        let from_class = self.classes.get(&from).unwrap().clone();
         for sh in from_class.usages {
             let i = self.hashcons[&sh];
             let bij = self.classes[&i].nodes[&sh].clone();
