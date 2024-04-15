@@ -32,6 +32,7 @@ fn get_impl(i: Id, map: &mut HashMap<Id, AppliedId>) -> AppliedId {
     out
 }
 
+// TODO all these functions should get references!
 impl Unionfind {
     pub fn set(&self, i: Id, j: AppliedId) {
         self.map.lock().unwrap().insert(i, j);

@@ -137,6 +137,7 @@ impl<L: Language> EGraph<L> {
         }
     }
 
+    // TODO: the bijection here is probably useless and error-prone. Let's only get Id and Shape as arguments here.
     pub(in crate::egraph) fn raw_remove_from_class(&mut self, id: Id, (sh, bij): (L, Bijection)) {
         assert!(self.classes.get_mut(&id).unwrap().nodes.remove(&sh).is_some());
         assert!(self.hashcons.remove(&sh).is_some());

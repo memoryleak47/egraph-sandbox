@@ -5,13 +5,14 @@ impl<L: Language> EGraph<L> {
     // TODO get references here instead!
     // returns whether it actually did something.
     pub fn union(&mut self, l: AppliedId, r: AppliedId) -> bool {
-        self.union_internal(l, r)
+        let out = self.union_internal(&l, &r);
+        out
     }
 
-    pub(in crate::egraph) fn union_internal(&mut self, l: AppliedId, r: AppliedId) -> bool {
+    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
         // normalize inputs
-        let l = self.find_applied_id(l);
-        let r = self.find_applied_id(r);
+        let l = self.find_applied_id(l.clone());
+        let r = self.find_applied_id(r.clone());
 
         // early return, if union should not be made.
         if l == r { return false; }
@@ -21,109 +22,97 @@ impl<L: Language> EGraph<L> {
             return false;
         };
 
-        // make the slots fresh.
-        let all_slots = &l.slots() | &r.slots();
-        let fresh_map = SlotMap::bijection_from_fresh_to(&all_slots).inverse();
-        let l = l.apply_slotmap(&fresh_map);
-        let r = r.apply_slotmap(&fresh_map);
+        // sort, s.t. size(l) >= size(r).
+        let size = |i| {
+            let c = &self.classes[&i];
+            c.nodes.len() + c.usages.len()
+        };
 
-        let slots = &l.slots() & &r.slots();
-        let c_id = self.alloc_eclass(&slots);
+        let (l, r) = if size(l.id) >= size(r.id) { (l, r) } else { (r, l) };
 
-        for lr in [l, r] {
-            // We need to filter the ones out that are newly "redundant".
-            let lr_m = lr.m.iter().filter(|(x, y)| slots.contains(y)).collect();
-            self.merge_into_eclass(lr.id, c_id, &lr_m);
+        let cap = &l.slots() & &r.slots();
+        if l.slots() == cap {
+            self.merge_into_eclass(&r, &l);
+        } else if r.slots() == cap {
+            self.merge_into_eclass(&l, &r);
+        } else {
+            let c = self.alloc_eclass_fresh(&cap);
+            self.merge_into_eclass(&l, &c);
+            self.merge_into_eclass(&r, &c);
         }
 
-        return true;
+        true
     }
 
-    // moves all e-nodes from `from` to `to`.
-    fn move_enodes(&mut self, from: Id, to: Id, map: &SlotMap) {
-        let from_enodes = self.classes.get(&from).unwrap().nodes.clone();
-        for (sh, bij) in from_enodes {
-            // SH = slots(sh)
-            // bij :: SH -> X
+    fn merge_into_eclass(&mut self, from: &AppliedId, to: &AppliedId) {
+        let from = self.find_applied_id(from.clone());
+        let to = self.find_applied_id(to.clone());
 
-            // out_bij :: SH -> Y
-            let mut out_bij = bij.compose_partial(map);
+        let map = to.m.compose_partial(&from.m.inverse());
 
-            // map redundant slots too.
-            for x in sh.slots() {
-                if !out_bij.contains_key(x) {
-                    out_bij.insert(x, Slot::fresh());
+        self.unionfind.set(from.id, self.mk_applied_id(to.id, map));
+        self.convert_eclass(from.id);
+    }
+
+    // Remove everything that references this e-class, and then re-add it using "semantic_add".
+    fn convert_eclass(&mut self, from: Id) {
+        let mut adds: Vec<(L, AppliedId)> = Vec::new();
+
+        // - remove all of its e-nodes
+        let from_nodes = self.classes.get(&from).unwrap().nodes.clone();
+        let from_id = self.mk_identity_applied_id(from);
+        for (sh, bij) in from_nodes {
+            let enode = sh.apply_slotmap(&bij);
+            self.raw_remove_from_class(from, (sh, bij));
+            adds.push((enode, from_id.clone()));
+        }
+
+        // - remove all of its usages
+        let from_usages = self.classes.get(&from).unwrap().usages.clone();
+        for sh in from_usages {
+            let k = self.hashcons[&sh];
+            let bij = self.classes[&k].nodes[&sh].clone();
+            let enode = sh.apply_slotmap(&bij);
+            self.raw_remove_from_class(k, (sh, bij));
+            let applied_k = self.mk_identity_applied_id(k);
+            adds.push((enode, applied_k));
+        }
+
+
+        // re-add everything.
+        for (enode, j) in adds {
+            self.semantic_add(&enode, &j);
+        }
+
+    }
+
+    // self.check() should hold before and after this.
+    fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
+        let mut enode = self.find_enode(&enode);
+        let mut i = self.find_applied_id(i.clone());
+
+        if let Some(j) = self.lookup_internal(&enode) {
+            self.union_internal(&i, &j);
+        } else {
+            if !i.slots().is_subset(&enode.slots()) {
+                let cap = &enode.slots() & &i.slots();
+                let c = self.alloc_eclass_fresh(&cap);
+                self.union_internal(&c, &i);
+
+                enode = self.find_enode(&enode);
+                i = self.find_applied_id(i.clone());
+            }
+
+            let (sh, bij) = enode.shape();
+            let mut m = i.m.inverse();
+
+            for x in bij.values() {
+                if !m.contains_key(x) {
+                    m.insert(x, Slot::fresh());
                 }
             }
-
-            self.raw_remove_from_class(from, (sh.clone(), bij.clone()));
-            self.raw_add_to_class(to, (sh, out_bij));
+            let bij = bij.compose(&m);
+            self.raw_add_to_class(i.id, (sh, bij));
         }
-    }
-
-    // merges the EClass `from` into `to`. This deprecates the EClass `from`.
-    // map :: slots(from) -> slots(to)
-    fn merge_into_eclass(&mut self, from: Id, to: Id, map: &SlotMap) {
-        // Should hold here: self.check();
-
-        let mut future_unions = Vec::new();
-
-        // X = slots(from)
-        // Y = slots(to)
-        // map :: X -> Y
-
-        assert!(map.keys().is_subset(&self.classes[&from].slots));
-        assert_eq!(self.classes[&to].slots, map.values());
-
-        // 1. add unionfind entry 'from -> to'.
-        self.unionfind.set(from, self.mk_applied_id(to, map.inverse()));
-
-        // 2. move enodes from 'from' to 'to'.
-        self.move_enodes(from, to, map);
-
-        // 3. fix all ENodes that reference `from`.
-        let from_class = self.classes.get(&from).unwrap().clone();
-        for sh in from_class.usages {
-            let i = self.hashcons[&sh];
-            let bij = self.classes[&i].nodes[&sh].clone();
-            self.raw_remove_from_class(i, (sh.clone(), bij.clone()));
-            let n = sh.apply_slotmap(&bij);
-            let norm = self.find_enode(&n);
-            let (norm_sh, norm_bij) = norm.shape();
-
-            // Check whether `norm` makes a Slot redundant.
-            let class_slots = self.classes[&i].slots.clone();
-            let norm_slots = norm.slots();
-            if !class_slots.is_subset(&norm_slots) {
-                let l = self.mk_identity_applied_id(i);
-
-                let sub = &class_slots & &norm_slots;
-
-                // We union `i` with an empty EClass that is just missing a slot.
-                let r = self.alloc_eclass_fresh(&sub);
-
-                // TODO This is a dangerous solution.
-                // The invariant that each e-class.slots subset e-node.slots doesn't hold until the corresponding future_union is handled.
-                // In other words, we call union_internal, even though the e-graphs invariants are not upheld.
-                future_unions.push((l, r));
-            }
-
-            // Check whether `norm` collides with something:
-            if let Some(app_id) = self.lookup_internal(&norm) {
-                // If there is a collision, we don't add it directly.
-                // Instead, we union it together.
-                let l = self.mk_identity_applied_id(i);
-                let r = app_id;
-                future_unions.push((l, r));
-            } else {
-                self.raw_add_to_class(i, norm.shape());
-            }
-        }
-
-        for (x, y) in future_unions {
-            self.union_internal(x, y);
-        }
-
-        // Should hold here: self.check();
     }
 }
