@@ -26,15 +26,6 @@ use egraph::*;
 mod extract;
 use extract::*;
 
-mod rewrite;
-use rewrite::*;
-
-mod subst;
-use subst::*;
-
-mod small_step;
-use small_step::*;
-
 mod tst;
 use tst::*;
 

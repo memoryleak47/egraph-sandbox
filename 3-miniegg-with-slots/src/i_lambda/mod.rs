@@ -1,5 +1,14 @@
 use crate::*;
 
+mod rewrite;
+pub use rewrite::*;
+
+mod subst;
+pub use subst::*;
+
+mod small_step;
+pub use small_step::*;
+
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ENode {
     Lam(Slot, AppliedId),
