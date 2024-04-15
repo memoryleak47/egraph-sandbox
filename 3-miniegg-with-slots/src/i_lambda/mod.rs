@@ -68,3 +68,15 @@ impl Language for ENode {
         }
     }
 }
+
+use std::fmt::*;
+
+impl Debug for ENode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            ENode::Lam(s, b) => write!(f, "(lam {s:?} {b:?})"),
+            ENode::App(l, r) => write!(f, "(app {l:?} {r:?})"),
+            ENode::Var(s) => write!(f, "{s:?}"),
+        }
+    }
+}

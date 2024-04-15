@@ -32,26 +32,3 @@ impl Debug for AppliedId {
         write!(f, "{:?}{:?}", self.id, self.m)
     }
 }
-
-impl Debug for ENode {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self {
-            ENode::Lam(s, b) => write!(f, "(lam {s:?} {b:?})"),
-            ENode::App(l, r) => write!(f, "(app {l:?} {r:?})"),
-            ENode::Var(s) => write!(f, "{s:?}"),
-        }
-    }
-}
-
-
-impl Debug for LetENode {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self {
-            LetENode::Lam(s, b) => write!(f, "(lam {s:?} {b:?})"),
-            LetENode::App(l, r) => write!(f, "(app {l:?} {r:?})"),
-            LetENode::Var(s) => write!(f, "{s:?}"),
-            LetENode::Let(x, t, b) => write!(f, "(let {x:?} {t:?} {b:?})"),
-        }
-    }
-}
-
