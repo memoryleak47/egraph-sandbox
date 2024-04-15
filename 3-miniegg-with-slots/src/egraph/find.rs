@@ -5,6 +5,10 @@ use std::sync::Mutex;
 #[derive(Default, Debug)]
 pub(in crate::egraph) struct Unionfind {
     // "map: HashMap<Id, Cell<AppliedId>>" is probably the optimal single-threaded choice.
+    //
+    // "map: Vec<RwLock<AppliedId>>" might be similarly good, as we mostly read.
+    // And only if get() notices a non-normalized entry, we need to lock mutably.
+    //
     map: Mutex<HashMap<Id, AppliedId>>,
 }
 
