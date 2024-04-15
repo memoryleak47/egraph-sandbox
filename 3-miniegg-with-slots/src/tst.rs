@@ -19,10 +19,10 @@ impl<T> Realization for Expr<T> where T: RewriteStep {
         let mut eg = EGraph::<ENode>::new();
         let i = eg.add_expr(self.0.clone());
 
-        eg.inv();
+        eg.check();
         for _ in 0..steps {
             T::rewrite_step(&mut eg);
-            eg.inv();
+            eg.check();
         }
 
         let re = ast_size_extract(i, &eg);
@@ -35,10 +35,10 @@ impl<T> Realization for Expr<T> where T: RewriteStep {
         let i1 = eg.add_expr(self.0.clone());
         let i2 = eg.add_expr(other.0.clone());
 
-        eg.inv();
+        eg.check();
         for _ in 0..steps {
             T::rewrite_step(&mut eg);
-            eg.inv();
+            eg.check();
 
             if eg.find_id(i1) == eg.find_id(i2) {
                 return true;

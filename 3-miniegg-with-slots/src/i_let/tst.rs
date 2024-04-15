@@ -19,12 +19,12 @@ impl Realization for LetExpr {
         let mut eg = EGraph::<LetENode>::new();
         let i = eg.add_expr(self.0.clone());
 
-        eg.inv();
+        eg.check();
         // println!("{}", eg.total_size());
         for _ in 0..steps {
             rewrite_let(&mut eg);
             // println!("{}", eg.total_size());
-            eg.inv();
+            eg.check();
         }
 
         let re = extract::<LetENode, AstSizeNoLet>(i, &eg);
@@ -37,10 +37,10 @@ impl Realization for LetExpr {
         let i1 = eg.add_expr(self.0.clone());
         let i2 = eg.add_expr(other.0.clone());
 
-        eg.inv();
+        eg.check();
         for _ in 0..steps {
             rewrite_let(&mut eg);
-            eg.inv();
+            eg.check();
 
             if eg.find_id(i1) == eg.find_id(i2) {
                 return true;

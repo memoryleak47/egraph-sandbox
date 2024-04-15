@@ -42,7 +42,7 @@ impl<L: Language> EGraph<L> {
     // merges the EClass `from` into `to`. This deprecates the EClass `from`.
     // map :: slots(from) -> slots(to)
     fn merge_into_eclass(&mut self, from: Id, to: Id, map: &SlotMap) {
-        // Should hold here: self.inv();
+        // Should hold here: self.check();
 
         let mut future_unions = Vec::new();
 
@@ -120,6 +120,6 @@ impl<L: Language> EGraph<L> {
             self.union_internal(x, y);
         }
 
-        // Should hold here: self.inv();
+        // Should hold here: self.check();
     }
 }

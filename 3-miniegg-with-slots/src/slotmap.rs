@@ -153,7 +153,7 @@ impl SlotMap {
     }
 
     // checks invariants.
-    fn inv(&self) {
+    fn check(&self) {
         // sortedness.
         let mut sorted = self.map.clone();
         sorted.sort_by_key(|(l, _)| *l);
@@ -214,5 +214,5 @@ fn test_slotmap() {
     m.insert(Slot(4), Slot(7));
     assert_eq!(m[Slot(3)], Slot(8));
 
-    m.inv();
+    m.check();
 }

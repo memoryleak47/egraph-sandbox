@@ -120,7 +120,7 @@ impl<L: Language> EGraph<L> {
         self.hashcons.len()
     }
 
-    pub fn inv(&self) {
+    pub fn check(&self) {
         // Checks whether the hashcons / usages are correct.
         // And also checks that each Shape comes up in at most one EClass!
         let mut hashcons = HashMap::default();
@@ -169,7 +169,7 @@ impl<L: Language> EGraph<L> {
 
         // Check that the Unionfind has valid AppliedIds.
         for (_, app_id) in self.unionfind.iter() {
-            inv_internal_applied_id::<L>(self, &app_id);
+            check_internal_applied_id::<L>(self, &app_id);
         }
 
         // Check that all ENodes are valid.
@@ -181,12 +181,12 @@ impl<L: Language> EGraph<L> {
                 assert_eq!((sh.clone(), bij.clone()), real.shape());
 
                 for x in real.applied_id_occurences() {
-                    inv_internal_applied_id::<L>(self, &x);
+                    check_internal_applied_id::<L>(self, &x);
                 }
             }
         }
 
-        fn inv_internal_applied_id<L: Language>(eg: &EGraph<L>, app_id: &AppliedId) {
+        fn check_internal_applied_id<L: Language>(eg: &EGraph<L>, app_id: &AppliedId) {
             // 1. the app_id needs to be normalized!
             let y = eg.find_applied_id(app_id.clone());
             assert_eq!(app_id, &y);
