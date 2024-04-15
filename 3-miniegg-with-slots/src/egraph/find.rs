@@ -9,11 +9,11 @@ pub(in crate::egraph) struct Unionfind {
     // "map: Vec<RwLock<AppliedId>>" might be similarly good, as we mostly read.
     // And only if get() notices a non-normalized entry, we need to lock mutably.
     //
-    map: Mutex<HashMap<Id, AppliedId>>,
+    map: Mutex<Vec<AppliedId>>,
 }
 
-fn get_impl(i: Id, map: &mut HashMap<Id, AppliedId>) -> AppliedId {
-    let next = map[&i].clone();
+fn get_impl(i: Id, map: &mut [AppliedId]) -> AppliedId {
+    let next = map[i.0].clone();
 
     if next.id == i {
         return next;
@@ -28,13 +28,18 @@ fn get_impl(i: Id, map: &mut HashMap<Id, AppliedId>) -> AppliedId {
     // out.m :: slots(repr.id) -> slots(i)
     let out = repr.apply_slotmap(&next.m);
 
-    map.insert(i, out.clone());
+    map[i.0] = out.clone();
     out
 }
 
 impl Unionfind {
     pub fn set(&self, i: Id, j: &AppliedId) {
-        self.map.lock().unwrap().insert(i, j.clone());
+        let mut lock = self.map.lock().unwrap();
+        if lock.len() == i.0 {
+            lock.push(j.clone());
+        } else {
+            lock[i.0] = j.clone();
+        }
     }
 
     pub fn get(&self, i: Id) -> AppliedId {
@@ -46,9 +51,7 @@ impl Unionfind {
         let mut map = self.map.lock().unwrap();
         let mut out = Vec::new();
 
-        let keys: Vec<_> = map.keys().cloned().collect();
-
-        for x in keys {
+        for x in (0..map.len()).map(Id) {
             let y = get_impl(x, &mut *map);
             out.push((x, y));
         }
