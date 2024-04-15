@@ -68,11 +68,9 @@ impl Realization for Expr {
     }
 }
 
-// TODO it requires more steps, but still gets everything done! Impressive.
-// The test suite should respect that somehow.
 unpack_tests!(Expr);
 
 fn main() {
     let s = app(app(add(), num(2)), num(2));
-    check_simplify::<Expr>(&s, 27);
+    check_simplify::<Expr>(&s, 35);
 }

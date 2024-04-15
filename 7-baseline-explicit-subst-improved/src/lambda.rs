@@ -66,7 +66,15 @@ fn is_not_same_var(v1: Var, v2: Var) -> impl Fn(&mut EGraph, Id, &Subst) -> bool
     move |egraph, _, subst| egraph.find(subst[v1]) != egraph.find(subst[v2])
 }
 
-fn is_nonfree_in(v: Var, b: Var) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+fn is_used_in(v: Var, b: Var) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    move |eg, _, subst| {
+        let v = subst[v];
+        let b = subst[b];
+        eg[b].data.free.contains(&v)
+    }
+}
+
+fn is_unused_in(v: Var, b: Var) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     move |eg, _, subst| {
         let v = subst[v];
         let b = subst[b];
@@ -74,20 +82,32 @@ fn is_nonfree_in(v: Var, b: Var) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
     }
 }
 
+fn is_used_in_any(v: Var, b: Vec<Var>) -> impl Fn(&mut EGraph, Id, &Subst) -> bool {
+    move |eg, _, subst| {
+        let v = subst[v];
+        for b in &b {
+            let b = subst[*b];
+            if eg[b].data.free.contains(&v) { return true; }
+        }
+        false
+    }
+}
+
+
 pub fn rules() -> Vec<Rewrite<Lambda, LambdaAnalysis>> {
     vec![
         rw!("beta";     "(app (lam ?v ?body) ?e)" => "(let ?v ?e ?body)"),
-        rw!("let-app";  "(let ?v ?e (app ?a ?b))" => "(app (let ?v ?e ?a) (let ?v ?e ?b))"),
+        rw!("my-let-unused"; "(let ?v ?e ?b)" => "?b"
+            if is_unused_in(var("?v"), var("?b"))
+        ),
+
         rw!("let-var-same"; "(let ?v1 ?e (var ?v1))" => "?e"),
 
-        // rw!("let-var-diff"; "(let ?v1 ?e (var ?v2))" => "(var ?v2)"
-        //    if is_not_same_var(var("?v1"), var("?v2"))),
-
-        // NOTE: I changed "let-var-diff" to "my-let-free" as it is more efficient.
-        rw!("my-let-free"; "(let ?v ?e ?b)" => "?b"
-            if is_nonfree_in(var("?v"), var("?b"))),
-
-        rw!("let-lam-same"; "(let ?v1 ?e (lam ?v1 ?body))" => "(lam ?v1 ?body)"),
+        // I added is_used_in checks for each of these:
+        // Thus, these rules only apply if "my-let-unused" does not apply.
+        rw!("let-app";  "(let ?v ?e (app ?a ?b))" => "(app (let ?v ?e ?a) (let ?v ?e ?b))"
+            if is_used_in_any(var("?v"), vec![var("?a"), var("?b")])
+        ),
         rw!("let-lam-diff";
             "(let ?v1 ?e (lam ?v2 ?body))" =>
             { CaptureAvoid {
@@ -95,7 +115,9 @@ pub fn rules() -> Vec<Rewrite<Lambda, LambdaAnalysis>> {
                 if_not_free: "(lam ?v2 (let ?v1 ?e ?body))".parse().unwrap(),
                 if_free: "(lam ?fresh (let ?v1 ?e (let ?v2 (var ?fresh) ?body)))".parse().unwrap(),
             }}
-            if is_not_same_var(var("?v1"), var("?v2"))),
+            if is_not_same_var(var("?v1"), var("?v2"))
+            if is_used_in(var("?v1"), var("?body"))
+        ),
     ]
 }
 
