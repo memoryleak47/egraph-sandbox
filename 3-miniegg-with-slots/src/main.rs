@@ -34,19 +34,6 @@ use std::fmt::Debug;
 pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;
 
-fn translate(re: RecExpr<ENode>) -> RecExpr<LetENode> {
-    let mut out = RecExpr::empty();
-    for x in re.node_dag {
-        let x = match x {
-            ENode::Var(x) => LetENode::Var(x),
-            ENode::App(l, r) => LetENode::App(l, r),
-            ENode::Lam(x, b) => LetENode::Lam(x, b),
-        };
-        out.push(x);
-    }
-    out
-}
-
 fn main() {
     let s = app(app(add(), num(2)), num(2));
     check_simplify::<LetExpr>(&s, 22);
