@@ -50,14 +50,21 @@ fn propagate_let(eg: &mut EGraph<LetENode>) {
 }
 
 fn propagate_let_step(x: Slot, t: AppliedId, b: LetENode, eg: &mut EGraph<LetENode>) -> Option<AppliedId> {
-    if !b.slots().contains(&x) { // TODO does the base case also do this?
-        return Some(eg.lookup(&b).unwrap());
-    }
+    // TODO re-enable optimization:
+
+    // if !b.slots().contains(&x) {
+    //    return Some(eg.lookup(&b).unwrap());
+    // }
 
     let out = match b {
-        LetENode::Var(_) => t,
+        LetENode::Var(_) => {
+            if b.slots().contains(&x) {
+                t
+            } else {
+                eg.lookup(&b).unwrap()
+            }
+        },
         LetENode::App(l, r) => {
-            // TODO there needs to be some slot-renaming, right?
             let l = eg.add(LetENode::Let(x, t.clone(), l));
             let r = eg.add(LetENode::Let(x, t.clone(), r));
             eg.add(LetENode::App(l, r))
