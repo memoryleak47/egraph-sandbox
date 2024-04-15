@@ -95,7 +95,7 @@ impl<L: Language> EGraph<L> {
 
     // Generates fresh slots for redundant slots.
     pub fn enodes_applied(&self, i: &AppliedId) -> HashSet<L> {
-        let i = self.find_applied_id(i.clone());
+        let i = self.find_applied_id(i);
 
         let mut out = HashSet::default();
         for x in self.enodes(i.id) {
@@ -188,7 +188,7 @@ impl<L: Language> EGraph<L> {
 
         fn check_internal_applied_id<L: Language>(eg: &EGraph<L>, app_id: &AppliedId) {
             // 1. the app_id needs to be normalized!
-            let y = eg.find_applied_id(app_id.clone());
+            let y = eg.find_applied_id(app_id);
             assert_eq!(app_id, &y);
 
             // 2. It needs to have exactly the same slots as the underlying EClass.

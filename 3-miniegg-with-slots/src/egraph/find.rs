@@ -32,10 +32,9 @@ fn get_impl(i: Id, map: &mut HashMap<Id, AppliedId>) -> AppliedId {
     out
 }
 
-// TODO all these functions should get references!
 impl Unionfind {
-    pub fn set(&self, i: Id, j: AppliedId) {
-        self.map.lock().unwrap().insert(i, j);
+    pub fn set(&self, i: Id, j: &AppliedId) {
+        self.map.lock().unwrap().insert(i, j.clone());
     }
 
     pub fn get(&self, i: Id) -> AppliedId {
@@ -64,7 +63,7 @@ impl Unionfind {
 
 impl<L: Language> EGraph<L> {
     pub fn find_enode(&self, enode: &L) -> L {
-        enode.map_applied_ids(|x| self.find_applied_id(x))
+        enode.map_applied_ids(|x| self.find_applied_id(&x))
     }
 
     // normalize i.id
@@ -74,7 +73,7 @@ impl<L: Language> EGraph<L> {
     //
     // Example 2:
     // 'find(c1(s3, s7, s8)) = c2(s8, s7)', where 'c1(s0, s1, s2) -> c2(s2, s1)' in unionfind,
-    pub fn find_applied_id(&self, i: AppliedId) -> AppliedId {
+    pub fn find_applied_id(&self, i: &AppliedId) -> AppliedId {
         let a = &self.unionfind.get(i.id);
 
         // I = self.slots(i.id);

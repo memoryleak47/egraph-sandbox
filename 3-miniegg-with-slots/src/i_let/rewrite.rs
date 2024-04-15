@@ -30,7 +30,7 @@ fn beta_to_let(eg: &mut EGraph<LetENode>) {
 
         let new = LetENode::Let(x_root, t, b);
         let new = eg.add(new);
-        eg.union(new, app_id.clone());
+        eg.union(&new, &app_id);
     }
 }
 
@@ -41,7 +41,7 @@ fn propagate_let(eg: &mut EGraph<LetENode>) {
             if let LetENode::Let(x, t, b) = &enode {
                 for b2 in eg.enodes_applied(b) {
                     if let Some(new) = propagate_let_step(*x, t.clone(), b2, eg) {
-                        eg.union(new, id.clone());
+                        eg.union(&new, &id);
                     }
                 }
             }
@@ -50,20 +50,13 @@ fn propagate_let(eg: &mut EGraph<LetENode>) {
 }
 
 fn propagate_let_step(x: Slot, t: AppliedId, b: LetENode, eg: &mut EGraph<LetENode>) -> Option<AppliedId> {
-    // TODO re-enable optimization:
-
-    // if !b.slots().contains(&x) {
-    //    return Some(eg.lookup(&b).unwrap());
-    // }
+    // This optimization does soo much for some reason.
+    if !b.slots().contains(&x) {
+        return Some(eg.lookup(&b).unwrap());
+    }
 
     let out = match b {
-        LetENode::Var(_) => {
-            if b.slots().contains(&x) {
-                t
-            } else {
-                eg.lookup(&b).unwrap()
-            }
-        },
+        LetENode::Var(_) => t,
         LetENode::App(l, r) => {
             let l = eg.add(LetENode::Let(x, t.clone(), l));
             let r = eg.add(LetENode::Let(x, t.clone(), r));

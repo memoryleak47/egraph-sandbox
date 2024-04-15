@@ -2,17 +2,16 @@ use crate::*;
 
 impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
-    // TODO get references here instead!
     // returns whether it actually did something.
-    pub fn union(&mut self, l: AppliedId, r: AppliedId) -> bool {
-        let out = self.union_internal(&l, &r);
+    pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
+        let out = self.union_internal(l, r);
         out
     }
 
     fn union_internal(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
         // normalize inputs
-        let l = self.find_applied_id(l.clone());
-        let r = self.find_applied_id(r.clone());
+        let l = self.find_applied_id(&l);
+        let r = self.find_applied_id(&r);
 
         // early return, if union should not be made.
         if l == r { return false; }
@@ -45,12 +44,13 @@ impl<L: Language> EGraph<L> {
     }
 
     fn merge_into_eclass(&mut self, from: &AppliedId, to: &AppliedId) {
-        let from = self.find_applied_id(from.clone());
-        let to = self.find_applied_id(to.clone());
+        let from = self.find_applied_id(from);
+        let to = self.find_applied_id(to);
 
+        // TODO this can be simplified.
         let map = to.m.compose_partial(&from.m.inverse());
 
-        self.unionfind.set(from.id, self.mk_applied_id(to.id, map));
+        self.unionfind.set(from.id, &self.mk_applied_id(to.id, map));
         self.convert_eclass(from.id);
     }
 
@@ -89,7 +89,7 @@ impl<L: Language> EGraph<L> {
     // self.check() should hold before and after this.
     fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
         let mut enode = self.find_enode(&enode);
-        let mut i = self.find_applied_id(i.clone());
+        let mut i = self.find_applied_id(i);
 
         if let Some(j) = self.lookup_internal(&enode) {
             self.union_internal(&i, &j);
@@ -100,7 +100,7 @@ impl<L: Language> EGraph<L> {
                 self.union_internal(&c, &i);
 
                 enode = self.find_enode(&enode);
-                i = self.find_applied_id(i.clone());
+                i = self.find_applied_id(&i);
             }
 
             let (sh, bij) = enode.shape();
