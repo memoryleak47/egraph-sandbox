@@ -17,6 +17,7 @@ pub fn extract<L: Language, CF: CostFunction<L>>(i: Id, eg: &EGraph<L>) -> RecEx
     let i = eg.find_id(i);
 
     // maps eclass id to their optimal RecExpr.
+    // TODO the map doesn't need RecExpr<L>. Just storing L would be enough.
     let mut map: HashMap<Id, WithOrdRev<RecExpr<L>, CF::Cost>> = HashMap::default();
     let mut queue: BinaryHeap<WithOrdRev<L, CF::Cost>> = BinaryHeap::new();
 
