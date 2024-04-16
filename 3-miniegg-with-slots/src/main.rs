@@ -29,6 +29,9 @@ use extract::*;
 mod tst;
 use tst::*;
 
+mod pattern;
+use pattern::*;
+
 use std::hash::Hash;
 use std::fmt::Debug;
 pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
