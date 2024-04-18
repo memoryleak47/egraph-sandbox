@@ -27,7 +27,7 @@ fn generate_impl(cost: usize, declared: &HashSet<String>) -> Ast {
 
     let mut opts = HashSet::default();
 
-    if !declared.is_empty() {
+    if !declared.is_empty() && cost <= 1 {
         opts.insert(Opts::Var);
     }
 

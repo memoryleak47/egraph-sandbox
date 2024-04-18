@@ -83,6 +83,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gen-finder"
+version = "0.1.0"
+dependencies = [
+ "explicit-subst",
+ "lamcalc",
+ "miniegg-with-slots",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -239,15 +248,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "t"
-version = "0.1.0"
-dependencies = [
- "explicit-subst",
- "lamcalc",
- "miniegg-with-slots",
 ]
 
 [[package]]
