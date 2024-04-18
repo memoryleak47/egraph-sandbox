@@ -7,6 +7,9 @@ use lamcalc::*;
 
 fn main() {
     let g = lamcalc::generate(40).to_string();
-    check_simplify::<LetExpr>(&g, 20);
-    check_simplify::<Expr>(&g, 20);
+    dbg!(&g);
+    let a = simplify::<LetExpr>(&g, 20);
+    dbg!(&a);
+    let b = simplify::<Expr>(&g, 20);
+    dbg!(&b);
 }
