@@ -19,6 +19,9 @@ pub use build::*;
 mod tst;
 pub use tst::*;
 
+mod gen;
+pub use gen::*;
+
 type HashSet<T> = std::collections::BTreeSet<T>;
 type HashMap<K, V> = std::collections::BTreeMap<K, V>;
 
