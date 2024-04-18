@@ -14,5 +14,12 @@ pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
 }
 
 fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, partial_subst: HashMap<String, AppliedId>) -> Vec<Match> {
-    todo!()
+    match pattern.node {
+        ENodeOrVar::Var(_) => {
+            todo!()
+        },
+        ENodeOrVar::ENode(_) => {
+            todo!()
+        },
+    }
 }
