@@ -14,12 +14,28 @@ pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
 }
 
 fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, partial_subst: HashMap<String, AppliedId>) -> Vec<Match> {
-    match pattern.node {
-        ENodeOrVar::Var(_) => {
-            todo!()
+    match &pattern.node {
+        ENodeOrVar::Var(s) => {
+            // TODO is this right?
+            let mut subst = partial_subst.clone();
+            if !subst.contains_key(&*s) {
+                let app_id = AppliedId::new(id, todo!());
+                subst.insert(s.clone(), app_id);
+            }
+            let mtch = Match { id, subst };
+            vec![mtch]
         },
-        ENodeOrVar::ENode(_) => {
-            todo!()
+        ENodeOrVar::ENode(n1) => {
+            // TODO is this right?
+            let mut matches = Vec::new();
+            for n2 in eg.enodes(id) {
+                if superficial_match(n1, &n2) {
+                    let mut subst = partial_subst.clone();
+                    let mtch = todo!();
+                    matches.push(mtch);
+                }
+            }
+            matches
         },
     }
 }
