@@ -7,13 +7,6 @@ pub enum ENodeOrVar<L: Language> {
 }
 
 impl<L: Language> Language for ENodeOrVar<L> {
-    fn discr(&self) -> u32 {
-        match self {
-            ENodeOrVar::ENode(x) => x.discr() + 1,
-            ENodeOrVar::Var(_) => 0,
-        }
-    }
-
     fn all_slot_occurences_mut(&mut self) -> Vec<&mut Slot> {
         match self {
             ENodeOrVar::ENode(x) => x.all_slot_occurences_mut(),

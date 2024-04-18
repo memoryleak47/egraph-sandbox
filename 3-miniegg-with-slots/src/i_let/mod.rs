@@ -18,15 +18,6 @@ pub enum LetENode {
 }
 
 impl Language for LetENode {
-    fn discr(&self) -> u32 {
-        match self {
-            LetENode::Lam(_, _) => 0,
-            LetENode::App(_, _) => 1,
-            LetENode::Var(_) => 2,
-            LetENode::Let(..) => 3,
-        }
-    }
-
     fn all_slot_occurences_mut(&mut self) -> Vec<&mut Slot> {
         let mut out = Vec::new();
         match self {

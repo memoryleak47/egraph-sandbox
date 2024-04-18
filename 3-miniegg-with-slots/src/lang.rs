@@ -1,8 +1,6 @@
 use crate::*;
 
 pub trait Language: Debug + Clone + Hash + Eq {
-    fn discr(&self) -> u32;
-
     // returns non-deduplicated lists of all occurences of these things, in order.
     fn all_slot_occurences_mut(&mut self) -> Vec<&mut Slot>;
     fn public_slot_occurences_mut(&mut self) -> Vec<&mut Slot>;

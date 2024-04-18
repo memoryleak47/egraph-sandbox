@@ -17,14 +17,6 @@ pub enum ENode {
 }
 
 impl Language for ENode {
-    fn discr(&self) -> u32 {
-        match self {
-            ENode::Lam(_, _) => 0,
-            ENode::App(_, _) => 1,
-            ENode::Var(_) => 2,
-        }
-    }
-
     fn all_slot_occurences_mut(&mut self) -> Vec<&mut Slot> {
         let mut out = Vec::new();
         match self {
