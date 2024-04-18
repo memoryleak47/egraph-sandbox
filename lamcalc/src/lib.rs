@@ -31,4 +31,3 @@ pub enum Ast {
     App(Box<Ast>, Box<Ast>),
     Var(String),
 }
-

@@ -69,8 +69,3 @@ impl Realization for Expr {
 }
 
 unpack_tests!(Expr);
-
-fn main() {
-    let s = app(app(add(), num(2)), num(2));
-    check_simplify::<Expr>(&s, 35);
-}
