@@ -145,6 +145,7 @@ impl Applier<Lambda, LambdaAnalysis> for CaptureAvoid {
             let mut subst = subst.clone();
             let sym = Lambda::Symbol(format!("_{}", eclass).into());
             subst.insert(self.fresh, egraph.add(sym));
+            println!("collision!!");
             self.if_free
                 .apply_one(egraph, eclass, &subst, searcher_ast, rule_name)
         } else {
