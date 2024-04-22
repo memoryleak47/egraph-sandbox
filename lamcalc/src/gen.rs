@@ -27,8 +27,12 @@ fn generate_impl(cost: usize, declared: &HashSet<String>) -> Ast {
 
     let mut opts = HashSet::default();
 
-    if !declared.is_empty() && cost <= 1 {
-        opts.insert(Opts::Var);
+    if cost <= 1 {
+        if declared.is_empty() {
+            opts.insert(Opts::Lam);
+        } else {
+            opts.insert(Opts::Var);
+        }
     }
 
     if cost >= 2 {
@@ -37,14 +41,6 @@ fn generate_impl(cost: usize, declared: &HashSet<String>) -> Ast {
 
     if cost >= 3 {
         opts.insert(Opts::App);
-    }
-
-    if cost == 0 {
-        if declared.is_empty() {
-            opts.insert(Opts::Lam);
-        } else {
-            opts.insert(Opts::Var);
-        }
     }
 
     let opt = any(&opts);
@@ -63,9 +59,14 @@ fn generate_impl(cost: usize, declared: &HashSet<String>) -> Ast {
             Ast::Lam(n, Box::new(next))
         },
         Opts::App => {
-            let scost = cost-1;
-            let l_cost = rand() % scost;
-            let r_cost = scost - l_cost;
+            let s_cost = cost-1;
+            assert!(s_cost >= 2);
+            // l_cost + r_cost = s_cost.
+
+            // 1 <= l_cost <= s_cost
+            let l_cost = rand() % (s_cost-1) + 1;
+            // 1 <= r_cost <= s_cost.
+            let r_cost = s_cost - l_cost;
             let l = generate_impl(l_cost, &declared);
             let r = generate_impl(r_cost, &declared);
             Ast::App(Box::new(l), Box::new(r))
