@@ -36,6 +36,7 @@ impl Realization for Expr {
         println!("egg:");
         let h = |r: &mut Runner<_, _>| {
             println!("{}", r.egraph.total_size());
+            println!("varcount: {}", varcount(&r.egraph));
             Ok(())
         };
         let runner = Runner::default()
@@ -65,6 +66,21 @@ impl Realization for Expr {
 
         runner.egraph.find(i1) == runner.egraph.find(i2)
     }
+}
+
+fn varcount(eg: &EGraph<Lambda, LambdaAnalysis>) -> usize {
+    use std::collections::HashSet;
+
+    let mut hashset: HashSet<&Symbol> = HashSet::default();
+    for c in eg.classes() {
+        for i in c.iter() {
+            if let Lambda::Symbol(v) = i {
+                hashset.insert(v);
+            }
+        }
+    }
+
+    hashset.len()
 }
 
 unpack_tests!(Expr);
