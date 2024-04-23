@@ -18,7 +18,7 @@ pub fn simplify<R: Realization>(s: &str) -> String {
     let i = eg.add_ast(&ast);
     for _ in 0..200 {
         eg.step();
-        if eg.enode_count() > 40000 {
+        if eg.enode_count() > 10000 {
             break;
         }
     }
