@@ -36,6 +36,7 @@ impl Realization for LambdaRealImproved {
     fn eclass_count(&self) -> usize { self.0.classes().filter(|x| x.id == self.find(x.id)).count() }
 }
 
+// useful to measure the number of naming collisions. As each naming collision creates a variable _i.
 fn varcount(eg: &EGraph<Lambda, LambdaAnalysis>) -> usize {
     use std::collections::HashSet;
 

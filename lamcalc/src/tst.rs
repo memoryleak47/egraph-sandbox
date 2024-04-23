@@ -123,7 +123,7 @@ macro_rules! unpack_tests {
         fn test_add_y_step() {
             let s1 = app(add_impl(), add());
             let s2 = add();
-            check_eq::<$R>(&s1, &s2, 5);
+            check_eq::<$R>(&s1, &s2);
         }
     }
 }

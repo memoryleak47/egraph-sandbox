@@ -42,7 +42,7 @@ pub fn check_simplify_incomplete<R: Realization>(p: &str) {
     assert_alpha_eq(&*out1, &*out2);
 }
 
-pub fn check_eq<R: Realization>(s1: &str, s2: &str, steps: u32) {
+pub fn check_eq<R: Realization>(s1: &str, s2: &str) {
     let s1 = Ast::parse(s1);
     let s2 = Ast::parse(s2);
     let mut eg = R::new();
