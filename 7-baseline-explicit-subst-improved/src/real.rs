@@ -1,13 +1,12 @@
 use crate::*;
 
-// TODO Expr is not a good name anymore.
-pub struct Expr(EGraph<Lambda, LambdaAnalysis>);
+pub struct LambdaRealImproved(EGraph<Lambda, LambdaAnalysis>);
 
-impl Realization for Expr {
+impl Realization for LambdaRealImproved {
     type Id = Id;
 
     fn new() -> Self {
-        Expr(EGraph::default())
+        LambdaRealImproved(EGraph::default())
     }
 
     fn add_ast(&mut self, ast: &Ast) -> Self::Id {
@@ -79,4 +78,4 @@ fn re_from_ast(a: &Ast) -> RecExpr<Lambda> {
     }
 }
     
-unpack_tests!(Expr);
+unpack_tests!(LambdaRealImproved);
