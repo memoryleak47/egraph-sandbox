@@ -15,7 +15,27 @@ pub trait Realization: Sized {
     fn eclass_count(&self) -> usize;
 }
 
-// TODO add a simplify_to_nf function that stops when the desired output has been reached.
+// stops when the desired output has been reached.
+pub fn simplify_to_nf<R: Realization>(s: &str) -> String {
+    let mut ast = Ast::parse(s);
+    let mut eg = R::new();
+    let i = eg.add_ast(&ast);
+    for _ in 0..NO_ITERS {
+        eg.step();
+
+        if eg.enode_count() > NO_ENODES {
+            break;
+        }
+
+        ast = eg.extract_ast(i.clone());
+        if ast.step().is_none() {
+            return ast.to_string();
+        };
+    }
+    panic!("failed to reach NF! Or the beta-NF is just AstSize-suboptimal!");
+}
+
+
 pub fn simplify<R: Realization>(s: &str) -> String {
     let ast = Ast::parse(s);
     let mut eg = R::new();
@@ -35,6 +55,12 @@ pub fn simplify<R: Realization>(s: &str) -> String {
 // TODO the smallest term isn't necessarily the beta-NF.
 pub fn check_simplify<R: Realization>(p: &str) {
     let out1 = simplify::<R>(p);
+    let out2 = run(p);
+    assert_alpha_eq(&*out1, &*out2);
+}
+
+pub fn check_simplify_to_nf<R: Realization>(p: &str) {
+    let out1 = simplify_to_nf::<R>(p);
     let out2 = run(p);
     assert_alpha_eq(&*out1, &*out2);
 }

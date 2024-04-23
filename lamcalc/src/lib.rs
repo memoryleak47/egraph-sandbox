@@ -31,3 +31,13 @@ pub enum Ast {
     App(Box<Ast>, Box<Ast>),
     Var(String),
 }
+
+impl Ast {
+    pub fn size(&self) -> usize {
+        match self {
+            Ast::Lam(_, b) => b.size() + 1,
+            Ast::App(l, r) => l.size() + r.size() + 1,
+            Ast::Var(_) => 1,
+        }
+    }
+}
