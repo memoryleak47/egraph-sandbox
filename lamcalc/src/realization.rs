@@ -1,6 +1,14 @@
 use crate::*;
 
 pub trait Realization: Sized {
+    type Id: Clone + Eq;
+
+    fn new() -> Self { todo!() }
+    fn add_ast(&mut self, ast: &Ast) -> Self::Id { todo!() }
+    fn extract_ast(&self, id: Self::Id) -> Ast { todo!() }
+    fn find(&self, id: Self::Id) -> Self::Id { todo!() }
+    fn step(&mut self) { todo!() }
+
     fn to_ast_string(&self) -> String;
     fn from_ast(ast: &Ast) -> Self;
     fn simplify(&self, steps: u32) -> Self;

@@ -7,6 +7,8 @@ pub trait RewriteStep {
 pub struct Expr<T: RewriteStep>(RecExpr<ENode>, std::marker::PhantomData<T>);
 
 impl<T> Realization for Expr<T> where T: RewriteStep {
+    type Id = Id;
+
     fn to_ast_string(&self) -> String {
         self.0.to_string()
     }

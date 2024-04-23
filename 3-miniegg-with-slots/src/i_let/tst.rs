@@ -5,6 +5,8 @@ use std::marker::PhantomData;
 pub struct LetExpr(RecExpr<LetENode>);
 
 impl Realization for LetExpr {
+    type Id = AppliedId;
+
     fn to_ast_string(&self) -> String {
         from_let(&self.0).to_string()
     }

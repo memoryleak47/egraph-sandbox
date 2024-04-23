@@ -10,6 +10,8 @@ use cost::*;
 struct Expr(RecExpr<Lambda>);
 
 impl Realization for Expr {
+    type Id = Id;
+
     fn to_ast_string(&self) -> String {
         let mut strings = Vec::new();
         for n in self.0.as_ref() {
