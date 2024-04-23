@@ -1,5 +1,8 @@
 use crate::*;
 
+const NO_ITERS: usize = 200;
+const NO_ENODES: usize = 4000;
+
 pub trait Realization: Sized {
     type Id: Clone + Eq;
 
@@ -16,9 +19,9 @@ pub fn simplify<R: Realization>(s: &str) -> String {
     let ast = Ast::parse(s);
     let mut eg = R::new();
     let i = eg.add_ast(&ast);
-    for _ in 0..200 {
+    for _ in 0..NO_ITERS {
         eg.step();
-        if eg.enode_count() > 10000 {
+        if eg.enode_count() > NO_ENODES {
             break;
         }
     }
@@ -48,13 +51,18 @@ pub fn check_eq<R: Realization>(s1: &str, s2: &str) {
     let mut eg = R::new();
     let i1 = eg.add_ast(&s1);
     let i2 = eg.add_ast(&s2);
-    for _ in 0..200 {
+    for _ in 0..NO_ITERS {
+        if eg.find(i1.clone()) == eg.find(i2.clone()) {
+            return;
+        }
+
         eg.step();
-        if eg.enode_count() > 40000 {
+
+        if eg.enode_count() > NO_ENODES {
             break;
         }
     }
-    assert!(eg.find(i1) == eg.find(i2));
+    panic!("equality could not be found!");
 }
 
 // Non-Realization functions:
