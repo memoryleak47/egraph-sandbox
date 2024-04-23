@@ -13,7 +13,7 @@ macro_rules! unpack_tests {
             ];
 
             for p in s {
-                let out = simplify::<$R>(p, 10);
+                let out = simplify::<$R>(p);
                 assert_alpha_eq(&*out, p);
             }
         }
@@ -30,7 +30,7 @@ macro_rules! unpack_tests {
             //
             // This sometimes causes infinite loops, if you iterate by depth-first-search.
             let s = "(lam x (app (lam y y) x))";
-            check_simplify::<$R>(&s, 2);
+            check_simplify::<$R>(&s);
         }
 
         #[test]
@@ -39,25 +39,25 @@ macro_rules! unpack_tests {
             let l = "(lam x (lam a x))";
             let r = "(lam z z)";
             let s = format!("(app {l} {r})");
-            check_simplify::<$R>(&s, 10);
+            check_simplify::<$R>(&s);
         }
 
         #[test]
         fn test_nested_identity1() {
             let p = "(app (lam x0 x0) (lam x1 x1))";
-            check_simplify::<$R>(p, 10);
+            check_simplify::<$R>(p);
         }
 
         #[test]
         fn test_nested_identity2() {
             let p = "(app (lam x0 x0) (lam x1 (app x1 x1)))";
-            check_simplify::<$R>(p, 10);
+            check_simplify::<$R>(p);
         }
 
         #[test]
         fn test_nested_identity3() {
             let p = "(app (lam x0 (app x0 x0)) (lam x1 x1))";
-            check_simplify::<$R>(p, 10);
+            check_simplify::<$R>(p);
         }
 
         #[test]
@@ -67,27 +67,27 @@ macro_rules! unpack_tests {
                     (lam z (app x z))
                 y)
             ))";
-            check_simplify::<$R>(p, 10);
+            check_simplify::<$R>(p);
         }
 
         #[test]
         fn test_redundant_slot() {
             // y is unused, and hence x is effectively redundant.
             let p = "(lam x (app (lam y (lam z z)) x))";
-            check_simplify::<$R>(p, 10);
+            check_simplify::<$R>(p);
         }
 
         #[test]
         fn test_redundant_slot2() {
             // y is unused, and hence x is effectively redundant.
             let p = "(lam x (lam z (app (lam y z) x)))";
-            check_simplify::<$R>(p, 10);
+            check_simplify::<$R>(p);
         }
 
         #[test]
         fn test_inf_loop() {
             let p = "(app (lam x0 (app x0 x0)) (lam x1 (app x1 x1)))";
-            let out = simplify::<$R>(p, 3);
+            let out = simplify::<$R>(p);
             assert_alpha_eq(&out, p);
         }
 
@@ -97,26 +97,26 @@ macro_rules! unpack_tests {
             let p = "(lam f (lam arg arg))";
             let s = app(y(), String::from(p));
 
-            let out = simplify::<$R>(&s, 7);
+            let out = simplify::<$R>(&s);
             assert_alpha_eq(&out, "(lam x x)");
         }
 
         #[test]
         fn test_add00() {
             let s = app(app(add(), num(0)), num(0));
-            check_simplify::<$R>(&s, 16);
+            check_simplify::<$R>(&s);
         }
 
         #[test]
         fn test_add01() {
             let s = app(app(add(), num(0)), num(1));
-            check_simplify::<$R>(&s, 16);
+            check_simplify::<$R>(&s);
         }
 
         #[test]
         fn test_add23_incomplete() {
             let s = app(app(add(), num(2)), num(3));
-            check_simplify_incomplete::<$R>(&s, 15);
+            check_simplify_incomplete::<$R>(&s);
         }
 
         #[test]
