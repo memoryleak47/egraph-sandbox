@@ -161,7 +161,7 @@ fn to_string_impl(en: ENode, re: &[ENode], name_map: HashMap<Slot, String>, name
 #[test]
 fn test_parse_roundtrip() {
     let s1 = "(app (lam x0 x0) (lam x1 x1))";
-    let p = RecExpr::parse(s1);
+    let p = RecExpr::<ENode>::parse(s1);
     let s2 = p.to_string();
     assert_eq!(s1, s2);
 }

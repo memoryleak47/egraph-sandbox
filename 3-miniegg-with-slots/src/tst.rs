@@ -1,3 +1,4 @@
+/*
 use crate::*;
 
 pub trait RewriteStep {
@@ -82,3 +83,4 @@ mod small_step {
     lamcalc::unpack_tests!(Expr<SmallStep>);
 }
 pub use small_step::*;
+*/

@@ -2,57 +2,45 @@ use crate::*;
 
 use std::marker::PhantomData;
 
-pub struct LetExpr(RecExpr<LetENode>);
+pub struct LetReal(EGraph<LetENode>);
 
-impl Realization for LetExpr {
-    type Id = AppliedId;
+impl Realization for LetReal {
+    type Id = Id;
 
-    fn to_ast_string(&self) -> String {
-        from_let(&self.0).to_string()
+    fn new() -> Self {
+        LetReal(EGraph::new())
     }
 
-    fn from_ast(ast: &Ast) -> Self {
-        let re = RecExpr::parse(&ast.to_string());
-        let re = to_let(&re);
-        LetExpr(re)
+    fn add_ast(&mut self, ast: &Ast) -> Self::Id {
+        let re = RecExpr::<LetENode>::parse(&ast.to_string());
+        self.0.add_expr(re)
     }
 
-    fn simplify(&self, steps: u32) -> Self {
-        let mut eg = EGraph::<LetENode>::new();
-        let i = eg.add_expr(self.0.clone());
-
-        eg.check();
-        println!("slotted:");
-        println!("{}", eg.total_size());
-        for _ in 0..steps {
-            rewrite_let(&mut eg);
-            println!("{}", eg.total_size());
-            eg.check();
-        }
-
-        let re = extract::<LetENode, AstSizeNoLet>(i, &eg);
-        Self(re)
+    fn extract_ast(&self, id: Self::Id) -> Ast {
+        let out = extract::<LetENode, AstSizeNoLet>(id, &self.0);
+        Ast::parse(&out.to_string())
     }
 
-    fn find_eq(&self, other: &Self, steps: u32) -> bool {
-        let mut eg = EGraph::<LetENode>::new();
-
-        let i1 = eg.add_expr(self.0.clone());
-        let i2 = eg.add_expr(other.0.clone());
-
-        eg.check();
-        for _ in 0..steps {
-            rewrite_let(&mut eg);
-            eg.check();
-
-            if eg.find_id(i1) == eg.find_id(i2) {
-                return true;
-            }
-        }
-
-        false
+    fn find(&self, id: Self::Id) -> Self::Id {
+        self.0.find_id(id)
     }
-    
+
+    fn step(&mut self) {
+        rewrite_let(&mut self.0);
+    }
+
+    fn enode_count(&self) -> usize { self.0.total_size() }
+    fn eclass_count(&self) -> usize { self.0.ids().len() } 
+}
+
+impl RecExpr<LetENode> {
+    pub fn to_string(&self) -> String {
+        from_let(self).to_string()
+    }
+
+    pub fn parse(s: &str) -> Self {
+        to_let(&RecExpr::<ENode>::parse(s))
+    }
 }
 
 fn to_let(re: &RecExpr<ENode>) -> RecExpr<LetENode> {
@@ -82,4 +70,4 @@ fn from_let(re: &RecExpr<LetENode>) -> RecExpr<ENode> {
     out
 }
 
-lamcalc::unpack_tests!(LetExpr);
+lamcalc::unpack_tests!(LetReal);

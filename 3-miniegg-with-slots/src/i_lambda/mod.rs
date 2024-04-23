@@ -1,5 +1,7 @@
 use crate::*;
 
+// TODO
+/*
 mod rewrite;
 pub use rewrite::*;
 
@@ -8,6 +10,7 @@ pub use subst::*;
 
 mod small_step;
 pub use small_step::*;
+*/
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ENode {
