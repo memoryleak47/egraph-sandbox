@@ -1,7 +1,5 @@
 use crate::*;
 
-use std::marker::PhantomData;
-
 pub struct LetReal(EGraph<LetENode>);
 
 impl Realization for LetReal {

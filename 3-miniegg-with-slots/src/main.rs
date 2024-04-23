@@ -26,9 +26,6 @@ use egraph::*;
 mod extract;
 use extract::*;
 
-mod tst;
-use tst::*;
-
 mod pattern;
 use pattern::*;
 

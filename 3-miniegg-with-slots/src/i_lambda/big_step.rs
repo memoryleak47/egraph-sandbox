@@ -8,7 +8,7 @@ pub struct Candidate {
 }
 
 // applies rewrites (only beta-reduction) for all applicable situations.
-pub fn rewrite_step(eg: &mut EGraph<ENode>) {
+pub fn rewrite_big_step(eg: &mut EGraph<ENode>) {
     for cand in candidates(eg) {
         let app_id = eg.lookup(&cand.app).unwrap();
 
@@ -60,3 +60,37 @@ pub fn candidates(eg: &EGraph<ENode>) -> Vec<Candidate> {
 
     candidates
 }
+
+pub struct LambdaRealBig(EGraph<ENode>);
+
+impl Realization for LambdaRealBig {
+    type Id = Id;
+
+    fn new() -> Self {
+        LambdaRealBig(EGraph::new())
+    }
+
+    fn add_ast(&mut self, ast: &Ast) -> Self::Id {
+        let re = RecExpr::<ENode>::parse(&ast.to_string());
+        self.0.add_expr(re)
+    }
+
+    fn extract_ast(&self, id: Self::Id) -> Ast {
+        let out = extract::<ENode, AstSize<ENode>>(id, &self.0);
+        Ast::parse(&out.to_string())
+    }
+
+    fn find(&self, id: Self::Id) -> Self::Id {
+        self.0.find_id(id)
+    }
+
+    fn step(&mut self) {
+        rewrite_big_step(&mut self.0);
+    }
+
+    fn enode_count(&self) -> usize { self.0.total_size() }
+    fn eclass_count(&self) -> usize { self.0.ids().len() } 
+}
+
+lamcalc::unpack_tests!(LambdaRealBig);
+
