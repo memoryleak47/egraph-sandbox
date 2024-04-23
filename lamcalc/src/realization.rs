@@ -6,15 +6,16 @@ const NO_ENODES: usize = 4000;
 pub trait Realization: Sized {
     type Id: Clone + Eq;
 
-    fn new() -> Self { todo!() }
-    fn add_ast(&mut self, ast: &Ast) -> Self::Id { todo!() }
-    fn extract_ast(&self, id: Self::Id) -> Ast { todo!() }
-    fn find(&self, id: Self::Id) -> Self::Id { todo!() }
-    fn step(&mut self) { todo!() }
-    fn enode_count(&self) -> usize { todo!() }
-    fn eclass_count(&self) -> usize { todo!() }
+    fn new() -> Self;
+    fn add_ast(&mut self, ast: &Ast) -> Self::Id;
+    fn extract_ast(&self, id: Self::Id) -> Ast;
+    fn find(&self, id: Self::Id) -> Self::Id;
+    fn step(&mut self);
+    fn enode_count(&self) -> usize;
+    fn eclass_count(&self) -> usize;
 }
 
+// TODO add a simplify_to_nf function that stops when the desired output has been reached.
 pub fn simplify<R: Realization>(s: &str) -> String {
     let ast = Ast::parse(s);
     let mut eg = R::new();
