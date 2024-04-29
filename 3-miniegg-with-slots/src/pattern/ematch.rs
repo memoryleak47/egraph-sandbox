@@ -1,8 +1,10 @@
 use crate::*;
 
+type Subst = HashMap<String, AppliedId>;
+
 struct Match {
-    id: Id,
-    subst: HashMap<String, AppliedId>,
+    id: AppliedId, // this needs to be AppliedId, as your pattern might have free slots, like the pattern "(var s4)".
+    subst: Subst,
 }
 
 pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
@@ -13,7 +15,7 @@ pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
     out
 }
 
-fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, partial_subst: HashMap<String, AppliedId>) -> Vec<Match> {
+fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, partial_subst: Subst) -> Vec<Match> {
     match &pattern.node {
         ENodeOrVar::Var(s) => {
             // TODO is this right?
@@ -22,7 +24,7 @@ fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, partia
                 let app_id = AppliedId::new(id, todo!());
                 subst.insert(s.clone(), app_id);
             }
-            let mtch = Match { id, subst };
+            let mtch = Match { id: todo!(), subst };
             vec![mtch]
         },
         ENodeOrVar::ENode(n1) => {
