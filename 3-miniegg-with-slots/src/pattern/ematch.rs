@@ -7,6 +7,7 @@ struct Match {
     subst: Subst,
 }
 
+// For each returned m: Match, we have pattern[m.subst] is represented by m.id
 pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
     let mut out = Vec::new();
     for id in eg.ids() {
