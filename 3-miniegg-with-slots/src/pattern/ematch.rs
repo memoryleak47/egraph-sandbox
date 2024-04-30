@@ -68,6 +68,9 @@ fn superficial_match<L: Language>(a: &L, b: &L) -> bool {
 // returns pattern[subst].
 // replaces all occurences of ?-variables in `pattern` with the corresponding AppliedId given by `subst`.
 // Then does something like EGraph::add_expr on the result.
+//
+// Is equivalent to replacing all ?-variables x, with a term extracted for the AppliedId subst[x], translating the Pattern<L> to L,
+// followed by EGraph::add_expr.
 fn pattern_subst<L: Language>(pattern: &Pattern<L>, subst: &Subst, eg: &mut EGraph<L>) -> AppliedId {
     todo!()
 }
