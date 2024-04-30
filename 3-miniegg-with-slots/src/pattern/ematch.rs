@@ -11,7 +11,7 @@ struct Match {
 pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
     let mut out = Vec::new();
     for id in eg.ids() {
-        out.extend(ematch_impl(eg, pattern, id, HashMap::default()));
+        out.extend(ematch_impl(eg, pattern, id, SlotMap::new(), HashMap::default()));
     }
     out
 }
@@ -20,7 +20,9 @@ pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
 // - pattern[m.subst] is represented by m.id
 // - m.subst is an extension of partial_subst
 // - m.id.id == id
-fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, partial_subst: Subst) -> Vec<Match> {
+//
+// slotmap: partially maps pattern-slotnames to slots(id).
+fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, slotmap: SlotMap, partial_subst: Subst) -> Vec<Match> {
     match &pattern.node {
         ENodeOrVar::Var(s) => {
             // TODO is this right?
