@@ -16,6 +16,10 @@ pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
     out
 }
 
+// For each returned m: Match, we have
+// - pattern[m.subst] is represented by m.id
+// - m.subst is an extension of partial_subst
+// - m.id.id == id
 fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, partial_subst: Subst) -> Vec<Match> {
     match &pattern.node {
         ENodeOrVar::Var(s) => {
