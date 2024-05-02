@@ -44,6 +44,18 @@ fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, srm: S
                         }
                     }
                 }
+                let sub_patterns = pattern.children.iter().cloned();
+                let sub_app_ids = n2.applied_id_occurences().into_iter();
+
+                let mut matches_local = Vec::new();
+                for (pat, app_id) in sub_patterns.zip(sub_app_ids) {
+                    let srm = todo!(); // rename the slots in the srm, according to app_id.
+                    for a in ematch_impl(eg, &pat, app_id.id, srm, partial_subst) {
+                        let a = todo!(); // undo the renaming from before. We should also affect *our* srm at this point.
+                        matches_local.push(a);
+                    }
+                }
+                matches.extend(matches_local);
             }
             matches
         },
