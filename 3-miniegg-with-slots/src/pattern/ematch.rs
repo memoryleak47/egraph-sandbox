@@ -1,5 +1,13 @@
 use crate::*;
 
+#[derive(Clone, PartialEq, Eq)]
+enum SlotResult {
+    Unmatched,
+    MatchedTo(Slot),
+    MatchedButLost,
+}
+
+type SlotResultMap = HashMap<Slot, SlotResult>;
 type Subst = HashMap<String, AppliedId>;
 
 struct Match {
@@ -11,7 +19,7 @@ struct Match {
 pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
     let mut out = Vec::new();
     for id in eg.ids() {
-        out.extend(ematch_impl(eg, pattern, id, SlotMap::new(), HashMap::default()));
+        out.extend(ematch_impl(eg, pattern, id, SlotResultMap::default(), HashMap::default()));
     }
     out
 }
@@ -21,27 +29,20 @@ pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
 // - m.subst is an extension of partial_subst
 // - m.id.id == id
 //
-// slotmap: partially maps pattern-slotnames to slots(id).
-fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, slotmap: SlotMap, partial_subst: Subst) -> Vec<Match> {
+// srm: partially maps pattern-slotnames to slots(id).
+fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, srm: SlotResultMap, partial_subst: Subst) -> Vec<Match> {
     match &pattern.node {
-        ENodeOrVar::Var(s) => {
-            // TODO is this right?
-            let mut subst = partial_subst.clone();
-            if !subst.contains_key(&*s) {
-                let app_id = AppliedId::new(id, todo!());
-                subst.insert(s.clone(), app_id);
-            }
-            let mtch = Match { id: todo!(), subst };
-            vec![mtch]
-        },
+        ENodeOrVar::Var(s) => todo!(),
         ENodeOrVar::ENode(n1) => {
-            // TODO is this right?
             let mut matches = Vec::new();
-            for n2 in eg.enodes(id) {
-                if superficial_match(n1, &n2) {
-                    let mut subst = partial_subst.clone();
-                    let mtch = todo!();
-                    matches.push(mtch);
+            'outer: for n2 in eg.enodes(id) {
+                let mut srm = srm.clone();
+                if let Some(smap) = superficial_match2(n1, &n2) {
+                    for (x, y) in smap.iter() {
+                        if !try_insert_compatible(x, SlotResult::MatchedTo(y), &mut srm) {
+                            continue 'outer;
+                        }
+                    }
                 }
             }
             matches
@@ -65,6 +66,47 @@ fn superficial_match<L: Language>(a: &L, b: &L) -> bool {
     }
 }
 
+// returns None, if they don't match.
+// returne Some(smap) if they agree, just with renaming smap in the slots.
+// Ignores all AppliedIds and their slots.
+fn superficial_match2<L: Language>(a: &L, b: &L) -> Option<SlotMap> {
+    let a = remove_applied_ids(a);
+    let b = remove_applied_ids(b);
+
+    let mut smap = SlotMap::new();
+    let a_slots = a.all_slot_occurences();
+    let b_slots = b.all_slot_occurences();
+    if a_slots.len() != b_slots.len() { return None; }
+    for i in 0..a_slots.len() {
+        let x = a_slots[i];
+        let y = b_slots[i];
+        if let Some(z) = smap.get(x) {
+            if y != z { return None; }
+        }
+        smap.insert(x, y);
+    }
+
+    let a = remove_slot_names(&a);
+    let b = remove_slot_names(&b);
+    return if a == b { Some(smap) } else { None };
+
+    fn remove_applied_ids<L: Language>(a: &L) -> L {
+        let mut a = a.clone();
+        for x in a.applied_id_occurences_mut() {
+            *x = AppliedId::new(Id(0), SlotMap::new());
+        }
+        a
+    }
+
+    fn remove_slot_names<L: Language>(a: &L) -> L {
+        let mut a = a.clone();
+        for x in a.all_slot_occurences_mut() {
+            *x = Slot(0);
+        }
+        a
+    }
+}
+
 // returns pattern[subst].
 // replaces all occurences of ?-variables in `pattern` with the corresponding AppliedId given by `subst`.
 // Then does something like EGraph::add_expr on the result.
@@ -73,4 +115,12 @@ fn superficial_match<L: Language>(a: &L, b: &L) -> bool {
 // followed by EGraph::add_expr.
 fn pattern_subst<L: Language>(pattern: &Pattern<L>, subst: &Subst, eg: &mut EGraph<L>) -> AppliedId {
     todo!()
+}
+
+fn try_insert_compatible<K: Eq + Hash, V: Eq>(k: K, v: V, map: &mut HashMap<K, V>) -> bool {
+    if let Some(v2) = map.get(&k) {
+        return &v == v2;
+    }
+    map.insert(k, v);
+    true
 }
