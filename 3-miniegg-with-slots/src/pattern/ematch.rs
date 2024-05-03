@@ -1,27 +1,33 @@
 use crate::*;
 
-#[derive(Clone, PartialEq, Eq)]
-enum SlotResult {
-    Unmatched,
-    MatchedTo(Slot),
-    MatchedButLost,
-}
-
-type SlotResultMap = HashMap<Slot, SlotResult>;
-type Subst = HashMap<String, AppliedId>;
-
 struct Match {
     id: AppliedId, // this needs to be AppliedId, as your pattern might have free slots, like the pattern "(var s4)".
-    subst: Subst,
+    subst: HashMap<String, AppliedId>,
 }
 
 // For each returned m: Match, we have pattern[m.subst] is represented by m.id
 pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
     let mut out = Vec::new();
     for id in eg.ids() {
-        out.extend(ematch_impl(eg, pattern, id, SlotResultMap::default(), HashMap::default()));
+        out.extend(ematch_impl(eg, pattern, id, State::default()));
     }
-    out
+    todo!()
+}
+
+// implementation:
+
+
+#[derive(Clone, PartialEq, Eq)]
+enum SlotMatch {
+    Unmatched,
+    MatchedTo(Slot),
+    MatchedButLost,
+}
+
+#[derive(Default)]
+struct State {
+    slot_state: HashMap<Slot, SlotMatch>,
+    subst_state: HashMap<String, AppliedId>,
 }
 
 // For each returned m: Match, we have
@@ -30,10 +36,11 @@ pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Match> {
 // - m.id.id == id
 //
 // srm: partially maps pattern-slotnames to slots(id).
-fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, srm: SlotResultMap, partial_subst: Subst) -> Vec<Match> {
+fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, state: State) -> Vec<State> {
     match &pattern.node {
         ENodeOrVar::Var(s) => todo!(),
         ENodeOrVar::ENode(n1) => {
+/*
             let mut matches = Vec::new();
             'outer: for n2 in eg.enodes(id) {
                 let mut srm = srm.clone();
@@ -58,23 +65,9 @@ fn ematch_impl<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>, id: Id, srm: S
                 matches.extend(matches_local);
             }
             matches
+*/
+        todo!()
         },
-    }
-}
-
-fn superficial_match<L: Language>(a: &L, b: &L) -> bool {
-    return mk_superficial(a) == mk_superficial(b);
-
-    fn mk_superficial<L: Language>(a: &L) -> L {
-        let mut a = a.clone();
-        for x in a.applied_id_occurences_mut() {
-            *x = AppliedId::new(Id(0), SlotMap::new());
-        }
-        for x in a.all_slot_occurences_mut() {
-            *x = Slot(0);
-        }
-
-        a
     }
 }
 
@@ -125,7 +118,7 @@ fn superficial_match2<L: Language>(a: &L, b: &L) -> Option<SlotMap> {
 //
 // Is equivalent to replacing all ?-variables x, with a term extracted for the AppliedId subst[x], translating the Pattern<L> to RecExpr2<L>,
 // followed by EGraph::add_expr.
-fn pattern_subst<L: Language>(pattern: &Pattern<L>, subst: &Subst, eg: &mut EGraph<L>) -> AppliedId {
+fn pattern_subst<L: Language>(pattern: &Pattern<L>, subst: &HashMap<String, AppliedId>, eg: &mut EGraph<L>) -> AppliedId {
     todo!()
 }
 
