@@ -6,6 +6,9 @@ pub use enode_or_var::*;
 mod ematch;
 pub use ematch::*;
 
+mod pattern_subst;
+pub use pattern_subst::*;
+
 // The AppliedIds in `node` are ignored. They are replaced by the children RecExpr2.
 // A non-fancy version of RecExpr that uses the slots as "names".
 #[derive(Clone, PartialEq, Eq)]
