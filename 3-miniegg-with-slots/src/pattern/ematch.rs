@@ -30,7 +30,7 @@ struct Traversal<L: Language> {
 
 #[derive(Clone)]
 struct TraversalNode<L: Language> {
-    shape: L,
+    l: L,
     children: Vec<Traversal<L>>,
 }
 
@@ -49,11 +49,10 @@ impl<L: Language> Traversal<L> {
             // Here we can extend the Traversal:
             (None, ENodeOrVar::ENode(n)) => {
                 let mut out = Vec::new();
-                for x in eg.enodes(self.id) {
-                    let (sh, _) = x.shape();
+                for l in eg.enodes(self.id) {
                     let tr_node = TraversalNode {
-                        shape: sh.clone(),
-                        children: sh.applied_id_occurences().into_iter().map(|x| Traversal::new(x.id)).collect(),
+                        l: l.clone(),
+                        children: l.applied_id_occurences().into_iter().map(|x| Traversal::new(x.id)).collect(),
                     };
                     let tr = Traversal {
                         id: self.id,
