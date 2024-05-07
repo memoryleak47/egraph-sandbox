@@ -75,13 +75,69 @@ fn clear_app_ids<L: Language>(l: &L) -> L {
 }
 
 fn compatible<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> bool {
-    match_against(sre, pattern).0
+    match_against(sre, pattern).is_some()
 }
 
 fn to_subst<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Subst {
-    match_against(sre, pattern).1.unwrap()
+    match_against(sre, pattern).unwrap()
 }
 
-fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> (/*compatible: */bool, Option<Subst>) {
+// Returns None if there is an inconsistency between `sre` and `pattern`.
+// `sre` is allowed to be partial though!
+fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Option<Subst> {
+    let Some(sre) = rename_to_fit(sre, pattern) else { return None };
+    match_against_impl(&sre, pattern)
+}
+
+fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Option<Subst> {
+    let mut subst = Subst::default();
+
+    match (&sre.node, &pattern.node) {
+        // the "leaf" case.
+        (ENodeOrAppId::AppliedId(x), ENodeOrVar::Var(v)) => {
+            subst.insert(v.clone(), x.clone());
+            Some(subst)
+        },
+
+        // the "partial" case.
+        (ENodeOrAppId::AppliedId(_), ENodeOrVar::ENode(_)) => {
+            Some(subst)
+        },
+
+        // the "equality-check" case.
+        (ENodeOrAppId::ENode(n1), ENodeOrVar::ENode(n2)) => {
+            if n1 != n2 {
+                return None;
+            }
+            for (subsre, subpat) in sre.children.iter().zip(pattern.children.iter()) {
+                for (x, y) in match_against_impl(subsre, subpat)? {
+                    if !try_insert_compatible(x, y, &mut subst) { return None; }
+                }
+            }
+
+            Some(subst)
+        },
+
+        // the "invalid" case.
+        (ENodeOrAppId::ENode(_), ENodeOrVar::Var(_)) => {
+            panic!("The sre can never be larger than the pattern!")
+        },
+    }
+}
+
+// Renames all Slots in `sre` to match `pattern`. The slots that don't come up in `pattern` are still arbitrarily named.
+// Returns None if `sre` and `pattern` are conceptually different.
+// Also supports partial `sre`s that don't cover all of `pattern`.
+fn rename_to_fit<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Option<SemiRecExpr<L>> {
     todo!()
+}
+
+fn try_insert_compatible<K: Hash + Eq, V: Eq>(k: K, v: V, map: &mut HashMap<K, V>) -> bool {
+    if let Some(v_old) = map.get(&k) {
+        if v_old != &v {
+            return false;
+        }
+    }
+    map.insert(k, v);
+    true
 }
