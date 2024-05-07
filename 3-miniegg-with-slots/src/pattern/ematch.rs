@@ -37,7 +37,7 @@ fn branch<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L
             let mut out = Vec::new();
             for l in eg.enodes_applied(id) {
                 let new_sre = SemiRecExpr {
-                    node: ENodeOrAppId::ENode(l.clone()),
+                    node: ENodeOrAppId::ENode(clear_app_ids(&l)),
                     children: l.applied_id_occurences().into_iter().map(leaf).collect(),
                 };
                 out.push(new_sre);
@@ -66,10 +66,22 @@ fn branch<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L
     }
 }
 
+fn clear_app_ids<L: Language>(l: &L) -> L {
+    let mut l = l.clone();
+    for x in l.applied_id_occurences_mut() {
+        *x = AppliedId::new(Id(0), SlotMap::new());
+    }
+    l
+}
+
 fn compatible<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> bool {
-    todo!()
+    match_against(sre, pattern).0
 }
 
 fn to_subst<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Subst {
+    match_against(sre, pattern).1.unwrap()
+}
+
+fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> (/*compatible: */bool, Option<Subst>) {
     todo!()
 }
