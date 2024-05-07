@@ -104,7 +104,7 @@ fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, s
     match (&sre.node, &pattern.node) {
         // the "leaf" case.
         (ENodeOrAppId::AppliedId(x), ENodeOrVar::Var(v)) => {
-            try_insert_compatible(v.clone(), x.clone(), subst);
+            if !try_insert_compatible(v.clone(), x.clone(), subst) { return None; }
             Some(())
         },
 
@@ -120,9 +120,7 @@ fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, s
 
             if slots1.len() != slots2.len() { return None; }
             for (&x, &y) in slots1.iter().zip(slots2.iter()) {
-                if !try_insert_compatible_slotmap(x, y, slotmap) {
-                    return None;
-                }
+                if !try_insert_compatible_slotmap(x, y, slotmap) { return None; }
             }
             let check_eq = {
                 let mut n1_clone = n1.clone();
