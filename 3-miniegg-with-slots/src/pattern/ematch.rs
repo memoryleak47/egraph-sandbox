@@ -79,43 +79,66 @@ fn compatible<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> bool {
 }
 
 fn to_subst<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Subst {
-    match_against(sre, pattern).unwrap()
+    match_against(sre, pattern).unwrap().0
 }
 
-// Returns None if there is an inconsistency between `sre` and `pattern`.
-// `sre` is allowed to be partial though!
-fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Option<Subst> {
-    let Some(sre) = rename_to_fit(sre, pattern) else { return None };
-    match_against_impl(&sre, pattern)
-}
-
-fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Option<Subst> {
+// Finds a renaming (SlotMap) of the slots of `sre`, so that it becomes equivalent to `pattern`.
+// Also extracts the resulting Subst for the Pattern.
+// Supports partial `sre`, but obviously it cannot return a Subst-entry for them.
+fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Option<(Subst, SlotMap)> {
     let mut subst = Subst::default();
+    let mut slotmap = SlotMap::new();
+    match_against_impl(&sre, pattern, &mut subst, &mut slotmap)?;
 
+    // Previously, the subst uses `sre`-based slot names.
+    // Afterwards, the subst uses `pattern`-based slot names.
+    for (k, v) in subst.iter_mut() {
+        *v = v.apply_slotmap(&slotmap);
+    }
+    Some((subst, slotmap))
+}
+
+// `slotmap` maps from `sre` to `pattern` slots.
+// The returned Subst works with `sre` slots.
+fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, subst: &mut Subst, slotmap: &mut SlotMap) -> Option<()> {
     match (&sre.node, &pattern.node) {
         // the "leaf" case.
         (ENodeOrAppId::AppliedId(x), ENodeOrVar::Var(v)) => {
-            subst.insert(v.clone(), x.clone());
-            Some(subst)
+            try_insert_compatible(v.clone(), x.clone(), subst);
+            Some(())
         },
 
         // the "partial" case.
         (ENodeOrAppId::AppliedId(_), ENodeOrVar::ENode(_)) => {
-            Some(subst)
+            Some(())
         },
 
         // the "equality-check" case.
         (ENodeOrAppId::ENode(n1), ENodeOrVar::ENode(n2)) => {
-            if n1 != n2 {
-                return None;
-            }
-            for (subsre, subpat) in sre.children.iter().zip(pattern.children.iter()) {
-                for (x, y) in match_against_impl(subsre, subpat)? {
-                    if !try_insert_compatible(x, y, &mut subst) { return None; }
+            let slots1 = n1.all_slot_occurences();
+            let slots2 = n2.all_slot_occurences();
+
+            if slots1.len() != slots2.len() { return None; }
+            for (&x, &y) in slots1.iter().zip(slots2.iter()) {
+                if !try_insert_compatible_slotmap(x, y, slotmap) {
+                    return None;
                 }
             }
+            let check_eq = {
+                let mut n1_clone = n1.clone();
+                for x in n1_clone.all_slot_occurences_mut() {
+                    *x = slotmap[*x];
+                }
 
-            Some(subst)
+                n1_clone == *n2
+            };
+            if !check_eq { return None; }
+
+            for (subsre, subpat) in sre.children.iter().zip(pattern.children.iter()) {
+                match_against_impl(subsre, subpat, subst, slotmap)?;
+            }
+
+            Some(())
         },
 
         // the "invalid" case.
@@ -125,16 +148,19 @@ fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -
     }
 }
 
-// Renames all Slots in `sre` to match `pattern`. The slots that don't come up in `pattern` are still arbitrarily named.
-// Returns None if `sre` and `pattern` are conceptually different.
-// Also supports partial `sre`s that don't cover all of `pattern`.
-fn rename_to_fit<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Option<SemiRecExpr<L>> {
-    todo!()
-}
-
 fn try_insert_compatible<K: Hash + Eq, V: Eq>(k: K, v: V, map: &mut HashMap<K, V>) -> bool {
     if let Some(v_old) = map.get(&k) {
         if v_old != &v {
+            return false;
+        }
+    }
+    map.insert(k, v);
+    true
+}
+
+fn try_insert_compatible_slotmap(k: Slot, v: Slot, map: &mut SlotMap) -> bool {
+    if let Some(v_old) = map.get(k) {
+        if v_old != v {
             return false;
         }
     }
