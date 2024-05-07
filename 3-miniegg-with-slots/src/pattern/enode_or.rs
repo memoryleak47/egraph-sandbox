@@ -1,5 +1,8 @@
 use crate::*;
 
+pub type Pattern<L> = RecExpr2<ENodeOrVar<L>>;
+pub type SemiRecExpr<L> = RecExpr2<ENodeOrAppId<L>>;
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ENodeOrVar<L: Language> {
     ENode(L),
@@ -27,6 +30,21 @@ impl<L: Language> Language for ENodeOrVar<L> {
             ENodeOrVar::Var(_) => vec![],
         }
     }
+}
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ENodeOrAppId<L: Language> {
+    ENode(L),
+    AppliedId(AppliedId),
+}
 
+#[track_caller]
+fn panic() -> ! {
+    panic!("Pattern match on this! Don't use these methods")
+}
+
+impl<L: Language> Language for ENodeOrAppId<L> {
+    fn all_slot_occurences_mut(&mut self) -> Vec<&mut Slot> { panic() }
+    fn public_slot_occurences_mut(&mut self) -> Vec<&mut Slot> { panic() }
+    fn applied_id_occurences_mut(&mut self) -> Vec<&mut AppliedId> { panic() }
 }

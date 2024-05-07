@@ -1,7 +1,7 @@
 use crate::*;
 
-mod enode_or_var;
-pub use enode_or_var::*;
+mod enode_or;
+pub use enode_or::*;
 
 mod ematch;
 pub use ematch::*;
@@ -16,5 +16,3 @@ pub struct RecExpr2<L: Language> {
     pub node: L,
     pub children: Vec<RecExpr2<L>>,
 }
-
-pub type Pattern<L> = RecExpr2<ENodeOrVar<L>>;
