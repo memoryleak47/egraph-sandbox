@@ -93,6 +93,13 @@ fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Opt
     // Previously, the subst uses `sre`-based slot names.
     // Afterwards, the subst uses `pattern`-based slot names.
     for (k, v) in subst.iter_mut() {
+        // All slots that are not covered by the pattern, need a fresh new name.
+        for s in v.slots() {
+            if !slotmap.contains_key(s) {
+                slotmap.insert(s, Slot::fresh());
+            }
+        }
+
         *v = v.apply_slotmap(&slotmap);
     }
     Some((subst, slotmap))

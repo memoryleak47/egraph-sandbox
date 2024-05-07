@@ -17,3 +17,12 @@ pub fn pattern_subst<L: Language>(eg: &mut EGraph<L>, pattern: &Pattern<L>, subs
         },
     }
 }
+
+// TODO do I want these?
+fn add_semi<L: Language>(semi: SemiRecExpr<L>, eg: &mut EGraph<L>) -> AppliedId {
+    todo!()
+}
+
+fn mk_semi<L: Language>(pattern: &Pattern<L>, subst: &Subst) -> SemiRecExpr<L> {
+    todo!()
+}
