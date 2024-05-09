@@ -135,7 +135,7 @@ fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, s
 
             if slots1.len() != slots2.len() { return None; }
             for (&x, &y) in slots1.iter().zip(slots2.iter()) {
-                if !try_insert_compatible_slotmap(x, y, slotmap) { return None; }
+                if !try_insert_compatible_slotmap_bij(x, y, slotmap) { return None; }
             }
             let check_eq = {
                 let mut n1_clone = n1.clone();
@@ -171,12 +171,12 @@ fn try_insert_compatible<K: Hash + Eq, V: Eq>(k: K, v: V, map: &mut HashMap<K, V
     true
 }
 
-fn try_insert_compatible_slotmap(k: Slot, v: Slot, map: &mut SlotMap) -> bool {
+fn try_insert_compatible_slotmap_bij(k: Slot, v: Slot, map: &mut SlotMap) -> bool {
     if let Some(v_old) = map.get(k) {
         if v_old != v {
             return false;
         }
     }
     map.insert(k, v);
-    true
+    map.is_bijection()
 }
