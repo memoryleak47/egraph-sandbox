@@ -3,42 +3,9 @@ use crate::*;
 pub fn rewrite_let(eg: &mut EGraph<LetENode>) {
     beta(eg);
     my_let_unused(eg);
-
-    old_propagate_let(eg);
-    // let_var_same(eg);
-
+    let_var_same(eg);
     let_app(eg);
     let_lam_diff(eg);
-}
-
-fn old_propagate_let(eg: &mut EGraph<LetENode>) {
-    for c in eg.ids() {
-        for enode in eg.enodes(c) {
-            let id = eg.lookup(&enode).unwrap();
-            if let LetENode::Let(x, t, b) = &enode {
-                for b2 in eg.enodes_applied(b) {
-                    if let Some(new) = old_propagate_let_step(*x, t.clone(), b2, eg) {
-                        eg.union(&new, &id);
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn old_propagate_let_step(x: Slot, t: AppliedId, b: LetENode, eg: &mut EGraph<LetENode>) -> Option<AppliedId> {
-    // This optimization does soo much for some reason.
-    if !b.slots().contains(&x) {
-        return Some(eg.lookup(&b).unwrap());
-    }
-
-    let out = match b {
-        LetENode::Var(_) => t,
-        _ => return None,
-    };
-
-
-    Some(out)
 }
 
 fn beta(eg: &mut EGraph<LetENode>) {
@@ -61,13 +28,8 @@ fn my_let_unused(eg: &mut EGraph<LetENode>) {
 
 fn let_var_same(eg: &mut EGraph<LetENode>) {
     let pat = let_pat(Slot::new(1), pvar_pat("?e"), var_pat(Slot::new(1)));
-    // let outpat = pvar_pat("?e");
-    for subst in ematch_all(eg, &pat) {
-        let semi = mk_semi(&pat, &subst);
-        let a = add_semi(&semi, eg);
-        // let b = pattern_subst(eg, &outpat, &subst);
-        // eg.union(&a, &b);
-    }
+    let outpat = pvar_pat("?e");
+    rewrite(eg, pat, outpat);
 }
 
 fn let_app(eg: &mut EGraph<LetENode>) {
