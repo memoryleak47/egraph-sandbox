@@ -8,13 +8,6 @@ pub fn rewrite_let(eg: &mut EGraph<LetENode>) {
     let_lam_diff(eg);
 }
 
-fn let_check(eg: &EGraph<LetENode>) {
-    let pat = let_pat(Slot(1), pvar_pat("?t"), pvar_pat("?b"));
-    for subst in ematch_all(eg, &pat) {
-        assert!(!subst["?t"].slots().contains(&Slot(1)));
-    }
-}
-
 fn old_propagate_let(eg: &mut EGraph<LetENode>) {
     for c in eg.ids() {
         for enode in eg.enodes(c) {
@@ -71,6 +64,18 @@ fn my_let_unused(eg: &mut EGraph<LetENode>) {
     rewrite_if(eg, pat, outpat, |subst| {
         !subst["?b"].slots().contains(&Slot(1))
     });
+}
+
+
+fn let_check(eg: &EGraph<LetENode>) {
+    let pat = let_pat(Slot(1), pvar_pat("?e"), pvar_pat("?b"));
+
+    // TODO why does this find counter examples? But the above does not?
+    // let pat = let_pat(Slot(1), pvar_pat("?e"), var_pat(Slot(1)));
+
+    for subst in ematch_all(eg, &pat) {
+        assert!(!subst["?e"].slots().contains(&Slot(1)));
+    }
 }
 
 fn let_var_same(eg: &mut EGraph<LetENode>) {
