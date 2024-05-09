@@ -6,31 +6,31 @@ pub fn rewrite_let(eg: &mut EGraph<LetENode>) {
 }
 
 fn beta_to_let(eg: &mut EGraph<LetENode>) {
-    for cand in beta_candidates(eg) {
-        let app_id = eg.lookup(&cand.app).unwrap();
+    // (\s1. ?b) ?t
+    let empty = || AppliedId::new(Id(0), SlotMap::new());
+    let var = |s: &str| Pattern {
+        node: ENodeOrVar::Var(s.to_string()),
+        children: vec![],
+    };
+    let lam = Pattern {
+        node: ENodeOrVar::ENode(LetENode::Lam(Slot(1), empty())),
+        children: vec![var("?b")],
+    };
+    let pat = Pattern {
+        node: ENodeOrVar::ENode(LetENode::App(empty(), empty())),
+        children: vec![lam, var("?t")],
+    };
 
-        // L0 = ENode::App(l, t).slots() -- "the root level"
-        // t.slots(), l.slots(), app_id.slots() :: L0
+    // let s1 ?t ?b
+    let outpat = Pattern {
+        node: ENodeOrVar::ENode(LetENode::Let(Slot(1), empty(), empty())),
+        children: vec![var("?t"), var("?b")],
+    };
 
-        // L1 = ENode::Lam(x, b).slots() = slots(l.id)
-
-        let LetENode::App(l, t) = cand.app.clone() else { panic!() };
-        let LetENode::Lam(x, b) = cand.lam.clone() else { panic!() };
-        assert_eq!(x, Slot(0));
-
-        // b.m :: slots(b.id) -> L1
-        // l.m :: slots(l.id) -> L0 (and thus L1 -> L0)
-
-        // The L0-equivalent of x.
-        let x_root = Slot::fresh();
-
-        let mut l_m = l.m.clone();
-        l_m.insert(x, x_root);
-        let b = b.apply_slotmap(&l_m);
-
-        let new = LetENode::Let(x_root, t, b);
-        let new = eg.add(new);
-        eg.union(&new, &app_id);
+    for subst in ematch_all(eg, &pat) {
+        let a = pattern_subst(eg, &pat, &subst);
+        let b = pattern_subst(eg, &outpat, &subst);
+        eg.union(&a, &b);
     }
 }
 
@@ -72,43 +72,3 @@ fn propagate_let_step(x: Slot, t: AppliedId, b: LetENode, eg: &mut EGraph<LetENo
 
     Some(out)
 }
-
-// candidate for beta reduction.
-// Both ENodes are computed by "sh.apply_slotmap(bij)", where (sh, bij) in EClass::nodes from their respective classes.
-struct BetaCandidate {
-    pub app: LetENode,
-    pub lam: LetENode,
-}
-
-fn beta_candidates(eg: &EGraph<LetENode>) -> Vec<BetaCandidate> {
-    // find all lambdas:
-    let mut lambdas: HashMap<Id, Vec<LetENode>> = Default::default();
-    for c in eg.ids() {
-        let mut v = Vec::new();
-        for enode in eg.enodes(c) {
-            if matches!(enode, LetENode::Lam(..)) {
-                v.push(enode.clone());
-            }
-        }
-
-        lambdas.insert(c, v);
-    }
-
-    // find apps:
-    let mut candidates = Vec::new();
-
-    for c in eg.ids() {
-        for enode in eg.enodes(c) {
-            if let LetENode::App(l, _t) = &enode {
-                for lam in lambdas[&l.id].clone() {
-                    candidates.push(BetaCandidate { app: enode.clone(), lam });
-                }
-            }
-        }
-    }
-
-    candidates
-}
-
-
-
