@@ -64,35 +64,35 @@ fn propagate_let_step(x: Slot, t: AppliedId, b: LetENode, eg: &mut EGraph<LetENo
 fn empty_app_id() -> AppliedId { AppliedId::new(Id(0), SlotMap::new()) }
 fn pvar_pat(s: &str) -> Pattern<LetENode> {
     Pattern {
-        node: ENodeOrVar::Var(s.to_string()),
+        node: ENodeOrPVar::PVar(s.to_string()),
         children: vec![],
     }
 }
 
 fn app_pat(l: Pattern<LetENode>, r: Pattern<LetENode>) -> Pattern<LetENode> {
     Pattern {
-        node: ENodeOrVar::ENode(LetENode::App(empty_app_id(), empty_app_id())),
+        node: ENodeOrPVar::ENode(LetENode::App(empty_app_id(), empty_app_id())),
         children: vec![l, r],
     }
 }
 
 fn var_pat(s: Slot) -> Pattern<LetENode> {
     Pattern {
-        node: ENodeOrVar::ENode(LetENode::Var(s)),
+        node: ENodeOrPVar::ENode(LetENode::Var(s)),
         children: vec![],
     }
 }
 
 fn lam_pat(s: Slot, b: Pattern<LetENode>) -> Pattern<LetENode> {
     Pattern {
-        node: ENodeOrVar::ENode(LetENode::Lam(s, empty_app_id())),
+        node: ENodeOrPVar::ENode(LetENode::Lam(s, empty_app_id())),
         children: vec![b],
     }
 }
 
 fn let_pat(s: Slot, t: Pattern<LetENode>, b: Pattern<LetENode>) -> Pattern<LetENode> {
     Pattern {
-        node: ENodeOrVar::ENode(LetENode::Let(s, empty_app_id(), empty_app_id())),
+        node: ENodeOrPVar::ENode(LetENode::Let(s, empty_app_id(), empty_app_id())),
         children: vec![t, b],
     }
 }

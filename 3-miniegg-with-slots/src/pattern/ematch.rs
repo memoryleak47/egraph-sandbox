@@ -41,7 +41,7 @@ fn leaf<L: Language>(x: AppliedId) -> SemiRecExpr<L> {
 fn branch<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L>) -> Option<Vec<SemiRecExpr<L>>> {
     match (&sre.node, &pattern.node) {
         // Here we can extend the SemiRecExpr:
-        (ENodeOrAppId::AppliedId(id), ENodeOrVar::ENode(n)) => {
+        (ENodeOrAppId::AppliedId(id), ENodeOrPVar::ENode(n)) => {
             let mut out = Vec::new();
             for l in eg.enodes_applied(id) {
                 let new_sre = SemiRecExpr {
@@ -52,7 +52,7 @@ fn branch<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L
             }
             Some(out)
         },
-        (ENodeOrAppId::ENode(_), ENodeOrVar::ENode(_)) => {
+        (ENodeOrAppId::ENode(_), ENodeOrPVar::ENode(_)) => {
             assert_eq!(sre.children.len(), pattern.children.len());
             for i in 0..sre.children.len() {
                 let subsre = &sre.children[i];
@@ -69,8 +69,8 @@ fn branch<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L
             }
             None
         },
-        (ENodeOrAppId::AppliedId(_), ENodeOrVar::Var(_)) => None,
-        (ENodeOrAppId::ENode(_), ENodeOrVar::Var(_)) => panic!(),
+        (ENodeOrAppId::AppliedId(_), ENodeOrPVar::PVar(_)) => None,
+        (ENodeOrAppId::ENode(_), ENodeOrPVar::PVar(_)) => panic!(),
     }
 }
 
@@ -118,18 +118,18 @@ fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Opt
 fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, subst: &mut Subst, slotmap: &mut SlotMap) -> Option<()> {
     match (&sre.node, &pattern.node) {
         // the "leaf" case.
-        (ENodeOrAppId::AppliedId(x), ENodeOrVar::Var(v)) => {
+        (ENodeOrAppId::AppliedId(x), ENodeOrPVar::PVar(v)) => {
             if !try_insert_compatible(v.clone(), x.clone(), subst) { return None; }
             Some(())
         },
 
         // the "partial" case.
-        (ENodeOrAppId::AppliedId(_), ENodeOrVar::ENode(_)) => {
+        (ENodeOrAppId::AppliedId(_), ENodeOrPVar::ENode(_)) => {
             Some(())
         },
 
         // the "equality-check" case.
-        (ENodeOrAppId::ENode(n1), ENodeOrVar::ENode(n2)) => {
+        (ENodeOrAppId::ENode(n1), ENodeOrPVar::ENode(n2)) => {
             let slots1 = n1.all_slot_occurences();
             let slots2 = n2.all_slot_occurences();
 
@@ -155,7 +155,7 @@ fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, s
         },
 
         // the "invalid" case.
-        (ENodeOrAppId::ENode(_), ENodeOrVar::Var(_)) => {
+        (ENodeOrAppId::ENode(_), ENodeOrPVar::PVar(_)) => {
             panic!("The sre can never be larger than the pattern!")
         },
     }

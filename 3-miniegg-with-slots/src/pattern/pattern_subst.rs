@@ -3,7 +3,7 @@ use crate::*;
 // We write this as pattern[subst] for short.
 pub fn pattern_subst<L: Language>(eg: &mut EGraph<L>, pattern: &Pattern<L>, subst: &Subst) -> AppliedId {
     match &pattern.node {
-        ENodeOrVar::ENode(n) => {
+        ENodeOrPVar::ENode(n) => {
             let mut n = n.clone();
             let mut refs: Vec<&mut _> = n.applied_id_occurences_mut();
             assert_eq!(pattern.children.len(), refs.len());
@@ -12,7 +12,7 @@ pub fn pattern_subst<L: Language>(eg: &mut EGraph<L>, pattern: &Pattern<L>, subs
             }
             eg.add(n)
         },
-        ENodeOrVar::Var(v) => {
+        ENodeOrPVar::PVar(v) => {
             subst[v].clone()
         },
     }
