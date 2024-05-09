@@ -81,10 +81,7 @@ fn let_check(eg: &EGraph<LetENode>) {
 fn let_var_same(eg: &mut EGraph<LetENode>) {
     let pat = let_pat(Slot(1), pvar_pat("?e"), var_pat(Slot(1)));
     let outpat = pvar_pat("?e");
-    rewrite_if(eg, pat, outpat, |subst| {
-        assert!(!subst["?e"].slots().contains(&Slot(1)));
-        true
-    });
+    rewrite(eg, pat, outpat);
 }
 
 fn let_app(eg: &mut EGraph<LetENode>) {
