@@ -11,7 +11,7 @@ pub struct Id(pub usize);
 // - internal (not really part of the ENode API, it's rather the exposed slots of its children)
 //
 // A slot is "flexible" if it's free or lambda.
-pub struct Slot(usize);
+pub struct Slot(usize, /*fresh: */ bool);
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AppliedId {
@@ -92,26 +92,25 @@ impl Slot {
         // Using this, all tests should run deterministically.
 
         thread_local! {
-            // starting with 100 might prevent some collisions with shape variables.
-            static CTR: RefCell<usize> = RefCell::new(100);
+            static CTR: RefCell<usize> = RefCell::new(0);
         }
 
         let u = CTR.with_borrow(|v| *v);
 
         CTR.with_borrow_mut(|v| *v += 1);
 
-        Slot(u)
+        Slot(u, true)
     }
 
     pub fn new(u: usize) -> Slot {
-        if u >= 100 {
-            panic!("slots >= 100 are used for fresh slots!");
-        }
-        Slot(u)
+        Slot(u, false)
     }
 
-    pub fn get(&self) -> usize {
-        self.0
+    pub fn to_string(&self) -> String {
+        match self.1 {
+            true => format!("s'{}", self.0),
+            false => format!("s{}", self.0),
+        }
     }
 }
 
