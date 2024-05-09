@@ -42,7 +42,7 @@ fn old_propagate_let_step(x: Slot, t: AppliedId, b: LetENode, eg: &mut EGraph<Le
             a2
         },
         LetENode::Let(..) => return None,
-     };
+    };
 
 
     Some(out)
