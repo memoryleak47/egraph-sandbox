@@ -84,6 +84,10 @@ impl AppliedId {
 }
 
 impl Slot {
+    // Generates a fresh slot.
+    // The only way to create an equivalent Slot is by copying this one.
+    // Hence we can rule out any form of naming collisions with this one.
+    // (In theory, another thread could also create the same Slot, but we don't do multithreading for now so it's fine)
     pub fn fresh() -> Self {
         use std::cell::RefCell;
 
@@ -102,6 +106,8 @@ impl Slot {
         Slot(u, true)
     }
 
+    // creates the slot `su`.
+    // These slots can never collide with the Slots returned from Slot::fresh() due to the `fresh: bool` annotation.
     pub fn new(u: usize) -> Slot {
         Slot(u, false)
     }
