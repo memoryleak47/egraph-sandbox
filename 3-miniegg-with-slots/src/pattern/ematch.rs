@@ -2,21 +2,29 @@ use crate::*;
 
 pub type Subst = HashMap<String, AppliedId>;
 
-pub fn ematch<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Subst> {
+pub fn ematch_all<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Subst> {
     let mut out = Vec::new();
     for i in eg.ids() {
-        // invariant: each x in worklist satisfies compatible(x, pattern)
-        let mut worklist = vec![leaf(eg.mk_identity_applied_id(i))];
-        while let Some(x) = worklist.pop() {
-            if let Some(xs) = branch(&x, pattern, eg) {
-                for y in xs {
-                    if compatible(&y, pattern) {
-                        worklist.push(y);
-                    }
+        let i = eg.mk_identity_applied_id(i);
+        out.extend(ematch(i, eg, pattern));
+    }
+    out
+}
+
+pub fn ematch<L: Language>(i: AppliedId, eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Subst> {
+    let mut out = Vec::new();
+
+    // invariant: each x in worklist satisfies compatible(x, pattern)
+    let mut worklist = vec![leaf(i)];
+    while let Some(x) = worklist.pop() {
+        if let Some(xs) = branch(&x, pattern, eg) {
+            for y in xs {
+                if compatible(&y, pattern) {
+                    worklist.push(y);
                 }
-            } else {
-                out.push(to_subst(&x, pattern));
             }
+        } else {
+            out.push(to_subst(&x, pattern));
         }
     }
     out
