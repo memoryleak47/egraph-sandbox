@@ -3,9 +3,11 @@ use crate::*;
 pub fn rewrite_let(eg: &mut EGraph<LetENode>) {
     beta(eg);
     my_let_unused(eg);
-    let_var_same(eg);
+    // let_var_same(eg);
     let_app(eg);
     let_lam_diff(eg);
+
+    old_propagate_let(eg);
 }
 
 fn old_propagate_let(eg: &mut EGraph<LetENode>) {
@@ -31,17 +33,7 @@ fn old_propagate_let_step(x: Slot, t: AppliedId, b: LetENode, eg: &mut EGraph<Le
 
     let out = match b {
         LetENode::Var(_) => t,
-        LetENode::App(l, r) => {
-             let l = eg.add(LetENode::Let(x, t.clone(), l));
-             let r = eg.add(LetENode::Let(x, t.clone(), r));
-             eg.add(LetENode::App(l, r))
-        },
-        LetENode::Lam(y, bb) => {
-            let a1 = eg.add(LetENode::Let(x, t, bb.clone()));
-            let a2 = eg.add(LetENode::Lam(y, a1));
-            a2
-        },
-        LetENode::Let(..) => return None,
+        _ => return None,
     };
 
 
