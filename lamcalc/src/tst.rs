@@ -114,12 +114,6 @@ macro_rules! unpack_tests {
         }
 
         #[test]
-        fn test_add23_incomplete() {
-            let s = app(app(add(), num(2)), num(3));
-            check_simplify_incomplete::<$R>(&s);
-        }
-
-        #[test]
         fn test_add_y_step() {
             let s1 = app(add_impl(), add());
             let s2 = add();
