@@ -170,7 +170,7 @@ impl<L: Language> EGraph<L> {
 
         // check that no EClass has Slot(0) in its API.
         for (i, c) in &self.classes {
-            assert!(!c.slots.contains(&Slot(0)));
+            assert!(!c.slots.contains(&Slot::new(0)));
         }
 
         // Check that the Unionfind has valid AppliedIds.
@@ -211,7 +211,7 @@ impl<L: Language> EGraph<L> {
         for (i, c) in &self.classes {
             if !self.is_alive(*i) { continue; }
 
-            let slot_str = c.slots.iter().map(|x| format!("s{}", x.0)).collect::<Vec<_>>().join(", ");
+            let slot_str = c.slots.iter().map(|x| format!("s{}", x.get())).collect::<Vec<_>>().join(", ");
             println!("{:?}({}):", i, &slot_str);
             for (sh, bij) in &c.nodes {
                 let n = sh.apply_slotmap(bij);

@@ -3,7 +3,7 @@ use std::fmt::*;
 
 impl Debug for Slot {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "s{}", self.0)
+        write!(f, "s{}", self.get())
     }
 }
 

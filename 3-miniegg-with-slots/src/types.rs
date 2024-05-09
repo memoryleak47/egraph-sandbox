@@ -11,7 +11,7 @@ pub struct Id(pub usize);
 // - internal (not really part of the ENode API, it's rather the exposed slots of its children)
 //
 // A slot is "flexible" if it's free or lambda.
-pub struct Slot(pub usize);
+pub struct Slot(usize);
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AppliedId {
@@ -101,6 +101,17 @@ impl Slot {
         CTR.with_borrow_mut(|v| *v += 1);
 
         Slot(u)
+    }
+
+    pub fn new(u: usize) -> Slot {
+        if u >= 100 {
+            panic!("slots >= 100 are used for fresh slots!");
+        }
+        Slot(u)
+    }
+
+    pub fn get(&self) -> usize {
+        self.0
     }
 }
 

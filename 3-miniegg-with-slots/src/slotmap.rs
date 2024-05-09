@@ -208,11 +208,11 @@ impl<const N: usize> From<[(Slot, Slot); N]> for SlotMap {
 #[test]
 fn test_slotmap() {
     let mut m: SlotMap = SlotMap::new();
-    m.insert(Slot(3), Slot(7));
-    m.insert(Slot(2), Slot(7));
-    m.insert(Slot(3), Slot(8));
-    m.insert(Slot(4), Slot(7));
-    assert_eq!(m[Slot(3)], Slot(8));
+    m.insert(Slot::new(3), Slot::new(7));
+    m.insert(Slot::new(2), Slot::new(7));
+    m.insert(Slot::new(3), Slot::new(8));
+    m.insert(Slot::new(4), Slot::new(7));
+    assert_eq!(m[Slot::new(3)], Slot::new(8));
 
     m.check();
 }

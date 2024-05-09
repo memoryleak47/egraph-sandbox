@@ -14,7 +14,7 @@ pub fn rewrite_big_step(eg: &mut EGraph<ENode>) {
 
         let ENode::App(l, t) = cand.app.clone() else { panic!() };
         let ENode::Lam(x, b) = cand.lam.clone() else { panic!() };
-        assert_eq!(x, Slot(0));
+        assert_eq!(x, Slot::new(0));
 
         // l.m :: slots(lam) -> slots(app)
         let mut m = l.m.clone();

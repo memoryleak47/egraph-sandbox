@@ -107,7 +107,7 @@ pub trait Language: Debug + Clone + Hash + Eq {
         for x in c.all_slot_occurences_mut() {
             let x_val = *x;
             if !m.contains_key(x_val) {
-                let new_slot = Slot(i);
+                let new_slot = Slot::new(i);
                 i += 1;
 
                 m.insert(x_val, new_slot);
