@@ -117,7 +117,7 @@ impl Slot {
 
 #[test]
 fn test_apply_slotmap() {
-    let s = Slot;
+    let s = Slot::new;
 
     let in_slotmap = SlotMap::from_pairs(&[(s(0), s(10)), (s(1), s(3))]);
     let in_enode = ENode::Lam(s(3), AppliedId::new(Id(12), in_slotmap));
