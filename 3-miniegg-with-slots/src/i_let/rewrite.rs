@@ -5,27 +5,13 @@ pub fn rewrite_let(eg: &mut EGraph<LetENode>) {
     propagate_let(eg);
 }
 
+
 fn beta_to_let(eg: &mut EGraph<LetENode>) {
     // (\s1. ?b) ?t
-    let empty = || AppliedId::new(Id(0), SlotMap::new());
-    let var = |s: &str| Pattern {
-        node: ENodeOrVar::Var(s.to_string()),
-        children: vec![],
-    };
-    let lam = Pattern {
-        node: ENodeOrVar::ENode(LetENode::Lam(Slot(1), empty())),
-        children: vec![var("?b")],
-    };
-    let pat = Pattern {
-        node: ENodeOrVar::ENode(LetENode::App(empty(), empty())),
-        children: vec![lam, var("?t")],
-    };
+    let pat = app_pat(lam_pat(Slot(1), pvar_pat("?b")), pvar_pat("?t"));
 
     // let s1 ?t ?b
-    let outpat = Pattern {
-        node: ENodeOrVar::ENode(LetENode::Let(Slot(1), empty(), empty())),
-        children: vec![var("?t"), var("?b")],
-    };
+    let outpat = let_pat(Slot(1), pvar_pat("?t"), pvar_pat("?b"));
 
     for subst in ematch_all(eg, &pat) {
         let a = pattern_subst(eg, &pat, &subst);
@@ -71,4 +57,42 @@ fn propagate_let_step(x: Slot, t: AppliedId, b: LetENode, eg: &mut EGraph<LetENo
     };
 
     Some(out)
+}
+
+
+// aux functions.
+fn empty_app_id() -> AppliedId { AppliedId::new(Id(0), SlotMap::new()) }
+fn pvar_pat(s: &str) -> Pattern<LetENode> {
+    Pattern {
+        node: ENodeOrVar::Var(s.to_string()),
+        children: vec![],
+    }
+}
+
+fn app_pat(l: Pattern<LetENode>, r: Pattern<LetENode>) -> Pattern<LetENode> {
+    Pattern {
+        node: ENodeOrVar::ENode(LetENode::App(empty_app_id(), empty_app_id())),
+        children: vec![l, r],
+    }
+}
+
+fn var_pat(s: Slot) -> Pattern<LetENode> {
+    Pattern {
+        node: ENodeOrVar::ENode(LetENode::Var(s)),
+        children: vec![],
+    }
+}
+
+fn lam_pat(s: Slot, b: Pattern<LetENode>) -> Pattern<LetENode> {
+    Pattern {
+        node: ENodeOrVar::ENode(LetENode::Lam(s, empty_app_id())),
+        children: vec![b],
+    }
+}
+
+fn let_pat(s: Slot, t: Pattern<LetENode>, b: Pattern<LetENode>) -> Pattern<LetENode> {
+    Pattern {
+        node: ENodeOrVar::ENode(LetENode::Let(s, empty_app_id(), empty_app_id())),
+        children: vec![t, b],
+    }
 }
