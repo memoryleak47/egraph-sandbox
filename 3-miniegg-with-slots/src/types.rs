@@ -92,7 +92,7 @@ impl Slot {
         // Using this, all tests should run deterministically.
 
         thread_local! {
-            // starting with 1 might prevent Slot(0) collisions with Lam variables.
+            // starting with 1 might prevent some collisions with shape variables.
             static CTR: RefCell<usize> = RefCell::new(1);
         }
 

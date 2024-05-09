@@ -133,6 +133,17 @@ pub trait Language: Debug + Clone + Hash + Eq {
         }
         c
     }
+
+    fn refresh_slots(&self, set: HashSet<Slot>) -> Self {
+        let mut c = self.clone();
+        let fresh = SlotMap::bijection_from_fresh_to(&set).inverse();
+        for x in c.all_slot_occurences_mut() {
+            if set.contains(x) {
+                *x = fresh[*x];
+            }
+        }
+        c
+    }
 }
 
 // sorts as_set(v) by their first usage in v.
