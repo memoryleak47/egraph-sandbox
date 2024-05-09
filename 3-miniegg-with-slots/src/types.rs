@@ -92,8 +92,8 @@ impl Slot {
         // Using this, all tests should run deterministically.
 
         thread_local! {
-            // starting with 1 might prevent some collisions with shape variables.
-            static CTR: RefCell<usize> = RefCell::new(1);
+            // starting with 100 might prevent some collisions with shape variables.
+            static CTR: RefCell<usize> = RefCell::new(100);
         }
 
         let u = CTR.with_borrow(|v| *v);

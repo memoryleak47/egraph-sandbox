@@ -1,7 +1,7 @@
 use crate::*;
 
-const NO_ITERS: usize = 300;
-const NO_ENODES: usize = 8000;
+const NO_ITERS: usize = 400;
+const NO_ENODES: usize = 10000;
 
 pub trait Realization: Sized {
     type Id: Clone + Eq;
