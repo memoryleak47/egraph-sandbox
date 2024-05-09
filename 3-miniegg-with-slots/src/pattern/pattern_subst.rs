@@ -25,7 +25,7 @@ pub fn pattern_subst2<L: Language>(eg: &mut EGraph<L>, pattern: &Pattern<L>, sub
     app_id
 }
 
-fn mk_semi<L: Language>(pattern: &Pattern<L>, subst: &Subst) -> SemiRecExpr<L> {
+pub fn mk_semi<L: Language>(pattern: &Pattern<L>, subst: &Subst) -> SemiRecExpr<L> {
     match &pattern.node {
         ENodeOrPVar::ENode(n) => {
             let children: Vec<SemiRecExpr<L>> = pattern.children.iter().map(|x| mk_semi(x, subst)).collect();
@@ -43,7 +43,7 @@ fn mk_semi<L: Language>(pattern: &Pattern<L>, subst: &Subst) -> SemiRecExpr<L> {
     }
 }
 
-fn add_semi<L: Language>(semi: &SemiRecExpr<L>, eg: &mut EGraph<L>) -> AppliedId {
+pub fn add_semi<L: Language>(semi: &SemiRecExpr<L>, eg: &mut EGraph<L>) -> AppliedId {
     match &semi.node {
         ENodeOrAppId::ENode(n) => {
             let mut n = n.clone();

@@ -3,11 +3,12 @@ use crate::*;
 pub fn rewrite_let(eg: &mut EGraph<LetENode>) {
     beta(eg);
     my_let_unused(eg);
-    // let_var_same(eg);
-    let_app(eg);
-    let_lam_diff(eg);
 
     old_propagate_let(eg);
+    // let_var_same(eg);
+
+    let_app(eg);
+    let_lam_diff(eg);
 }
 
 fn old_propagate_let(eg: &mut EGraph<LetENode>) {
@@ -58,27 +59,19 @@ fn my_let_unused(eg: &mut EGraph<LetENode>) {
     });
 }
 
-
-fn let_check(eg: &EGraph<LetENode>) {
-    let pat = let_pat(Slot::new(1), pvar_pat("?e"), pvar_pat("?b"));
-
-    // TODO why does this find counter examples? But the above does not?
-    // let pat = let_pat(Slot::new(1), pvar_pat("?e"), var_pat(Slot::new(1)));
-
-    for subst in ematch_all(eg, &pat) {
-        assert!(!subst["?e"].slots().contains(&Slot::new(1)));
-    }
-}
-
 fn let_var_same(eg: &mut EGraph<LetENode>) {
     let pat = let_pat(Slot::new(1), pvar_pat("?e"), var_pat(Slot::new(1)));
-    let outpat = pvar_pat("?e");
-    rewrite(eg, pat, outpat);
+    // let outpat = pvar_pat("?e");
+    for subst in ematch_all(eg, &pat) {
+        let semi = mk_semi(&pat, &subst);
+        let a = add_semi(&semi, eg);
+        // let b = pattern_subst(eg, &outpat, &subst);
+        // eg.union(&a, &b);
+    }
 }
 
 fn let_app(eg: &mut EGraph<LetENode>) {
     let pat = let_pat(Slot::new(1), pvar_pat("?e"), app_pat(pvar_pat("?a"), pvar_pat("?b")));
-    // TODO this double usage of Slot::new(1) is dubious.
     let outpat = app_pat(
         let_pat(Slot::new(1), pvar_pat("?e"), pvar_pat("?a")),
         let_pat(Slot::new(1), pvar_pat("?e"), pvar_pat("?b"))
