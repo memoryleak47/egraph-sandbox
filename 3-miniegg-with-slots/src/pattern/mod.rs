@@ -16,3 +16,17 @@ pub struct RecExpr2<L: Language> {
     pub node: L,
     pub children: Vec<RecExpr2<L>>,
 }
+
+pub fn rewrite_if<L: Language>(eg: &mut EGraph<L>, a: Pattern<L>, b: Pattern<L>, cond: impl Fn(&Subst) -> bool) {
+    for subst in ematch_all(eg, &a) {
+        if cond(&subst) {
+            let a = pattern_subst(eg, &a, &subst);
+            let b = pattern_subst(eg, &b, &subst);
+            eg.union(&a, &b);
+        }
+    }
+}
+
+pub fn rewrite<L: Language>(eg: &mut EGraph<L>, a: Pattern<L>, b: Pattern<L>) {
+    rewrite_if(eg, a, b, |_| true);
+}
