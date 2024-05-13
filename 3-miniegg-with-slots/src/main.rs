@@ -38,9 +38,5 @@ pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;
 
 fn main() {
-    let p = "(lam f (lam arg arg))";
-    let s = app(y(), String::from(p));
-
-    let out = simplify::<LetReal>(&s);
-    assert_alpha_eq(&out, "(lam x x)");
+    rise_test_reduction();
 }

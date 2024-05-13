@@ -1,5 +1,11 @@
 use crate::*;
 
+mod build;
+pub use build::*;
+
+mod tst;
+pub use tst::*;
+
 mod rewrite;
 pub use rewrite::*;
 
@@ -8,10 +14,15 @@ pub use my_cost::*;
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RiseENode {
+    // lambda calculus:
     Lam(Slot, AppliedId),
     App(AppliedId, AppliedId),
     Var(Slot),
     Let(Slot, AppliedId, AppliedId),
+
+    // rest:
+    Add(AppliedId, AppliedId),
+    Number(u32),
 }
 
 impl Language for RiseENode {
@@ -21,7 +32,7 @@ impl Language for RiseENode {
             RiseENode::Lam(x, b) => {
                 out.push(x);
                 out.extend(b.slots_mut());
-            },
+            }
             RiseENode::App(l, r) => {
                 out.extend(l.slots_mut());
                 out.extend(r.slots_mut());
@@ -34,6 +45,11 @@ impl Language for RiseENode {
                 out.extend(t.slots_mut());
                 out.extend(b.slots_mut());
             }
+            RiseENode::Add(l, r) => {
+                out.extend(l.slots_mut());
+                out.extend(r.slots_mut());
+            }
+            RiseENode::Number(_) => {}
         }
         out
     }
@@ -43,7 +59,7 @@ impl Language for RiseENode {
         match self {
             RiseENode::Lam(x, b) => {
                 out.extend(b.slots_mut().into_iter().filter(|y| *y != x));
-            },
+            }
             RiseENode::App(l, r) => {
                 out.extend(l.slots_mut());
                 out.extend(r.slots_mut());
@@ -55,6 +71,11 @@ impl Language for RiseENode {
                 out.extend(b.slots_mut().into_iter().filter(|y| *y != x));
                 out.extend(t.slots_mut());
             }
+            RiseENode::Add(l, r) => {
+                out.extend(l.slots_mut());
+                out.extend(r.slots_mut());
+            }
+            RiseENode::Number(_) => {}
         }
         out
     }
@@ -65,6 +86,8 @@ impl Language for RiseENode {
             RiseENode::App(l, r) => vec![l, r],
             RiseENode::Var(_) => vec![],
             RiseENode::Let(_, t, b) => vec![t, b],
+            RiseENode::Add(l, r) => vec![l, r],
+            RiseENode::Number(_) => vec![],
         }
     }
 }
@@ -79,6 +102,8 @@ impl Debug for RiseENode {
             RiseENode::App(l, r) => write!(f, "(app {l:?} {r:?})"),
             RiseENode::Var(s) => write!(f, "{s:?}"),
             RiseENode::Let(x, t, b) => write!(f, "(let {x:?} {t:?} {b:?})"),
+            RiseENode::Add(l, r) => write!(f, "({l:?} + {r:?})"),
+            RiseENode::Number(i) => write!(f, "{i}"),
         }
     }
 }

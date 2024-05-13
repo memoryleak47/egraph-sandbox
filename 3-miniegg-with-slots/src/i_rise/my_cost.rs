@@ -2,8 +2,6 @@ use crate::*;
 
 use std::cmp::Ordering;
 
-pub struct AstSizeNoLet;
-
 impl CostFunction<RiseENode> for AstSizeNoLet {
     type Cost = MyCost;
 

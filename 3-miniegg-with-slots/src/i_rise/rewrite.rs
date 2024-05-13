@@ -1,6 +1,6 @@
 use crate::*;
 
-pub fn rewrite_let(eg: &mut EGraph<RiseENode>) {
+pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     beta(eg);
     my_let_unused(eg);
     let_var_same(eg);
