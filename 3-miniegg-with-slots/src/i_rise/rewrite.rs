@@ -14,6 +14,8 @@ pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
 
     map_fusion(eg);
     map_fission(eg);
+
+    remove_transpose_pair(eg);
 }
 
 fn beta(eg: &mut EGraph<RiseENode>) {
@@ -125,7 +127,17 @@ fn map_fission(eg: &mut EGraph<RiseENode>) {
     });
 }
 
-// aux functions.
+fn remove_transpose_pair(eg: &mut EGraph<RiseENode>) {
+    let transpose = |x| app_pat(symb_pat("transpose"), x);
+    let pat = transpose(transpose(pvar_pat("?x")));
+    let outpat = pvar_pat("?x");
+    rewrite(eg, pat, outpat);
+}
+
+
+
+
+/////////// aux functions. ////////////
 fn pvar_pat(s: &str) -> Pattern<RiseENode> {
     Pattern {
         node: ENodeOrPVar::PVar(s.to_string()),
