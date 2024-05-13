@@ -29,7 +29,7 @@ pub enum MyCost {
 }
 
 impl MyCost {
-    fn add(&self, other: &MyCost) -> MyCost {
+    pub fn add(&self, other: &MyCost) -> MyCost {
         use MyCost::*;
         match (self, other) {
             (Infinite, _) => Infinite,

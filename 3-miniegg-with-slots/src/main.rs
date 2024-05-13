@@ -12,6 +12,9 @@ use i_lambda::*;
 mod i_let;
 use i_let::*;
 
+mod i_rise;
+use i_rise::*;
+
 mod syntax;
 use syntax::*;
 
