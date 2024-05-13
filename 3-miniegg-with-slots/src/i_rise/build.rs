@@ -50,6 +50,13 @@ pub fn num_pat(i: u32) -> Pattern<RiseENode> {
     }
 }
 
+pub fn symb_pat(s: &str) -> Pattern<RiseENode> {
+    Pattern {
+        node: ENodeOrPVar::ENode(RiseENode::Symbol(Symbol::new(s))),
+        children: vec![],
+    }
+}
+
 fn empty_app_id() -> AppliedId { AppliedId::new(Id(0), SlotMap::new()) }
 
 // recexpr2 functions:
@@ -91,6 +98,13 @@ pub fn add_re(l: RecExpr2<RiseENode>, r: RecExpr2<RiseENode>) -> RecExpr2<RiseEN
 pub fn num_re(i: u32) -> RecExpr2<RiseENode> {
     RecExpr2 {
         node: RiseENode::Number(i),
+        children: vec![],
+    }
+}
+
+pub fn symb_re(s: &str) -> RecExpr2<RiseENode> {
+    RecExpr2 {
+        node: RiseENode::Symbol(Symbol::new(s)),
         children: vec![],
     }
 }

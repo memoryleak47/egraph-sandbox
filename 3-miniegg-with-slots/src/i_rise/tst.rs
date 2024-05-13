@@ -46,3 +46,14 @@ fn test_reduction() {
     let out = extract::<_, AstSizeNoLet>(i.id, &eg);
     assert!(out.node_dag.len() == 16);
 }
+
+fn fission_re1() -> RecExpr2<RiseENode> {
+    let map = symb_re("map");
+    let x = 0;
+    let mut it = var_re(x);
+    for i in 1..=5 {
+        let s = symb_re(&format!("f{}", i));
+        it = app_re(s, it);
+    }
+    app_re(map, lam_re(x, it))
+}

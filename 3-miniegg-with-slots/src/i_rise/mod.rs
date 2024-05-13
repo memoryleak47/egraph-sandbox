@@ -23,7 +23,7 @@ pub enum RiseENode {
     // rest:
     Add(AppliedId, AppliedId),
     Number(u32),
-    Symbol(u32),
+    Symbol(Symbol),
 }
 
 impl Language for RiseENode {
@@ -108,7 +108,7 @@ impl Debug for RiseENode {
             RiseENode::Let(x, t, b) => write!(f, "(let {x:?} {t:?} {b:?})"),
             RiseENode::Add(l, r) => write!(f, "({l:?} + {r:?})"),
             RiseENode::Number(i) => write!(f, "{i}"),
-            RiseENode::Symbol(i) => write!(f, "symb{i}"),
+            RiseENode::Symbol(i) => write!(f, "symb{i:?}"),
         }
     }
 }

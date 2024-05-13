@@ -1,3 +1,4 @@
+use symbol_table::GlobalSymbol as Symbol;
 use lamcalc::*;
 
 mod types;

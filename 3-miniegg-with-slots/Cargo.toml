@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 lamcalc = { path = "../lamcalc" }
 fnv = "*"
+symbol_table = { version = "0.3", features = ["global"]}
 
 [profile.release]
 debug = true
