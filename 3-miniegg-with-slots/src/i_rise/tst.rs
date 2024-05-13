@@ -27,26 +27,22 @@ fn reduction_re() -> RecExpr2<RiseENode> {
         it = app_re(app_re(var_re(comp), var_re(add1)), it);
     }
 
-    app_re(
-        app_re(
-            lam_re(comp,
-                lam_re(add1, it)
-            ),
-            add1_re,
+    app_re(lam_re(comp,
+            app_re(lam_re(add1, it),
+                add1_re,
+            )
         ),
         comp_re
     )
 }
 
-// #[test]
-pub fn rise_test_reduction() {
+#[test]
+pub fn test_reduction() {
     let mut eg = EGraph::new();
     let i = add_rec_expr2(&reduction_re(), &mut eg);
-    loop {
-        for _ in 0..100 {
-            rewrite_rise(&mut eg);
-        }
-        let out = extract::<_, AstSizeNoLet>(i.id, &eg);
-        dbg!(&out);
+    for _ in 0..30 {
+        rewrite_rise(&mut eg);
     }
+    let out = extract::<_, AstSizeNoLet>(i.id, &eg);
+    assert!(out.node_dag.len() == 16);
 }
