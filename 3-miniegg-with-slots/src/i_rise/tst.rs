@@ -76,12 +76,36 @@ fn fission_re2() -> RecExpr2<RiseENode> {
 }
 
 #[test]
-pub fn test_fission() {
+fn test_fission() {
     let mut eg = EGraph::new();
     let i1 = add_rec_expr2(&fission_re1(), &mut eg);
     for _ in 0..40 {
         rewrite_rise(&mut eg);
         if let Some(i2) = lookup_rec_expr2(&fission_re2(), &eg) {
+            assert_eq!(eg.find_id(i1.id), eg.find_id(i2.id));
+            return;
+        }
+    }
+
+    assert!(false);
+}
+
+// BINOMIAL //
+
+fn binomial_re1() -> RecExpr2<RiseENode> {
+    todo!()
+}
+
+fn binomial_re2() -> RecExpr2<RiseENode> {
+    todo!()
+}
+
+pub fn test_binomial() {
+    let mut eg = EGraph::new();
+    let i1 = add_rec_expr2(&binomial_re1(), &mut eg);
+    for _ in 0..40 {
+        rewrite_rise(&mut eg);
+        if let Some(i2) = lookup_rec_expr2(&binomial_re2(), &eg) {
             assert_eq!(eg.find_id(i1.id), eg.find_id(i2.id));
             return;
         }
