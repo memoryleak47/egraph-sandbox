@@ -17,6 +17,7 @@ pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
 
     remove_transpose_pair(eg);
     slide_before_map(eg);
+    map_slide_before_transpose(eg);
 }
 
 fn beta(eg: &mut EGraph<RiseENode>) {
@@ -150,6 +151,25 @@ fn slide_before_map(eg: &mut EGraph<RiseENode>) {
               );
     rewrite(eg, pat, outpat);
 }
+
+fn map_slide_before_transpose(eg: &mut EGraph<RiseENode>) {
+    let transpose = |a| app_pat(symb_pat("transpose"), a);
+    let slide = |a, b| app_pat(app_pat(symb_pat("slide"), a), b);
+    let map = |a, b| app_pat(app_pat(symb_pat("map"), a), b);
+    let map1 = |a| app_pat(symb_pat("map"), a);
+    let pat = transpose(map(
+        slide(pvar_pat("?sz"), pvar_pat("?sp")),
+        pvar_pat("?y")
+    ));
+    let outpat = map(symb_pat("transpose"),
+        app_pat(
+            slide(pvar_pat("?sz"), pvar_pat("?sp")),
+            transpose(pvar_pat("?y"))
+        )
+    );
+    rewrite(eg, pat, outpat);
+}
+
 
 
 
