@@ -87,5 +87,5 @@ pub fn test_fission() {
         if lookup_rec_expr2(&fission_re2(), &eg).is_some() { break; }
     }
     let i2 = lookup_rec_expr2(&fission_re2(), &eg).unwrap();
-    assert_eq!(i1, i2);
+    assert_eq!(eg.find_id(i1.id), eg.find_id(i2.id));
 }
