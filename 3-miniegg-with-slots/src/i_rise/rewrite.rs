@@ -3,6 +3,7 @@ use crate::*;
 pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     beta(eg);
     eta(eg);
+    // eta_expansion(eg);
 
     my_let_unused(eg);
     let_var_same(eg);
@@ -35,6 +36,16 @@ fn eta(eg: &mut EGraph<RiseENode>) {
     rewrite_if(eg, pat, outpat, |subst| {
         !subst["?b"].slots().contains(&Slot::new(1))
     });
+}
+
+fn eta_expansion(eg: &mut EGraph<RiseENode>) {
+    // ?b
+    let pat = pvar_pat("?b");
+
+    // \s1. ?b s1
+    let outpat = lam_pat(Slot::new(1), app_pat(pvar_pat("?b"), var_pat(Slot::new(1))));
+
+    rewrite(eg, pat, outpat);
 }
 
 fn my_let_unused(eg: &mut EGraph<RiseENode>) {
