@@ -23,6 +23,7 @@ pub enum RiseENode {
     // rest:
     Add(AppliedId, AppliedId),
     Number(u32),
+    Symbol(u32),
 }
 
 impl Language for RiseENode {
@@ -50,6 +51,7 @@ impl Language for RiseENode {
                 out.extend(r.slots_mut());
             }
             RiseENode::Number(_) => {}
+            RiseENode::Symbol(_) => {}
         }
         out
     }
@@ -76,6 +78,7 @@ impl Language for RiseENode {
                 out.extend(r.slots_mut());
             }
             RiseENode::Number(_) => {}
+            RiseENode::Symbol(_) => {}
         }
         out
     }
@@ -88,6 +91,7 @@ impl Language for RiseENode {
             RiseENode::Let(_, t, b) => vec![t, b],
             RiseENode::Add(l, r) => vec![l, r],
             RiseENode::Number(_) => vec![],
+            RiseENode::Symbol(_) => vec![],
         }
     }
 }
@@ -104,6 +108,7 @@ impl Debug for RiseENode {
             RiseENode::Let(x, t, b) => write!(f, "(let {x:?} {t:?} {b:?})"),
             RiseENode::Add(l, r) => write!(f, "({l:?} + {r:?})"),
             RiseENode::Number(i) => write!(f, "{i}"),
+            RiseENode::Symbol(i) => write!(f, "symb{i}"),
         }
     }
 }

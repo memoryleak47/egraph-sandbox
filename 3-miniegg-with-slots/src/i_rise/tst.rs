@@ -37,7 +37,7 @@ fn reduction_re() -> RecExpr2<RiseENode> {
 }
 
 #[test]
-pub fn test_reduction() {
+fn test_reduction() {
     let mut eg = EGraph::new();
     let i = add_rec_expr2(&reduction_re(), &mut eg);
     for _ in 0..30 {
