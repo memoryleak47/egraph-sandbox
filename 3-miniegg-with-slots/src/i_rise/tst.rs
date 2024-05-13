@@ -75,17 +75,17 @@ fn fission_re2() -> RecExpr2<RiseENode> {
     lam_re(y, app_re(left, right))
 }
 
-// #[test]
+#[test]
 pub fn test_fission() {
     let mut eg = EGraph::new();
     let i1 = add_rec_expr2(&fission_re1(), &mut eg);
-    loop {
-        for _ in 0..30 {
-            rewrite_rise(&mut eg);
+    for _ in 0..40 {
+        rewrite_rise(&mut eg);
+        if let Some(i2) = lookup_rec_expr2(&fission_re2(), &eg) {
+            assert_eq!(eg.find_id(i1.id), eg.find_id(i2.id));
+            return;
         }
-        dbg!(eg.total_size());
-        if lookup_rec_expr2(&fission_re2(), &eg).is_some() { break; }
     }
-    let i2 = lookup_rec_expr2(&fission_re2(), &eg).unwrap();
-    assert_eq!(eg.find_id(i1.id), eg.find_id(i2.id));
+
+    assert!(false);
 }

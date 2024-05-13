@@ -114,12 +114,12 @@ fn map_fission(eg: &mut EGraph<RiseENode>) {
     let map = |a, b| app_pat(app_pat(symb_pat("map"), a), b);
     let map1 = |a| app_pat(symb_pat("map"), a);
     let f = || pvar_pat("?f");
-    let g = || pvar_pat("?g");
+    let gx = || pvar_pat("?gx");
     let x = Slot::new(0);
     let y = Slot::new(1);
 
-    let pat = map1(lam_pat(x, app_pat(f(), app_pat(g(), var_pat(x)))));
-    let outpat = lam_pat(y, map(f(), map(lam_pat(x, app_pat(g(), var_pat(x))), var_pat(y))));
+    let pat = map1(lam_pat(x, app_pat(f(), gx())));
+    let outpat = lam_pat(y, map(f(), map(lam_pat(x, gx()), var_pat(y))));
     rewrite_if(eg, pat, outpat, |subst| {
         !subst["?f"].slots().contains(&x)
     });
