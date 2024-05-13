@@ -1,5 +1,7 @@
 use crate::*;
 
+// REDUCTION //
+
 fn reduction_re() -> RecExpr2<RiseENode> {
     let comp = 0;
     let add1 = 1;
@@ -47,13 +49,39 @@ fn test_reduction() {
     assert!(out.node_dag.len() == 16);
 }
 
-fn fission_re1() -> RecExpr2<RiseENode> {
-    let map = symb_re("map");
-    let x = 0;
+// FISSION //
+
+fn fchain(fs: impl Iterator<Item=usize>) -> RecExpr2<RiseENode> {
+    let x = 42;
     let mut it = var_re(x);
-    for i in 1..=5 {
-        let s = symb_re(&format!("f{}", i));
-        it = app_re(s, it);
+    for i in fs {
+        let f_i = symb_re(&format!("f{}", i));
+        it = app_re(f_i, it);
     }
-    app_re(map, lam_re(x, it))
+    lam_re(x, it)
+}
+
+fn fission_re1() -> RecExpr2<RiseENode> {
+    app_re(symb_re("map"), fchain(1..=5))
+}
+
+fn fission_re2() -> RecExpr2<RiseENode> {
+    let map = || symb_re("map");
+    let y = 1;
+
+    let left = app_re(map(), fchain(3..=5));
+    let right = app_re(app_re(map(), fchain(1..=2)), var_re(y));
+
+    lam_re(y, app_re(left, right))
+}
+
+// #[test]
+pub fn test_fission() {
+    let mut eg = EGraph::new();
+    let i1 = add_rec_expr2(&fission_re1(), &mut eg);
+    for _ in 0..30 {
+        rewrite_rise(&mut eg);
+    }
+    let i2 = lookup_rec_expr2(&fission_re2(), &eg).unwrap();
+    assert_eq!(i1, i2);
 }

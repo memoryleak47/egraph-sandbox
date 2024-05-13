@@ -67,3 +67,13 @@ pub fn add_rec_expr2<L: Language>(re: &RecExpr2<L>, eg: &mut EGraph<L>) -> Appli
     }
     eg.add(n)
 }
+
+pub fn lookup_rec_expr2<L: Language>(re: &RecExpr2<L>, eg: &EGraph<L>) -> Option<AppliedId> {
+    let mut n = re.node.clone();
+    let mut refs: Vec<&mut AppliedId> = n.applied_id_occurences_mut();
+    assert_eq!(re.children.len(), refs.len());
+    for i in 0..refs.len() {
+        *(refs[i]) = lookup_rec_expr2(&re.children[i], eg)?;
+    }
+    eg.lookup(&n)
+}
