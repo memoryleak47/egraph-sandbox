@@ -42,9 +42,11 @@ fn reduction_re() -> RecExpr2<RiseENode> {
 pub fn rise_test_reduction() {
     let mut eg = EGraph::new();
     let i = add_rec_expr2(&reduction_re(), &mut eg);
-    for _ in 0..200 {
-        rewrite_rise(&mut eg);
+    loop {
+        for _ in 0..100 {
+            rewrite_rise(&mut eg);
+        }
+        let out = extract::<_, AstSizeNoLet>(i.id, &eg);
+        dbg!(&out);
     }
-    let out = extract::<_, AstSizeNoLet>(i.id, &eg);
-    dbg!(&out);
 }

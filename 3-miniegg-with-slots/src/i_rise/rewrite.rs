@@ -2,10 +2,14 @@ use crate::*;
 
 pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     beta(eg);
+    eta(eg);
+
     my_let_unused(eg);
     let_var_same(eg);
     let_app(eg);
     let_lam_diff(eg);
+
+    let_add(eg);
 }
 
 fn beta(eg: &mut EGraph<RiseENode>) {
@@ -16,6 +20,18 @@ fn beta(eg: &mut EGraph<RiseENode>) {
     let outpat = let_pat(Slot::new(1), pvar_pat("?t"), pvar_pat("?b"));
 
     rewrite(eg, pat, outpat);
+}
+
+fn eta(eg: &mut EGraph<RiseENode>) {
+    // \s1. ?b s1
+    let pat = lam_pat(Slot::new(1), app_pat(pvar_pat("?b"), var_pat(Slot::new(1))));
+
+    // ?b
+    let outpat = pvar_pat("?b");
+
+    rewrite_if(eg, pat, outpat, |subst| {
+        !subst["?b"].slots().contains(&Slot::new(1))
+    });
 }
 
 fn my_let_unused(eg: &mut EGraph<RiseENode>) {
@@ -50,6 +66,17 @@ fn let_lam_diff(eg: &mut EGraph<RiseENode>) {
     );
     rewrite_if(eg, pat, outpat, |subst| {
         subst["?b"].slots().contains(&Slot::new(1))
+    });
+}
+
+fn let_add(eg: &mut EGraph<RiseENode>) {
+    let pat = let_pat(Slot::new(1), pvar_pat("?e"), add_pat(pvar_pat("?a"), pvar_pat("?b")));
+    let outpat = add_pat(
+        let_pat(Slot::new(1), pvar_pat("?e"), pvar_pat("?a")),
+        let_pat(Slot::new(1), pvar_pat("?e"), pvar_pat("?b"))
+    );
+    rewrite_if(eg, pat, outpat, |subst| {
+        subst["?a"].slots().contains(&Slot::new(1)) || subst["?b"].slots().contains(&Slot::new(1))
     });
 }
 
