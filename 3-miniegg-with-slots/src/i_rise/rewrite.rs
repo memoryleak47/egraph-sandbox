@@ -10,6 +10,9 @@ pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     let_lam_diff(eg);
 
     let_add(eg);
+
+    map_fusion(eg);
+    map_fission(eg);
 }
 
 fn beta(eg: &mut EGraph<RiseENode>) {
@@ -77,6 +80,37 @@ fn let_add(eg: &mut EGraph<RiseENode>) {
     );
     rewrite_if(eg, pat, outpat, |subst| {
         subst["?a"].slots().contains(&Slot::new(1)) || subst["?b"].slots().contains(&Slot::new(1))
+    });
+}
+
+
+fn map_fusion(eg: &mut EGraph<RiseENode>) {
+    let map = |a, b| app_pat(app_pat(symb_pat("map"), a), b);
+    let f = || pvar_pat("?f");
+    let g = || pvar_pat("?g");
+    let arg = || pvar_pat("?arg");
+    let x = Slot::new(0);
+    let pat = map(f(),
+                map(g(), arg())
+              );
+    let outpat = map(
+            lam_pat(x, app_pat(f(), app_pat(g(), var_pat(x)))),
+        arg());
+    rewrite(eg, pat, outpat);
+}
+
+fn map_fission(eg: &mut EGraph<RiseENode>) {
+    let map = |a, b| app_pat(app_pat(symb_pat("map"), a), b);
+    let map1 = |a| app_pat(symb_pat("map"), a);
+    let f = || pvar_pat("?f");
+    let g = || pvar_pat("?g");
+    let x = Slot::new(0);
+    let y = Slot::new(1);
+
+    let pat = map1(lam_pat(x, app_pat(f(), app_pat(g(), var_pat(x)))));
+    let outpat = lam_pat(y, map(f(), map(lam_pat(x, app_pat(g(), var_pat(x))), var_pat(y))));
+    rewrite_if(eg, pat, outpat, |subst| {
+        !subst["?f"].slots().contains(&x)
     });
 }
 
