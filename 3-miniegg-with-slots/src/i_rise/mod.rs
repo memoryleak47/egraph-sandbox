@@ -20,7 +20,6 @@ pub enum RiseENode {
     Let(Slot, AppliedId, AppliedId),
 
     // rest:
-    Add(AppliedId, AppliedId),
     Number(u32),
     Symbol(Symbol),
 }
@@ -45,10 +44,6 @@ impl Language for RiseENode {
                 out.extend(t.slots_mut());
                 out.extend(b.slots_mut());
             }
-            RiseENode::Add(l, r) => {
-                out.extend(l.slots_mut());
-                out.extend(r.slots_mut());
-            }
             RiseENode::Number(_) => {}
             RiseENode::Symbol(_) => {}
         }
@@ -72,10 +67,6 @@ impl Language for RiseENode {
                 out.extend(b.slots_mut().into_iter().filter(|y| *y != x));
                 out.extend(t.slots_mut());
             }
-            RiseENode::Add(l, r) => {
-                out.extend(l.slots_mut());
-                out.extend(r.slots_mut());
-            }
             RiseENode::Number(_) => {}
             RiseENode::Symbol(_) => {}
         }
@@ -88,7 +79,6 @@ impl Language for RiseENode {
             RiseENode::App(l, r) => vec![l, r],
             RiseENode::Var(_) => vec![],
             RiseENode::Let(_, t, b) => vec![t, b],
-            RiseENode::Add(l, r) => vec![l, r],
             RiseENode::Number(_) => vec![],
             RiseENode::Symbol(_) => vec![],
         }
@@ -105,7 +95,6 @@ impl Debug for RiseENode {
             RiseENode::App(l, r) => write!(f, "(app {l:?} {r:?})"),
             RiseENode::Var(s) => write!(f, "{s:?}"),
             RiseENode::Let(x, t, b) => write!(f, "(let {x:?} {t:?} {b:?})"),
-            RiseENode::Add(l, r) => write!(f, "({l:?} + {r:?})"),
             RiseENode::Number(i) => write!(f, "{i}"),
             RiseENode::Symbol(i) => write!(f, "symb{i:?}"),
         }

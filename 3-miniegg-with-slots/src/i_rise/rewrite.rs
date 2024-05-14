@@ -11,8 +11,6 @@ pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     let_app(eg);
     let_lam_diff(eg);
 
-    let_add(eg);
-
     map_fusion(eg);
     map_fission(eg);
 
@@ -88,18 +86,6 @@ fn let_lam_diff(eg: &mut EGraph<RiseENode>) {
         subst["?b"].slots().contains(&Slot::new(1))
     });
 }
-
-fn let_add(eg: &mut EGraph<RiseENode>) {
-    let pat = let_(1, pvar("?e"), add(pvar("?a"), pvar("?b")));
-    let outpat = add(
-        let_(1, pvar("?e"), pvar("?a")),
-        let_(1, pvar("?e"), pvar("?b"))
-    );
-    rewrite_if(eg, pat, outpat, |subst| {
-        subst["?a"].slots().contains(&Slot::new(1)) || subst["?b"].slots().contains(&Slot::new(1))
-    });
-}
-
 
 fn map_fusion(eg: &mut EGraph<RiseENode>) {
     let f = || pvar("?f");

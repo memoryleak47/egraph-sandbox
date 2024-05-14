@@ -24,7 +24,7 @@ fn reduction_re() -> RecExpr2<RiseENode> {
                     )
                 );
 
-    let add1_re = lam(y, add(var(y), num(1)));
+    let add1_re = lam(y, add2(var(y), num(1)));
     let mut it = var(add1);
     for _ in 0..6 {
         it = app(app(var(comp), var(add1)), it);
@@ -98,7 +98,21 @@ fn test_fission() {
 // BINOMIAL //
 
 fn binomial_re1() -> RecExpr2<RiseENode> {
-    todo!()
+    // map (map λnbh. dot (join weights2d) (join nbh))
+    //   (map transpose (slide 3 1 (map (slide 3 1) input)))
+
+    let nbh = 0;
+    let dt = dot2(
+            join1(symb("weights2d")),
+            join1(var(nbh)));
+    let out = map2(
+        map1(lam(nbh, dt)),
+        map2(transpose0(),
+            slide3(num(3), num(1), map2(slide2(num(3), num(1)), symb("input")))
+        )
+    );
+
+    pattern_to_re(&out)
 }
 
 fn binomial_re2() -> RecExpr2<RiseENode> {
