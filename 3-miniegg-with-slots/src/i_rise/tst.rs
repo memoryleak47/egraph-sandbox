@@ -1,9 +1,26 @@
 use crate::*;
 use crate::i_rise::build::*;
 
+fn assert_reaches(start: RecExpr2<RiseENode>, goal: RecExpr2<RiseENode>, steps: usize) {
+    let mut eg = EGraph::new();
+    let i1 = add_rec_expr2(&start, &mut eg);
+    for _ in 0..steps {
+        rewrite_rise(&mut eg);
+        if let Some(i2) = lookup_rec_expr2(&goal, &eg) {
+            if eg.find_id(i1.id) == eg.find_id(i2.id) {
+                return;
+            }
+        }
+    }
+
+    dbg!(extract::<_, AstSizeNoLet>(i1.id, &eg));
+    dbg!(&goal);
+    assert!(false);
+}
+
 // REDUCTION //
 
-fn reduction_re() -> RecExpr2<RiseENode> {
+fn reduction_re1() -> RecExpr2<RiseENode> {
     let comp = 0;
     let add1 = 1;
     let y = 2;
@@ -41,15 +58,21 @@ fn reduction_re() -> RecExpr2<RiseENode> {
     pattern_to_re(&out)
 }
 
+fn reduction_re2() -> RecExpr2<RiseENode> {
+    let x = 0;
+    let mut it = var(x);
+    for _ in 0..7 {
+        it = add2(it, num(1));
+    }
+
+    let out = lam(x, it);
+
+    pattern_to_re(&out)
+}
+
 #[test]
 fn test_reduction() {
-    let mut eg = EGraph::new();
-    let i = add_rec_expr2(&reduction_re(), &mut eg);
-    for _ in 0..30 {
-        rewrite_rise(&mut eg);
-    }
-    let out = extract::<_, AstSizeNoLet>(i.id, &eg);
-    assert!(out.node_dag.len() == 16);
+    assert_reaches(reduction_re1(), reduction_re2(), 40);
 }
 
 // FISSION //
@@ -82,25 +105,12 @@ fn fission_re2() -> RecExpr2<RiseENode> {
 
 #[test]
 fn test_fission() {
-    let mut eg = EGraph::new();
-    let i1 = add_rec_expr2(&fission_re1(), &mut eg);
-    for _ in 0..40 {
-        rewrite_rise(&mut eg);
-        if let Some(i2) = lookup_rec_expr2(&fission_re2(), &eg) {
-            assert_eq!(eg.find_id(i1.id), eg.find_id(i2.id));
-            return;
-        }
-    }
-
-    assert!(false);
+    assert_reaches(fission_re1(), fission_re2(), 40);
 }
 
 // BINOMIAL //
 
 fn binomial_re1() -> RecExpr2<RiseENode> {
-    // map (map λnbh. dot (join weights2d) (join nbh))
-    //   (map transpose (slide 3 1 (map (slide 3 1) input)))
-
     let nbh = 0;
     let dt = dot2(
             join1(symb("weights2d")),
@@ -116,10 +126,6 @@ fn binomial_re1() -> RecExpr2<RiseENode> {
 }
 
 fn binomial_re2() -> RecExpr2<RiseENode> {
-// map (λnbhL. map (λnbhH. dot weightsH nbhH)
-//  (slide 3 1 (map (λnbhV. dot weightsV nbhV) transpose nbhL)))
-//   (slide 3 1 input)
-
     let nbhL = 0;
     let nbhH = 1;
     let nbhV = 2;
@@ -145,16 +151,5 @@ fn binomial_re2() -> RecExpr2<RiseENode> {
 }
 
 pub fn test_binomial() {
-    let mut eg = EGraph::new();
-    let i1 = add_rec_expr2(&binomial_re1(), &mut eg);
-    for _ in 0..40 {
-        rewrite_rise(&mut eg);
-        dbg!(eg.total_size());
-        if let Some(i2) = lookup_rec_expr2(&binomial_re2(), &eg) {
-            assert_eq!(eg.find_id(i1.id), eg.find_id(i2.id));
-            return;
-        }
-    }
-
-    assert!(false);
+    assert_reaches(binomial_re1(), binomial_re2(), 40);
 }
