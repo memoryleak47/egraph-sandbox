@@ -1,5 +1,5 @@
 use symbol_table::GlobalSymbol as Symbol;
-use lamcalc::*;
+use lamcalc::{Realization, Ast};
 
 mod types;
 use types::*;

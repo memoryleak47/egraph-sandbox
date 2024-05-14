@@ -77,3 +77,12 @@ pub fn lookup_rec_expr2<L: Language>(re: &RecExpr2<L>, eg: &EGraph<L>) -> Option
     }
     eg.lookup(&n)
 }
+
+pub fn pattern_to_re<L: Language>(pat: &Pattern<L>) -> RecExpr2<L> {
+    let ENodeOrPVar::ENode(n) = &pat.node else { panic!() };
+    let children: Vec<RecExpr2<L>> = pat.children.iter().map(|x| pattern_to_re(x)).collect();
+    RecExpr2 {
+        node: n.clone(),
+        children,
+    }
+}

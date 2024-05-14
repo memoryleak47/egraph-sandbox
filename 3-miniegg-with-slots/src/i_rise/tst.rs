@@ -10,32 +10,34 @@ fn reduction_re() -> RecExpr2<RiseENode> {
     let g = 4;
     let x = 5;
 
-    let comp_re = lam_re(f,
-                    lam_re(g,
-                        lam_re(x,
-                            app_re(var_re(f),
-                                app_re(
-                                    var_re(g),
-                                    var_re(x)
+    let comp_re = lam(f,
+                    lam(g,
+                        lam(x,
+                            app(var(f),
+                                app(
+                                    var(g),
+                                    var(x)
                                 )
                             )
                         )
                     )
                 );
 
-    let add1_re = lam_re(y, add_re(var_re(y), num_re(1)));
-    let mut it = var_re(add1);
+    let add1_re = lam(y, add(var(y), num(1)));
+    let mut it = var(add1);
     for _ in 0..6 {
-        it = app_re(app_re(var_re(comp), var_re(add1)), it);
+        it = app(app(var(comp), var(add1)), it);
     }
 
-    app_re(lam_re(comp,
-            app_re(lam_re(add1, it),
+    let out = app(lam(comp,
+            app(lam(add1, it),
                 add1_re,
             )
         ),
         comp_re
-    )
+    );
+
+    pattern_to_re(&out)
 }
 
 #[test]
@@ -51,28 +53,30 @@ fn test_reduction() {
 
 // FISSION //
 
-fn fchain(fs: impl Iterator<Item=usize>) -> RecExpr2<RiseENode> {
+fn fchain(fs: impl Iterator<Item=usize>) -> Pattern<RiseENode> {
     let x = 42;
-    let mut it = var_re(x);
+    let mut it = var(x);
     for i in fs {
-        let f_i = symb_re(&format!("f{}", i));
-        it = app_re(f_i, it);
+        let f_i = symb(&format!("f{}", i));
+        it = app(f_i, it);
     }
-    lam_re(x, it)
+    lam(x, it)
 }
 
 fn fission_re1() -> RecExpr2<RiseENode> {
-    app_re(symb_re("map"), fchain(1..=5))
+    let out = app(symb("map"), fchain(1..=5));
+    pattern_to_re(&out)
 }
 
 fn fission_re2() -> RecExpr2<RiseENode> {
-    let map = || symb_re("map");
     let y = 1;
 
-    let left = app_re(map(), fchain(3..=5));
-    let right = app_re(app_re(map(), fchain(1..=2)), var_re(y));
+    let left = map1(fchain(3..=5));
+    let right = map2(fchain(1..=2), var(y));
 
-    lam_re(y, app_re(left, right))
+    let out = lam(y, app(left, right));
+
+    pattern_to_re(&out)
 }
 
 #[test]
