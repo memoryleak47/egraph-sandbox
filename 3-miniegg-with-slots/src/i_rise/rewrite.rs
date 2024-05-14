@@ -19,6 +19,7 @@ pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     map_slide_before_transpose(eg);
     slide_before_map_map_f(eg);
     separate_dot_vh_simplified(eg);
+    separate_dot_hv_simplified(eg);
 }
 
 fn beta(eg: &mut EGraph<RiseENode>) {
@@ -179,6 +180,37 @@ fn separate_dot_vh_simplified(eg: &mut EGraph<RiseENode>) {
                         ),
                     ),
                     transpose1(pvar("?nbh")),
+                ),
+            ),
+        ),
+    );
+    rewrite(eg, pat, outpat);
+}
+
+fn separate_dot_hv_simplified(eg: &mut EGraph<RiseENode>) {
+    let x = 0;
+    let sdhv = 1;
+
+    let pat = reduce3(add0(), num(0),
+        map2(
+            lam(x, mul2(fst1(var(x)), snd1(var(x)))),
+            zip2(join1(symb("weights2d")), join1(pvar("?nbh"))),
+        ),
+    );
+    let outpat = reduce3(add0(), num(0),
+        map2(
+            lam(x, mul2(fst1(var(x)), snd1(var(x)))),
+            zip2(symb("weightsV"),
+                map2(
+                    lam(sdhv,
+                        reduce3(add0(), num(0),
+                            map2(
+                                lam(x, mul2(fst1(var(x)), snd1(var(x)))),
+                                zip2(symb("weightsH"), var(sdhv))
+                            ),
+                        ),
+                    ),
+                    pvar("?nbh"),
                 ),
             ),
         ),
