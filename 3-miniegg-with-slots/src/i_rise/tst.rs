@@ -116,7 +116,32 @@ fn binomial_re1() -> RecExpr2<RiseENode> {
 }
 
 fn binomial_re2() -> RecExpr2<RiseENode> {
-    todo!()
+// map (λnbhL. map (λnbhH. dot weightsH nbhH)
+//  (slide 3 1 (map (λnbhV. dot weightsV nbhV) transpose nbhL)))
+//   (slide 3 1 input)
+
+    let nbhL = 0;
+    let nbhH = 1;
+    let nbhV = 2;
+
+    let tt = map3(
+        lam(nbhV, dot2(symb("weightsV"), var(nbhV))),
+        transpose0(),
+        var(nbhL)
+    );
+    let t = lam(nbhL,
+        map2(
+            lam(nbhH, dot2(symb("weightsH"), var(nbhH))),
+            slide3(num(3), num(1), tt)
+        ),
+    );
+
+    let out = map2(
+        t,
+        slide3(num(3), num(1), symb("input"))
+    );
+
+    pattern_to_re(&out)
 }
 
 pub fn test_binomial() {

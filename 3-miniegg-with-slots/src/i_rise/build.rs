@@ -4,6 +4,7 @@ use crate::*;
 pub fn map0() -> Pattern<RiseENode> { symb("map") }
 pub fn map1(x: Pattern<RiseENode>) -> Pattern<RiseENode> { app(map0(), x) }
 pub fn map2(x: Pattern<RiseENode>, y: Pattern<RiseENode>) -> Pattern<RiseENode> { app(map1(x), y) }
+pub fn map3(x: Pattern<RiseENode>, y: Pattern<RiseENode>, z: Pattern<RiseENode>) -> Pattern<RiseENode> { app(map2(x, y), z) }
 
 pub fn transpose0() -> Pattern<RiseENode> { symb("transpose") }
 pub fn transpose1(x: Pattern<RiseENode>) -> Pattern<RiseENode> { app(transpose0(), x) }
