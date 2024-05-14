@@ -13,8 +13,7 @@ pub use display::*;
 mod realization;
 pub use realization::*;
 
-mod build;
-pub use build::*;
+pub mod build;
 
 mod tst;
 pub use tst::*;

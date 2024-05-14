@@ -1,4 +1,5 @@
-use crate::i_rise::*;
+use crate::*;
+use crate::i_rise::build::*;
 
 pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     beta(eg);
