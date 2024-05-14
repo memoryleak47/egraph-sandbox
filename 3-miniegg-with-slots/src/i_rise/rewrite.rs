@@ -18,6 +18,7 @@ pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     slide_before_map(eg);
     map_slide_before_transpose(eg);
     slide_before_map_map_f(eg);
+    separate_dot_vh_simplified(eg);
 }
 
 fn beta(eg: &mut EGraph<RiseENode>) {
@@ -145,12 +146,42 @@ fn map_slide_before_transpose(eg: &mut EGraph<RiseENode>) {
 }
 
 fn slide_before_map_map_f(eg: &mut EGraph<RiseENode>) {
-
     let pat = map2(map1(pvar("?f")),
         slide3(pvar("?sz"), pvar("?sp"), pvar("?y"))
     );
     let outpat = slide3(pvar("?sz"), pvar("?sp"),
         map2(pvar("?f"), pvar("?y"))
+    );
+    rewrite(eg, pat, outpat);
+}
+
+fn separate_dot_vh_simplified(eg: &mut EGraph<RiseENode>) {
+    let x = 0;
+    let sdvh = 1;
+
+    let pat = reduce3(add0(), num(0),
+        map2(
+            lam(x, mul2(fst1(var(x)), snd1(var(x)))),
+            zip2(join1(symb("weights2d")), join1(pvar("?nbh"))),
+        ),
+    );
+    let outpat = reduce3(add0(), num(0),
+        map2(
+            lam(x, mul2(fst1(var(x)), snd1(var(x)))),
+            zip2(symb("weightsH"),
+                map2(
+                    lam(sdvh,
+                        reduce3(add0(), num(0),
+                            map2(
+                                lam(x, mul2(fst1(var(x)), snd1(var(x)))),
+                                zip2(symb("weightsV"), var(sdvh))
+                            ),
+                        ),
+                    ),
+                    transpose1(pvar("?nbh")),
+                ),
+            ),
+        ),
     );
     rewrite(eg, pat, outpat);
 }
