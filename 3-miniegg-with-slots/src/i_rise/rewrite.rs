@@ -6,10 +6,12 @@ pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     eta(eg);
     // eta_expansion(eg);
 
-    my_let_unused(eg);
-    let_var_same(eg);
-    let_app(eg);
-    let_lam_diff(eg);
+    for _ in 0..5 {
+        my_let_unused(eg);
+        let_var_same(eg);
+        let_app(eg);
+        let_lam_diff(eg);
+    }
 
     map_fusion(eg);
     map_fission(eg);
