@@ -130,20 +130,11 @@ fn binomial_re2() -> RecExpr2<RiseENode> {
     let nbhH = 1;
     let nbhV = 2;
 
-    let tt = map3(
-        lam(nbhV, dot2(symb("weightsV"), var(nbhV))),
-        transpose0(),
-        var(nbhL)
-    );
-    let t = lam(nbhL,
-        map2(
-            lam(nbhH, dot2(symb("weightsH"), var(nbhH))),
-            slide3(num(3), num(1), tt)
-        ),
-    );
-
     let out = map2(
-        t,
+        lam(nbhL, map2(
+            lam(nbhH, dot2(symb("weightsH"), var(nbhH))),
+            slide3(num(3), num(1), map2(lam(nbhV, dot2(symb("weightsV"), var(nbhV))), transpose1(var(nbhL))))
+        )),
         slide3(num(3), num(1), symb("input"))
     );
 
