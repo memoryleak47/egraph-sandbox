@@ -29,8 +29,8 @@ use extract::*;
 mod pattern;
 use pattern::*;
 
-mod perm;
-use perm::*;
+mod group;
+use group::*;
 
 use std::hash::Hash;
 use std::fmt::Debug;
