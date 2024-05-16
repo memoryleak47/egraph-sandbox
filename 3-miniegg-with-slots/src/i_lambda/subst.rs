@@ -209,7 +209,3 @@ fn map_lookup(b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph<ENode>, map
         false => Ok(app_id),
     }
 }
-
-pub fn singleton_set<T: Eq + std::hash::Hash>(t: T) -> HashSet<T> {
-    [t].into_iter().collect()
-}
