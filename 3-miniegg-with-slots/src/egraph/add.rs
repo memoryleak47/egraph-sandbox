@@ -111,6 +111,7 @@ impl<L: Language> EGraph<L> {
         let c_id = Id(self.unionfind.len()); // Pick the next unused Id.
         let c = EClass {
             nodes: HashMap::default(),
+            group: Group::identity(&slots),
             slots: slots.clone(),
             usages: HashSet::default(),
         };

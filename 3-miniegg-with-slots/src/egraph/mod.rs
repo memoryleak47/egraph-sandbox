@@ -21,6 +21,9 @@ pub struct EClass<L: Language> {
 
     // Shows which Shapes refer to this EClass.
     usages: HashSet<L>,
+
+    // Expresses the self-symmetries of this e-class.
+    group: Group,
 }
 
 // invariants:

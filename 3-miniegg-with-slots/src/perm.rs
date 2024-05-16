@@ -1,15 +1,15 @@
 use crate::*;
 
-// Trivial implementations of PermGroup.
+// Trivial implementation of permutation Group.
 #[derive(Clone, Debug)]
-pub struct PermGroup {
+pub struct Group {
     // all perms are bijections : omega -> omega.
     pub omega: HashSet<Slot>,
 
     perms: HashSet<Perm>,
 }
 
-impl PermGroup {
+impl Group {
     pub fn identity(omega: &HashSet<Slot>) -> Self {
         Self {
             omega: omega.clone(),
@@ -44,13 +44,13 @@ impl PermGroup {
             if generators.len() == copy.len() { break; }
         }
 
-        PermGroup {
+        Group {
             omega: omega.clone(),
             perms: generators,
         }
     }
 
-    pub fn union(&self, other: &PermGroup) -> PermGroup {
+    pub fn union(&self, other: &Group) -> Group {
         assert_eq!(self.omega, other.omega);
 
         let perms = self.perms.union(&other.perms).cloned().collect();
@@ -58,7 +58,7 @@ impl PermGroup {
         Self::new(&self.omega, perms)
     }
 
-    pub fn intersection(&self, other: &PermGroup) -> PermGroup {
+    pub fn intersection(&self, other: &Group) -> Group {
         assert_eq!(self.omega, other.omega);
 
         let perms = self.perms.intersection(&other.perms).cloned().collect();
@@ -93,7 +93,7 @@ fn chaos_test() {
 
     let perms = HashSet::from([a, b]);
 
-    let grp = PermGroup::new(&omega, perms);
+    let grp = Group::new(&omega, perms);
 
     let fak = |x| (1..=x).product();
     assert_eq!(grp.generators().len(), fak(n));
