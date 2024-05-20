@@ -16,10 +16,7 @@ impl<L: Language> EGraph<L> {
         // early return, if union should not be made.
         if l == r { return false; }
 
-        if l.id == r.id {
-            eprintln!("We reject self-unions for now!");
-            return false;
-        };
+        let cap = &l.slots() & &r.slots();
 
         // sort, s.t. size(l) >= size(r).
         let size = |i| {
@@ -29,29 +26,46 @@ impl<L: Language> EGraph<L> {
 
         let (l, r) = if size(l.id) >= size(r.id) { (l, r) } else { (r, l) };
 
-        let cap = &l.slots() & &r.slots();
         if l.slots() == cap {
-            self.merge_into_eclass(&r, &l);
+            self.merge_into_eclass(&r, &l)
         } else if r.slots() == cap {
-            self.merge_into_eclass(&l, &r);
+            self.merge_into_eclass(&l, &r)
         } else {
             let c = self.alloc_eclass_fresh(&cap);
             self.merge_into_eclass(&l, &c);
             self.merge_into_eclass(&r, &c);
+            true
         }
-
-        true
     }
 
-    fn merge_into_eclass(&mut self, from: &AppliedId, to: &AppliedId) {
+    fn merge_into_eclass(&mut self, from: &AppliedId, to: &AppliedId) -> bool {
         let from = self.find_applied_id(from);
         let to = self.find_applied_id(to);
 
-        // TODO this can be simplified.
-        let map = to.m.compose_partial(&from.m.inverse());
+        // self-symmetries:
+        if from.id == to.id {
+            let id = from.id;
 
-        self.unionfind.set(from.id, &self.mk_applied_id(to.id, map));
-        self.convert_eclass(from.id);
+            let fm = &from.m; // slots(id) -> X
+            let tm = &to.m; // slots(id) -> X
+            let perm = fm.compose_partial(&tm.inverse());
+            assert!(perm.is_perm());
+            assert_eq!(&perm.keys(), &self.classes[&id].slots);
+
+            let grp = &mut self.classes.get_mut(&id).unwrap().group;
+            if grp.contains(&perm) { return false; }
+
+            grp.add(perm);
+
+            true
+        } else {
+            let map = to.m.compose_partial(&from.m.inverse());
+
+            self.unionfind.set(from.id, &self.mk_applied_id(to.id, map));
+            self.convert_eclass(from.id);
+
+            true
+        }
     }
 
     // Remove everything that references this e-class, and then re-add it using "semantic_add".

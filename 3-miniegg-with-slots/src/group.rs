@@ -74,6 +74,16 @@ impl Group {
     pub fn omega(&self) -> HashSet<Slot> {
         self.omega.clone()
     }
+
+    pub fn add(&mut self, a: Perm) {
+        let mut new = self.perms.clone();
+        new.insert(a);
+        *self = Self::new(&self.omega, new);
+    }
+
+    pub fn contains(&self, p: &Perm) -> bool {
+        self.perms.contains(p)
+    }
 }
 
 pub fn singleton_set<T: Eq + std::hash::Hash>(t: T) -> HashSet<T> {
@@ -83,15 +93,17 @@ pub fn singleton_set<T: Eq + std::hash::Hash>(t: T) -> HashSet<T> {
 #[test]
 fn chaos_test() {
     let n = 5;
-    let omega: HashSet<_> = (0..n).map(Slot).collect();
+    let omega: HashSet<_> = (0..n).map(Slot::new).collect();
 
     let a = |x| (x+1)%n;
-    let a: Perm = (0..n).map(|x| (Slot(x), Slot(a(x)))).collect();
+    let a: Perm = (0..n).map(|x| (Slot::new(x), Slot::new(a(x)))).collect();
 
     let b = |x| if x < 2 { 1 - x } else { x };
-    let b: Perm = (0..n).map(|x| (Slot(x), Slot(b(x)))).collect();
+    let b: Perm = (0..n).map(|x| (Slot::new(x), Slot::new(b(x)))).collect();
 
-    let perms = HashSet::from([a, b]);
+    let mut perms = HashSet::default();
+    perms.insert(a);
+    perms.insert(b);
 
     let grp = Group::new(&omega, perms);
 
