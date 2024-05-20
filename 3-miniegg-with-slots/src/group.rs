@@ -71,6 +71,10 @@ impl Group {
         self.perms.clone()
     }
 
+    pub fn perms(&self) -> HashSet<Perm> {
+        self.perms.clone()
+    }
+
     pub fn omega(&self) -> HashSet<Slot> {
         self.omega.clone()
     }

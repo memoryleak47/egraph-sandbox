@@ -99,8 +99,31 @@ impl<L: Language> EGraph<L> {
 
         // re-add everything.
         for (enode, j) in adds {
-            self.semantic_add(&enode, &j);
+            for enode2 in self.get_group_compatible_variants(&enode) {
+                self.semantic_add(&enode, &j);
+            }
         }
+    }
+
+    // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
+    fn get_group_compatible_variants(&self, enode: &L) -> HashSet<L> {
+        let mut s = HashSet::default();
+        s.insert(enode.clone());
+
+        for (i, app_id) in enode.applied_id_occurences().iter().enumerate() {
+            let grp_perms = self.classes[&app_id.id].group.perms();
+            let mut next = HashSet::default();
+            for x in s {
+                for y in &grp_perms {
+                    let mut x = x.clone();
+                    let rf: &mut SlotMap = &mut x.applied_id_occurences_mut()[i].m;
+                    *rf = y.compose(rf);
+                    next.insert(x);
+                }
+            }
+            s = next;
+        }
+        s
     }
 
     // self.check() should hold before and after this.
