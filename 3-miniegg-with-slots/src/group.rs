@@ -25,7 +25,7 @@ impl Group {
         }
 
         generators.insert(SlotMap::identity(omega));
-        
+
         loop {
             let copy = generators.clone();
 
