@@ -34,10 +34,13 @@ impl<L: Language> EGraph<L> {
             let c = self.alloc_eclass_fresh(&cap);
             self.merge_into_eclass(&l, &c);
             self.merge_into_eclass(&r, &c);
+
             true
         }
     }
 
+    // A directed union from `from` to `to`.
+    // `from.id` gets deprecated, if it's different from `to.id`.
     fn merge_into_eclass(&mut self, from: &AppliedId, to: &AppliedId) -> bool {
         let from = self.find_applied_id(from);
         let to = self.find_applied_id(to);
@@ -56,6 +59,8 @@ impl<L: Language> EGraph<L> {
             if grp.contains(&perm) { return false; }
 
             grp.add(perm);
+
+            self.convert_eclass(id);
 
             true
         } else {
@@ -92,12 +97,10 @@ impl<L: Language> EGraph<L> {
             adds.push((enode, applied_k));
         }
 
-
         // re-add everything.
         for (enode, j) in adds {
             self.semantic_add(&enode, &j);
         }
-
     }
 
     // self.check() should hold before and after this.
