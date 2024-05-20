@@ -129,6 +129,19 @@ impl<L: Language> EGraph<L> {
         self.hashcons.len()
     }
 
+    pub fn eq(&self, a: &AppliedId, b: &AppliedId) -> bool {
+        let a = self.find_applied_id(a);
+        let b = self.find_applied_id(b);
+        if a.id != b.id { return false; }
+        let id = a.id;
+
+        let perm = a.m.compose(&b.m.inverse());
+        assert!(perm.is_perm());
+        assert_eq!(&perm.values(), &self.classes[&id].slots);
+
+        self.classes[&id].group.contains(&perm)
+    }
+
     pub fn check(&self) {
         // Checks whether the hashcons / usages are correct.
         // And also checks that each Shape comes up in at most one EClass!
@@ -219,6 +232,9 @@ impl<L: Language> EGraph<L> {
             for (sh, bij) in &c.nodes {
                 let n = sh.apply_slotmap(bij);
                 println!(" - {:?}", n);
+            }
+            for p in &c.group.perms() {
+                println!(" -- {:?}", p);
             }
         }
         println!("");
