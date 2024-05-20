@@ -10,6 +10,9 @@ pub fn rewrite_arith(eg: &mut EGraph<ArithENode>) {
     let_var_same(eg);
     let_app(eg);
     let_lam_diff(eg);
+
+    add_comm(eg);
+    mul_comm(eg);
 }
 
 fn beta(eg: &mut EGraph<ArithENode>) {
@@ -77,4 +80,16 @@ fn let_lam_diff(eg: &mut EGraph<ArithENode>) {
     rewrite_if(eg, pat, outpat, |subst| {
         subst["?b"].slots().contains(&Slot::new(1))
     });
+}
+
+fn add_comm(eg: &mut EGraph<ArithENode>) {
+    let pat = add2(pvar("?a"), pvar("?b"));
+    let outpat = add2(pvar("?b"), pvar("?a"));
+    rewrite(eg, pat, outpat);
+}
+
+fn mul_comm(eg: &mut EGraph<ArithENode>) {
+    let pat = mul2(pvar("?a"), pvar("?b"));
+    let outpat = mul2(pvar("?b"), pvar("?a"));
+    rewrite(eg, pat, outpat);
 }
