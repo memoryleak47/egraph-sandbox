@@ -22,6 +22,9 @@ pub enum ArithENode {
     Var(Slot),
     Let(Slot, AppliedId, AppliedId),
 
+    Add(AppliedId, AppliedId),
+    Mul(AppliedId, AppliedId),
+
     // rest:
     Number(u32),
     Symbol(Symbol),
@@ -47,6 +50,15 @@ impl Language for ArithENode {
                 out.extend(t.slots_mut());
                 out.extend(b.slots_mut());
             }
+
+            ArithENode::Add(l, r) => {
+                out.extend(l.slots_mut());
+                out.extend(r.slots_mut());
+            }
+            ArithENode::Mul(l, r) => {
+                out.extend(l.slots_mut());
+                out.extend(r.slots_mut());
+            }
             ArithENode::Number(_) => {}
             ArithENode::Symbol(_) => {}
         }
@@ -70,6 +82,14 @@ impl Language for ArithENode {
                 out.extend(b.slots_mut().into_iter().filter(|y| *y != x));
                 out.extend(t.slots_mut());
             }
+            ArithENode::Add(l, r) => {
+                out.extend(l.slots_mut());
+                out.extend(r.slots_mut());
+            }
+            ArithENode::Mul(l, r) => {
+                out.extend(l.slots_mut());
+                out.extend(r.slots_mut());
+            }
             ArithENode::Number(_) => {}
             ArithENode::Symbol(_) => {}
         }
@@ -82,6 +102,8 @@ impl Language for ArithENode {
             ArithENode::App(l, r) => vec![l, r],
             ArithENode::Var(_) => vec![],
             ArithENode::Let(_, t, b) => vec![t, b],
+            ArithENode::Add(l, r) => vec![l, r],
+            ArithENode::Mul(l, r) => vec![l, r],
             ArithENode::Number(_) => vec![],
             ArithENode::Symbol(_) => vec![],
         }
@@ -98,6 +120,8 @@ impl Debug for ArithENode {
             ArithENode::App(l, r) => write!(f, "(app {l:?} {r:?})"),
             ArithENode::Var(s) => write!(f, "{s:?}"),
             ArithENode::Let(x, t, b) => write!(f, "(let {x:?} {t:?} {b:?})"),
+            ArithENode::Add(l, r) => write!(f, "(+ {l:?} {r:?})"),
+            ArithENode::Mul(l, r) => write!(f, "(* {l:?} {r:?})"),
             ArithENode::Number(i) => write!(f, "{i}"),
             ArithENode::Symbol(i) => write!(f, "symb{i:?}"),
         }

@@ -42,12 +42,12 @@ pub fn arith_test2() {
 
     let a = mul2(
                 add2(var(x), var(y)),
-                add2(var(y), var(z))
+                add2(var(x), var(y))
             );
     let a = pattern_to_re(&a);
 
     let b = mul2(
-                add2(var(z), var(y)),
+                add2(var(x), var(y)),
                 add2(var(y), var(x))
             );
     let b = pattern_to_re(&b);

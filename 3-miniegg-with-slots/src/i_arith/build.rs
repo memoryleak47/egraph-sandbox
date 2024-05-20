@@ -1,17 +1,5 @@
 use crate::*;
 
-// advanced functions:
-
-pub fn add0() -> Pattern<ArithENode> { symb("add") }
-pub fn add1(x: Pattern<ArithENode>) -> Pattern<ArithENode> { app(add0(), x) }
-pub fn add2(x: Pattern<ArithENode>, y: Pattern<ArithENode>) -> Pattern<ArithENode> { app(add1(x), y) }
-
-pub fn mul0() -> Pattern<ArithENode> { symb("mul") }
-pub fn mul1(x: Pattern<ArithENode>) -> Pattern<ArithENode> { app(mul0(), x) }
-pub fn mul2(x: Pattern<ArithENode>, y: Pattern<ArithENode>) -> Pattern<ArithENode> { app(mul1(x), y) }
-
-// base functions:
-
 pub fn pvar(s: &str) -> Pattern<ArithENode> {
     Pattern {
         node: ENodeOrPVar::PVar(s.to_string()),
@@ -54,6 +42,21 @@ pub fn let_(s: usize, t: Pattern<ArithENode>, b: Pattern<ArithENode>) -> Pattern
         children: vec![t, b],
     }
 }
+
+pub fn add2(l: Pattern<ArithENode>, r: Pattern<ArithENode>) -> Pattern<ArithENode> {
+    Pattern {
+        node: ENodeOrPVar::ENode(ArithENode::Add(empty_app_id(), empty_app_id())),
+        children: vec![l, r],
+    }
+}
+
+pub fn mul2(l: Pattern<ArithENode>, r: Pattern<ArithENode>) -> Pattern<ArithENode> {
+    Pattern {
+        node: ENodeOrPVar::ENode(ArithENode::Mul(empty_app_id(), empty_app_id())),
+        children: vec![l, r],
+    }
+}
+
 
 pub fn num(i: u32) -> Pattern<ArithENode> {
     Pattern {
