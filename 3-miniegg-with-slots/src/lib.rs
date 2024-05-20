@@ -1,3 +1,4 @@
+use symbol_table::GlobalSymbol as Symbol;
 use lamcalc::*;
 
 mod types;
@@ -11,6 +12,12 @@ pub use i_lambda::*;
 
 mod i_let;
 pub use i_let::*;
+
+mod i_rise;
+pub use i_rise::*;
+
+mod i_arith;
+pub use i_arith::*;
 
 mod syntax;
 use syntax::*;

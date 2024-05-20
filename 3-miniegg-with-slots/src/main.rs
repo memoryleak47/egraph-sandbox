@@ -16,6 +16,9 @@ use i_let::*;
 mod i_rise;
 use i_rise::*;
 
+mod i_arith;
+use i_arith::*;
+
 mod syntax;
 use syntax::*;
 
