@@ -124,7 +124,7 @@ impl<L: Language> EGraph<L> {
         s
     }
 
-    fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
+    pub fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
         let mut enode = self.find_enode(&enode);
         let mut i = self.find_applied_id(i);
 

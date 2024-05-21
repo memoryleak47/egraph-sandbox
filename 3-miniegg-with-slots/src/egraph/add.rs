@@ -66,9 +66,10 @@ impl<L: Language> EGraph<L> {
         // allocate new class & slot set.
         let fresh_slots = fresh_enode.slots();
         let id = self.alloc_eclass(&fresh_slots);
+        let app_id = self.mk_identity_applied_id(id);
 
-        let (sh, bij) = fresh_enode.shape();
-        self.raw_add_to_class(id, (sh.clone(), bij));
+        // calling semantic_add is a bit overkill here, we use it for the symmetries though.
+        self.semantic_add(&fresh_enode, &app_id);
 
         self.mk_applied_id(id, fresh_to_old)
     }
