@@ -30,3 +30,8 @@ pub fn rewrite_if<L: Language>(eg: &mut EGraph<L>, a: Pattern<L>, b: Pattern<L>,
 pub fn rewrite<L: Language>(eg: &mut EGraph<L>, a: Pattern<L>, b: Pattern<L>) {
     rewrite_if(eg, a, b, |_| true);
 }
+
+pub fn rewrite_bi<L: Language>(eg: &mut EGraph<L>, a: Pattern<L>, b: Pattern<L>) {
+    rewrite(eg, a.clone(), b.clone());
+    rewrite(eg, b, a);
+}

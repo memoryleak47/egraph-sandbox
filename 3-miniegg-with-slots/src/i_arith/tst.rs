@@ -76,3 +76,29 @@ fn arith_test3() {
 
     assert_reaches(a, b, 3);
 }
+
+pub fn arith_test() {
+    let x = 0;
+    let y = 1;
+    let z = 1;
+
+    let a = mul2(
+                add2(var(x), var(y)),
+                add2(var(x), var(y))
+            );
+    let a = pattern_to_re(&a);
+
+    let b = add2(
+                mul2(var(x), var(x)),
+                add2(
+                    mul2(var(x), var(y)),
+                    add2(
+                        mul2(var(x), var(y)),
+                        mul2(var(y), var(y)),
+                    ),
+                )
+            );
+    let b = pattern_to_re(&b);
+
+    assert_reaches(a, b, 3);
+}

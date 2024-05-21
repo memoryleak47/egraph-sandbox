@@ -12,7 +12,12 @@ pub fn rewrite_arith(eg: &mut EGraph<ArithENode>) {
     let_lam_diff(eg);
 
     add_comm(eg);
+    add_assoc(eg);
+
     mul_comm(eg);
+    mul_assoc(eg);
+
+    distr(eg);
 }
 
 fn beta(eg: &mut EGraph<ArithENode>) {
@@ -92,4 +97,22 @@ fn mul_comm(eg: &mut EGraph<ArithENode>) {
     let pat = mul2(pvar("?a"), pvar("?b"));
     let outpat = mul2(pvar("?b"), pvar("?a"));
     rewrite(eg, pat, outpat);
+}
+
+fn add_assoc(eg: &mut EGraph<ArithENode>) {
+    let pat = add2(pvar("?a"), add2(pvar("?b"), pvar("?c")));
+    let outpat = add2(add2(pvar("?a"), pvar("?b")), pvar("?c"));
+    rewrite_bi(eg, pat, outpat);
+}
+
+fn mul_assoc(eg: &mut EGraph<ArithENode>) {
+    let pat = mul2(pvar("?a"), mul2(pvar("?b"), pvar("?c")));
+    let outpat = mul2(mul2(pvar("?a"), pvar("?b")), pvar("?c"));
+    rewrite_bi(eg, pat, outpat);
+}
+
+fn distr(eg: &mut EGraph<ArithENode>) {
+    let pat = mul2(pvar("?a"), add2(pvar("?b"), pvar("?c"))); // a * (b+c)
+    let outpat = add2(mul2(pvar("?a"), pvar("?b")), mul2(pvar("?a"), pvar("?c"))); // (a*b) + (a*c)
+    rewrite_bi(eg, pat, outpat);
 }
