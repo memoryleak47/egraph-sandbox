@@ -229,7 +229,11 @@ impl<L: Language> EGraph<L> {
 
     pub fn dump(&self) {
         println!("");
-        for (i, c) in &self.classes {
+
+        let mut v: Vec<(&Id, &EClass<L>)> = self.classes.iter().collect();
+        v.sort_by_key(|(x, _)| *x);
+
+        for (i, c) in v {
             if !self.is_alive(*i) { continue; }
 
             let slot_str = c.slots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ");
