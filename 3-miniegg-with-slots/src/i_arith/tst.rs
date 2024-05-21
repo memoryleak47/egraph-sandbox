@@ -22,7 +22,7 @@ fn assert_reaches(start: RecExpr2<ArithENode>, goal: RecExpr2<ArithENode>, steps
 
 
 #[test]
-fn arith_test1() {
+fn arith_test1() { // x+y = y+x
     let x = 0;
     let y = 1;
 
@@ -36,7 +36,7 @@ fn arith_test1() {
 }
 
 #[test]
-fn arith_test2() {
+fn arith_test2() { // (x+y) * (x+y) = (x+y) * (y+x)
     let x = 0;
     let y = 1;
     let z = 1;
@@ -57,7 +57,7 @@ fn arith_test2() {
 }
 
 #[test]
-fn arith_test3() {
+fn arith_test3() { // (x+y) * (y+z) = (z+y) * (y+x)
     let x = 0;
     let y = 1;
     let z = 1;
@@ -77,7 +77,8 @@ fn arith_test3() {
     assert_reaches(a, b, 3);
 }
 
-pub fn arith_test() {
+#[test]
+fn arith_test4() { // (x+y)**2 = x**2 + x*y + x*y + y**2
     let x = 0;
     let y = 1;
     let z = 1;
