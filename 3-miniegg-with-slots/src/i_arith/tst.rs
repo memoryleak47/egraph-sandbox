@@ -103,3 +103,24 @@ fn arith_test4() { // (x+y)**2 = x**2 + x*y + x*y + y**2
 
     assert_reaches(a, b, 10);
 }
+
+fn add_chain(it: impl Iterator<Item=usize>) -> Pattern<ArithENode> {
+    let mut it = it.map(var);
+    let mut x = it.next().unwrap();
+    for y in it {
+        x = add2(x, y);
+    }
+    x
+}
+
+pub fn arith_test5() { // x0+...+xN = xN+...+x0
+    const N: usize = 5;
+
+    let a = add_chain(0..=N);
+    let a = pattern_to_re(&a);
+
+    let b = add_chain((0..=N).rev());
+    let b = pattern_to_re(&b);
+
+    assert_reaches(a, b, 10);
+}
