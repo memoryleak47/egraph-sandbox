@@ -19,12 +19,12 @@ pub fn ematch<L: Language>(i: AppliedId, eg: &EGraph<L>, pattern: &Pattern<L>) -
     while let Some(x) = worklist.pop() {
         if let Some(xs) = branch(&x, pattern, eg) {
             for y in xs {
-                if compatible(&y, pattern) {
+                if compatible(&y, pattern, eg) {
                     worklist.push(y);
                 }
             }
         } else {
-            out.push(to_subst(&x, pattern));
+            out.push(to_subst(&x, pattern, eg));
         }
     }
     out
@@ -82,21 +82,21 @@ fn clear_app_ids<L: Language>(l: &L) -> L {
     l
 }
 
-fn compatible<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> bool {
-    match_against(sre, pattern).is_some()
+fn compatible<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L>) -> bool {
+    match_against(sre, pattern, eg).is_some()
 }
 
-fn to_subst<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Subst {
-    match_against(sre, pattern).unwrap().0
+fn to_subst<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L>) -> Subst {
+    match_against(sre, pattern, eg).unwrap().0
 }
 
 // Finds a renaming (SlotMap) of the slots of `sre`, so that it becomes equivalent to `pattern`.
 // Also extracts the resulting Subst for the Pattern.
 // Supports partial `sre`, but obviously it cannot return a Subst-entry for them.
-fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Option<(Subst, SlotMap)> {
+fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L>) -> Option<(Subst, SlotMap)> {
     let mut subst = Subst::default();
     let mut slotmap = SlotMap::new();
-    match_against_impl(&sre, pattern, &mut subst, &mut slotmap)?;
+    match_against_impl(&sre, pattern, &mut subst, &mut slotmap, eg)?;
 
     // Previously, the subst uses `sre`-based slot names.
     // Afterwards, the subst uses `pattern`-based slot names.
@@ -115,11 +115,18 @@ fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>) -> Opt
 
 // `slotmap` maps from `sre` to `pattern` slots.
 // The returned Subst works with `sre` slots.
-fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, subst: &mut Subst, slotmap: &mut SlotMap) -> Option<()> {
+fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, subst: &mut Subst, slotmap: &mut SlotMap, eg: &EGraph<L>) -> Option<()> {
     match (&sre.node, &pattern.node) {
         // the "leaf" case.
         (ENodeOrAppId::AppliedId(x), ENodeOrPVar::PVar(v)) => {
-            if !try_insert_compatible(v.clone(), x.clone(), subst) { return None; }
+            // This is a fancy "try_insert_compatible" using eg.eq(_, _)-equality.
+            if let Some(old) = subst.get(&*v) {
+                if !eg.eq(old, x) {
+                    return None;
+                }
+            } else {
+                subst.insert(v.clone(), x.clone());
+            }
             Some(())
         },
 
@@ -148,7 +155,7 @@ fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, s
             if !check_eq { return None; }
 
             for (subsre, subpat) in sre.children.iter().zip(pattern.children.iter()) {
-                match_against_impl(subsre, subpat, subst, slotmap)?;
+                match_against_impl(subsre, subpat, subst, slotmap, eg)?;
             }
 
             Some(())
