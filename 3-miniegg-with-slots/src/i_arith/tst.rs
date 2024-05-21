@@ -55,3 +55,24 @@ fn arith_test2() {
 
     assert_reaches(a, b, 3);
 }
+
+#[test]
+fn arith_test3() {
+    let x = 0;
+    let y = 1;
+    let z = 1;
+
+    let a = mul2(
+                add2(var(x), var(y)),
+                add2(var(y), var(z))
+            );
+    let a = pattern_to_re(&a);
+
+    let b = mul2(
+                add2(var(z), var(y)),
+                add2(var(y), var(x))
+            );
+    let b = pattern_to_re(&b);
+
+    assert_reaches(a, b, 3);
+}
