@@ -35,7 +35,8 @@ fn arith_test1() {
     assert_reaches(a, b, 3);
 }
 
-pub fn arith_test2() {
+#[test]
+fn arith_test2() {
     let x = 0;
     let y = 1;
     let z = 1;
