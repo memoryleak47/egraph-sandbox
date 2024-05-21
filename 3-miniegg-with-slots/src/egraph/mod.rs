@@ -132,7 +132,12 @@ impl<L: Language> EGraph<L> {
     pub fn eq(&self, a: &AppliedId, b: &AppliedId) -> bool {
         let a = self.find_applied_id(a);
         let b = self.find_applied_id(b);
+
+        self.check_applied_id(&a);
+        self.check_applied_id(&b);
+
         if a.id != b.id { return false; }
+        if a.m.values() != b.m.values() { return false; }
         let id = a.id;
 
         let perm = a.m.compose(&b.m.inverse());

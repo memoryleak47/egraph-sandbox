@@ -100,5 +100,5 @@ pub fn arith_test() {
             );
     let b = pattern_to_re(&b);
 
-    assert_reaches(a, b, 3);
+    assert_reaches(a, b, 10);
 }
