@@ -113,7 +113,8 @@ fn add_chain(it: impl Iterator<Item=usize>) -> Pattern<ArithENode> {
     x
 }
 
-pub fn arith_test5() { // x0+...+xN = xN+...+x0
+#[test]
+fn arith_test5() { // x0+...+xN = xN+...+x0
     const N: usize = 5;
 
     let a = add_chain(0..=N);
