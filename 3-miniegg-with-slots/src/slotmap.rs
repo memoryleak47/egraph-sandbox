@@ -100,7 +100,9 @@ impl SlotMap {
 
     // self :: X -> Y
     // other :: Y -> Z
-    // out :: X -> Z
+    // -> out :: X -> Z
+    //
+    // In other words, compose_partial first runs "self" and then "other", for any given input Slot.
     pub fn compose_partial(&self, other: &SlotMap) -> SlotMap {
         let mut out = SlotMap::new();
         for (x, y) in self.iter() {
