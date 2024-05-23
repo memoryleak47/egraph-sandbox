@@ -41,7 +41,7 @@ impl Group {
 
     pub fn generators(&self) -> HashSet<Perm> {
         match &self.next {
-            None => [Perm::identity(&self.omega)].into_iter().collect(),
+            None => HashSet::default(),
             Some(n) => &n.ot.values().cloned().collect::<HashSet<_>>() | &n.g.generators(),
         }
     }
