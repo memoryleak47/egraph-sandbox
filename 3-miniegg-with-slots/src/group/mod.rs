@@ -1,5 +1,7 @@
 use crate::*;
 
+mod tst;
+
 // In order to be compatible with the literature:
 // https://en.wikipedia.org/wiki/Schreier%27s_lemma
 // I define "x y" = x.compose(y)
@@ -136,28 +138,4 @@ fn find_lowest_nonstab(generators: &HashSet<Perm>) -> Option<Slot> {
 
 pub fn singleton_set<T: Eq + Hash>(t: T) -> HashSet<T> {
     [t].into_iter().collect()
-}
-
-#[test]
-fn group_test1() {
-    let s = Slot::new;
-    let [s0, s1, s2, s3] = [s(0), s(1), s(2), s(3)];
-    let omega = [s0, s1, s2, s3].into_iter().collect();
-
-    let perm1: Perm = [(s0, s1), (s1, s0), (s2, s2), (s3, s3)].into_iter().collect();
-    let perm2: Perm = [(s0, s0), (s1, s1), (s2, s3), (s3, s2)].into_iter().collect();
-    let g = Group::new(&omega, [&perm1, &perm2].into_iter().cloned().collect());
-    assert_eq!(g.all_perms().len(), 4);
-}
-
-#[test]
-fn group_test2() {
-    let s = Slot::new;
-    let [s0, s1, s2, s3] = [s(0), s(1), s(2), s(3)];
-    let omega = [s0, s1, s2, s3].into_iter().collect();
-
-    let perm1: Perm = [(s0, s1), (s1, s2), (s2, s3), (s3, s0)].into_iter().collect();
-    let perm2: Perm = [(s0, s1), (s1, s0), (s2, s2), (s3, s3)].into_iter().collect();
-    let g = Group::new(&omega, [&perm1, &perm2].into_iter().cloned().collect());
-    assert_eq!(g.all_perms().len(), 4*3*2);
 }
