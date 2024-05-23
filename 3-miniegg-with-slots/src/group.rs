@@ -54,8 +54,7 @@ impl Group {
 
                 for l in &left {
                     for r in &right {
-                        // TODO correct order?
-                        out.insert(l.compose(r));
+                        out.insert(r.compose(l));
                     }
                 }
                 out
@@ -147,8 +146,8 @@ fn group_test1() {
 
     let perm1: Perm = [(s0, s1), (s1, s0), (s2, s2), (s3, s3)].into_iter().collect();
     let perm2: Perm = [(s0, s0), (s1, s1), (s2, s3), (s3, s2)].into_iter().collect();
-    let g1 = Group::new(&omega, [&perm1, &perm2].into_iter().cloned().collect());
-    assert_eq!(g1.all_perms().len(), 4);
+    let g = Group::new(&omega, [&perm1, &perm2].into_iter().cloned().collect());
+    assert_eq!(g.all_perms().len(), 4);
 }
 
 #[test]
@@ -159,6 +158,6 @@ fn group_test2() {
 
     let perm1: Perm = [(s0, s1), (s1, s2), (s2, s3), (s3, s0)].into_iter().collect();
     let perm2: Perm = [(s0, s1), (s1, s0), (s2, s2), (s3, s3)].into_iter().collect();
-    let g1 = Group::new(&omega, [&perm1, &perm2].into_iter().cloned().collect());
-    assert_eq!(g1.all_perms().len(), 4*3*2);
+    let g = Group::new(&omega, [&perm1, &perm2].into_iter().cloned().collect());
+    assert_eq!(g.all_perms().len(), 4*3*2);
 }
