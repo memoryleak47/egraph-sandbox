@@ -1,5 +1,6 @@
 use crate::*;
 
+#[cfg(test)]
 mod tst;
 
 // In order to be compatible with the literature:
@@ -65,13 +66,19 @@ impl Group {
         }
     }
 
-    // TODO improve.
     pub fn contains(&self, p: &Perm) -> bool {
-        self.all_perms().contains(p)
+        match &self.next {
+            None => p.iter().all(|(x, y)| x == y),
+            Some(n) => {
+                let Some(part) = &n.ot.get(&p[n.stab]) else { return false };
+                n.g.contains(&p.compose(&part.inverse()))
+            },
+        }
     }
 
-    // TODO improve.
     pub fn add(&mut self, p: Perm) {
+        // There might be ways to make this faster, by iterating through the stab chain and determining at which layer this perm actually has an effect.
+        // But it's polytime, so fast enough I guess.
         *self = Group::new(&self.omega, &self.generators() | &singleton_set(p));
     }
 }
