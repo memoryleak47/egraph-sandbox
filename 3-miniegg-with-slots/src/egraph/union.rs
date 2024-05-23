@@ -109,7 +109,7 @@ impl<L: Language> EGraph<L> {
         s.insert(enode.clone());
 
         for (i, app_id) in enode.applied_id_occurences().iter().enumerate() {
-            let grp_perms = self.classes[&app_id.id].group.perms();
+            let grp_perms = self.classes[&app_id.id].group.all_perms();
             let mut next = HashSet::default();
             for x in s {
                 for y in &grp_perms {
