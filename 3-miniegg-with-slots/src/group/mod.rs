@@ -45,6 +45,7 @@ impl Group {
         }
     }
 
+    // Should be very rarely called.
     pub fn all_perms(&self) -> HashSet<Perm> {
         match &self.next {
             None => [Perm::identity(&self.omega)].into_iter().collect(),
@@ -69,8 +70,9 @@ impl Group {
         self.all_perms().contains(p)
     }
 
+    // TODO improve.
     pub fn add(&mut self, p: Perm) {
-        *self = Group::new(&self.omega, &self.generators() & &singleton_set(p));
+        *self = Group::new(&self.omega, &self.generators() | &singleton_set(p));
     }
 }
 

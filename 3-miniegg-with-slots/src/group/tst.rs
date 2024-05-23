@@ -48,6 +48,8 @@ fn check_group(generators: impl IntoIterator<Item=Perm>) {
 
 fn enrich(perms: HashSet<Perm>) -> HashSet<Perm> {
     let mut perms = perms;
+    assert!(perms.len() > 0); // We can't add the identity, because we don't have omega here.
+
     loop {
         let copy = perms.clone();
         for x in &copy {
