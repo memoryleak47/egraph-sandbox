@@ -45,6 +45,14 @@ impl<L: Language> EGraph<L> {
         let from = self.find_applied_id(from);
         let to = self.find_applied_id(to);
 
+        /* TODO
+        let set = self.classes[&from.id].group.generators()
+            .into_iter()
+            .map(|x| change_permutation_from_from_to_to(x))
+            .collect();
+        self.classes.get_mut(&to.id).unwrap().group.add_set(set);
+        */
+
         // self-symmetries:
         if from.id == to.id {
             let id = from.id;

@@ -77,9 +77,18 @@ impl Group {
     }
 
     pub fn add(&mut self, p: Perm) {
+        self.add_set([p].into_iter().collect());
+    }
+
+    pub fn add_set(&mut self, mut perms: HashSet<Perm>) {
         // There might be ways to make this faster, by iterating through the stab chain and determining at which layer this perm actually has an effect.
         // But it's polytime, so fast enough I guess.
-        *self = Group::new(&self.omega, &self.generators() | &singleton_set(p));
+
+        perms.retain(|x| !self.contains(x));
+
+        if !perms.is_empty() {
+            *self = Group::new(&self.omega, &self.generators() | &perms);
+        }
     }
 }
 
