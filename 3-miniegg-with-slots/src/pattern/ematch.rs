@@ -2,75 +2,69 @@ use crate::*;
 
 pub type Subst = HashMap<String, AppliedId>;
 
+#[derive(Default, Clone)]
+struct State {
+    // uses egraph slots.
+    partial_subst: Subst,
+
+    // maps from the egraph slots to the pattern slots.
+    partial_slotmap: SlotMap,
+}
+
 pub fn ematch_all<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Subst> {
     let mut out = Vec::new();
     for i in eg.ids() {
         let i = eg.mk_identity_applied_id(i);
-        out.extend(ematch(i, eg, pattern));
+        out.extend(
+            ematch_impl(pattern, State::default(), i, eg)
+                .into_iter()
+                .map(final_subst)
+        );
     }
     out
 }
 
-pub fn ematch<L: Language>(i: AppliedId, eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Subst> {
-    let mut out = Vec::new();
-
-    // invariant: each x in worklist satisfies compatible(x, pattern)
-    let mut worklist = vec![leaf(i)];
-    while let Some(x) = worklist.pop() {
-        if let Some(xs) = branch(&x, pattern, eg) {
-            for y in xs {
-                if compatible(&y, pattern, eg) {
-                    worklist.push(y);
-                }
+// `i` uses egraph slots instead of pattern slots.
+fn ematch_impl<L: Language>(pattern: &Pattern<L>, st: State, i: AppliedId, eg: &EGraph<L>) -> Vec<State> {
+    match &pattern.node {
+        ENodeOrPVar::PVar(v) => {
+            let mut st = st;
+            if let Some(j) = st.partial_subst.get(v) {
+                if !eg.eq(&i, j) { return Vec::new(); }
+            } else {
+                st.partial_subst.insert(v.clone(), i);
             }
-        } else {
-            out.push(to_subst(&x, pattern, eg));
-        }
-    }
-    out
-}
-
-fn leaf<L: Language>(x: AppliedId) -> SemiRecExpr<L> {
-    let x = ENodeOrAppId::AppliedId(x);
-    let x = SemiRecExpr { node: x, children: vec![] };
-    x
-}
-
-// If the SemiRecExpr already covers the whole pattern, we return None.
-// Otherwise, we extend the SemiRecExpr at some point and return all possible e-node extensions for that spot.
-fn branch<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L>) -> Option<Vec<SemiRecExpr<L>>> {
-    match (&sre.node, &pattern.node) {
-        // Here we can extend the SemiRecExpr:
-        (ENodeOrAppId::AppliedId(id), ENodeOrPVar::ENode(n)) => {
+            vec![st]
+        },
+        ENodeOrPVar::ENode(n) => {
             let mut out = Vec::new();
-            for l in eg.enodes_applied(id) {
-                let new_sre = SemiRecExpr {
-                    node: ENodeOrAppId::ENode(clear_app_ids(&l)),
-                    children: l.applied_id_occurences().into_iter().map(leaf).collect(),
-                };
-                out.push(new_sre);
-            }
-            Some(out)
-        },
-        (ENodeOrAppId::ENode(_), ENodeOrPVar::ENode(_)) => {
-            assert_eq!(sre.children.len(), pattern.children.len());
-            for i in 0..sre.children.len() {
-                let subsre = &sre.children[i];
-                let subpat = &pattern.children[i];
-                if let Some(subs) = branch(subsre, subpat, eg) {
-                    let mut out = Vec::new();
-                    for sub in subs {
-                        let mut option = sre.clone();
-                        option.children[i] = sub;
-                        out.push(option);
-                    }
-                    return Some(out);
+            'nodeloop: for n2 in eg.enodes_applied(&i) {
+                assert_eq!(&clear_app_ids(n), n);
+
+                let clear_n2 = clear_app_ids(&n2);
+                let (n_sh, _) = n.shape();
+                let (clear_n2_sh, _) = clear_n2.shape();
+                if n_sh != clear_n2_sh { continue 'nodeloop; }
+
+                let mut st = st.clone();
+
+                for (x, y) in clear_n2.all_slot_occurences().into_iter().zip(n.all_slot_occurences().into_iter()) {
+                    if !try_insert_compatible_slotmap_bij(x, y, &mut st.partial_slotmap) { continue 'nodeloop; }
                 }
+
+                let mut acc = vec![st];
+                for (sub_id, sub_pat) in n2.applied_id_occurences().into_iter().zip(pattern.children.iter()) {
+                    let mut next = Vec::new();
+                    for a in acc {
+                        next.extend(ematch_impl(sub_pat, a, sub_id.clone(), eg));
+                    }
+                    acc = next;
+                }
+
+                out.extend(acc);
             }
-            None
+            out
         },
-        (ENodeOrAppId::AppliedId(_), ENodeOrPVar::PVar(_)) => None,
-        (ENodeOrAppId::ENode(_), ENodeOrPVar::PVar(_)) => panic!(),
     }
 }
 
@@ -82,23 +76,21 @@ fn clear_app_ids<L: Language>(l: &L) -> L {
     l
 }
 
-fn compatible<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L>) -> bool {
-    match_against(sre, pattern, eg).is_some()
+fn try_insert_compatible_slotmap_bij(k: Slot, v: Slot, map: &mut SlotMap) -> bool {
+    if let Some(v_old) = map.get(k) {
+        if v_old != v { return false; }
+    }
+    map.insert(k, v);
+    map.is_bijection()
 }
 
-fn to_subst<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L>) -> Subst {
-    match_against(sre, pattern, eg).unwrap().0
-}
+fn final_subst(s: State) -> Subst {
+    let State {
+        partial_subst: mut subst,
+        partial_slotmap: mut slotmap
+    } = s;
 
-// Finds a renaming (SlotMap) of the slots of `sre`, so that it becomes equivalent to `pattern`.
-// Also extracts the resulting Subst for the Pattern.
-// Supports partial `sre`, but obviously it cannot return a Subst-entry for them.
-fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &EGraph<L>) -> Option<(Subst, SlotMap)> {
-    let mut subst = Subst::default();
-    let mut slotmap = SlotMap::new();
-    match_against_impl(&sre, pattern, &mut subst, &mut slotmap, eg)?;
-
-    // Previously, the subst uses `sre`-based slot names.
+    // Previously, the subst uses `egraph`-based slot names.
     // Afterwards, the subst uses `pattern`-based slot names.
     for (k, v) in subst.iter_mut() {
         // All slots that are not covered by the pattern, need a fresh new name.
@@ -110,80 +102,6 @@ fn match_against<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, eg: &E
 
         *v = v.apply_slotmap(&slotmap);
     }
-    Some((subst, slotmap))
-}
 
-// `slotmap` maps from `sre` to `pattern` slots.
-// The returned Subst works with `sre` slots.
-fn match_against_impl<L: Language>(sre: &SemiRecExpr<L>, pattern: &Pattern<L>, subst: &mut Subst, slotmap: &mut SlotMap, eg: &EGraph<L>) -> Option<()> {
-    match (&sre.node, &pattern.node) {
-        // the "leaf" case.
-        (ENodeOrAppId::AppliedId(x), ENodeOrPVar::PVar(v)) => {
-            // This is a fancy "try_insert_compatible" using eg.eq(_, _)-equality.
-            if let Some(old) = subst.get(&*v) {
-                if !eg.eq(old, x) {
-                    return None;
-                }
-            } else {
-                subst.insert(v.clone(), x.clone());
-            }
-            Some(())
-        },
-
-        // the "partial" case.
-        (ENodeOrAppId::AppliedId(_), ENodeOrPVar::ENode(_)) => {
-            Some(())
-        },
-
-        // the "equality-check" case.
-        (ENodeOrAppId::ENode(n1), ENodeOrPVar::ENode(n2)) => {
-            let slots1 = n1.all_slot_occurences();
-            let slots2 = n2.all_slot_occurences();
-
-            if slots1.len() != slots2.len() { return None; }
-            for (&x, &y) in slots1.iter().zip(slots2.iter()) {
-                if !try_insert_compatible_slotmap_bij(x, y, slotmap) { return None; }
-            }
-            let check_eq = {
-                let mut n1_clone = n1.clone();
-                for x in n1_clone.all_slot_occurences_mut() {
-                    *x = slotmap[*x];
-                }
-
-                n1_clone == *n2
-            };
-            if !check_eq { return None; }
-
-            for (subsre, subpat) in sre.children.iter().zip(pattern.children.iter()) {
-                match_against_impl(subsre, subpat, subst, slotmap, eg)?;
-            }
-
-            Some(())
-        },
-
-        // the "invalid" case.
-        (ENodeOrAppId::ENode(_), ENodeOrPVar::PVar(_)) => {
-            panic!("The sre can never be larger than the pattern!")
-        },
-    }
-}
-
-fn try_insert_compatible<K: Hash + Eq, V: Eq>(k: K, v: V, map: &mut HashMap<K, V>) -> bool {
-    if let Some(v_old) = map.get(&k) {
-        if v_old != &v {
-            return false;
-        }
-    }
-    map.insert(k, v);
-    true
-}
-
-fn try_insert_compatible_slotmap_bij(k: Slot, v: Slot, map: &mut SlotMap) -> bool {
-    if let Some(v_old) = map.get(k) {
-        if v_old != v {
-            return false;
-        }
-    }
-    map.insert(k, v);
-    map.is_bijection()
+    subst
 }

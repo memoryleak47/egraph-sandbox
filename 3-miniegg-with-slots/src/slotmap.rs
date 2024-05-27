@@ -8,7 +8,7 @@ pub type Perm = Bijection;
 // Bijections are bijective SlotMaps.
 pub type Bijection = SlotMap;
 
-#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct SlotMap {
     // if (l, r) in map, then there is no (l, r') in map. Each key is uniquely contained.
     // Also: map is sorted by their keys.
