@@ -39,7 +39,11 @@ use pattern::*;
 mod group;
 use group::*;
 
+// Whether to enable invariant-checks.
+const CHECKS: bool = false;
+
 use std::hash::Hash;
 use std::fmt::Debug;
+
 pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;

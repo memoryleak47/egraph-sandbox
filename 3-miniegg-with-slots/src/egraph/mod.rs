@@ -66,7 +66,9 @@ impl<L: Language> EGraph<L> {
     pub fn mk_applied_id(&self, i: Id, m: SlotMap) -> AppliedId {
         let app_id = AppliedId::new(i, m);
 
-        self.check_applied_id(&app_id);
+        if CHECKS {
+            self.check_applied_id(&app_id);
+        }
 
         app_id
     }
@@ -117,8 +119,10 @@ impl<L: Language> EGraph<L> {
             out.insert(x.apply_slotmap(&m));
         }
 
-        for x in &out {
-            assert_eq!(self.lookup(x).unwrap(), i);
+        if CHECKS {
+            for x in &out {
+                assert_eq!(self.lookup(x).unwrap(), i);
+            }
         }
 
         out
@@ -133,16 +137,20 @@ impl<L: Language> EGraph<L> {
         let a = self.find_applied_id(a);
         let b = self.find_applied_id(b);
 
-        self.check_applied_id(&a);
-        self.check_applied_id(&b);
+        if CHECKS {
+            self.check_applied_id(&a);
+            self.check_applied_id(&b);
+        }
 
         if a.id != b.id { return false; }
         if a.m.values() != b.m.values() { return false; }
         let id = a.id;
 
         let perm = a.m.compose(&b.m.inverse());
-        assert!(perm.is_perm());
-        assert_eq!(&perm.values(), &self.classes[&id].slots);
+        if CHECKS {
+            assert!(perm.is_perm());
+            assert_eq!(&perm.values(), &self.classes[&id].slots);
+        }
 
         self.classes[&id].group.contains(&perm)
     }

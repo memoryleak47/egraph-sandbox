@@ -39,7 +39,9 @@ fn ematch_impl<L: Language>(pattern: &Pattern<L>, st: State, i: AppliedId, eg: &
         ENodeOrPVar::ENode(n) => {
             let mut out = Vec::new();
             'nodeloop: for n2 in eg.enodes_applied(&i) {
-                assert_eq!(&clear_app_ids(n), n);
+                if CHECKS {
+                    assert_eq!(&clear_app_ids(n), n);
+                }
 
                 let clear_n2 = clear_app_ids(&n2);
                 let (n_sh, _) = n.shape();

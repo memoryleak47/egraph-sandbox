@@ -60,8 +60,10 @@ impl<L: Language> EGraph<L> {
             let fm = &from.m; // slots(id) -> X
             let tm = &to.m; // slots(id) -> X
             let perm = fm.compose_partial(&tm.inverse());
-            assert!(perm.is_perm());
-            assert_eq!(&perm.keys(), &self.classes[&id].slots);
+            if CHECKS {
+                assert!(perm.is_perm());
+                assert_eq!(&perm.keys(), &self.classes[&id].slots);
+            }
 
             let grp = &mut self.classes.get_mut(&id).unwrap().group;
             if grp.contains(&perm) { return false; }

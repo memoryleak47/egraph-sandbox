@@ -13,7 +13,9 @@ impl<L: Language> EGraph<L> {
                 // - a.id.0 expresses the index in re.node_dag where you can find the underlying ENode `a_enode`, and
                 // - a.m maps its internal slots (`a_enode.slots()`) to its exposed slots.
                 let a_enode = re.node_dag[a.id.0].clone();
-                assert_eq!(a.m.keys(), a_enode.slots()); // we call this set I.
+                if CHECKS {
+                    assert_eq!(a.m.keys(), a_enode.slots()); // we call this set I.
+                }
 
                 // v_a is an AppliedId to be interpreted within the EGraph.
                 // It shares the same exposed slots as `a_enode`.
@@ -40,7 +42,9 @@ impl<L: Language> EGraph<L> {
         }
 
         let res = v.pop().unwrap();
-        assert!(res.m.is_empty(), "Free variables are not allowed!");
+        if CHECKS {
+            assert!(res.m.is_empty(), "Free variables are not allowed!");
+        }
 
         res.id
     }
@@ -102,7 +106,9 @@ impl<L: Language> EGraph<L> {
             out,
         );
 
-        assert_eq!(&c.slots, &app_id.m.keys());
+        if CHECKS {
+            assert_eq!(&c.slots, &app_id.m.keys());
+        }
 
         Some(app_id)
     }
@@ -131,8 +137,12 @@ impl<L: Language> EGraph<L> {
 
     // adds (sh, bij) to the eclass `id`.
     pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (L, Bijection)) {
-        assert!(self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij).is_none());
-        assert!(self.hashcons.insert(sh.clone(), id).is_none());
+        let tmp1 = self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij);
+        let tmp2 = self.hashcons.insert(sh.clone(), id);
+        if CHECKS {
+            assert!(tmp1.is_none());
+            assert!(tmp2.is_none());
+        }
         for ref_id in sh.ids() {
             let usages = &mut self.classes.get_mut(&ref_id).unwrap().usages;
             usages.insert(sh.clone());
@@ -141,8 +151,12 @@ impl<L: Language> EGraph<L> {
 
     // TODO: the bijection here is probably useless and error-prone. Let's only get Id and Shape as arguments here.
     pub(in crate::egraph) fn raw_remove_from_class(&mut self, id: Id, (sh, bij): (L, Bijection)) {
-        assert!(self.classes.get_mut(&id).unwrap().nodes.remove(&sh).is_some());
-        assert!(self.hashcons.remove(&sh).is_some());
+        let tmp1 = self.classes.get_mut(&id).unwrap().nodes.remove(&sh);
+        let tmp2 = self.hashcons.remove(&sh);
+        if CHECKS {
+            assert!(tmp1.is_some());
+            assert!(tmp2.is_some());
+        }
         for ref_id in sh.ids() {
             let usages = &mut self.classes.get_mut(&ref_id).unwrap().usages;
             usages.remove(&sh);
