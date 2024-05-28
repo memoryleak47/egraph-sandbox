@@ -109,7 +109,7 @@ impl Slot {
     }
 
     // creates the slot `su`.
-    // These slots can never collide with the Slots returned from Slot::fresh() due to the `fresh: bool` annotation.
+    // These slots can never collide with the Slots returned from Slot::fresh() due to their sign.
     pub fn new(u: usize) -> Slot {
         Slot(u as i64)
     }
