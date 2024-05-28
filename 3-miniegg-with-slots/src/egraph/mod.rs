@@ -250,7 +250,7 @@ impl<L: Language> EGraph<L> {
                 let n = sh.apply_slotmap(bij);
                 println!(" - {:?}", n);
             }
-            for p in &c.group.all_perms() {
+            for p in &c.group.generators() {
                 println!(" -- {:?}", p);
             }
         }
