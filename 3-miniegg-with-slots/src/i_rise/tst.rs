@@ -141,8 +141,6 @@ fn binomial_re2() -> RecExpr2<RiseENode> {
     pattern_to_re(&out)
 }
 
-#[test]
-#[ignore] // takes too long (2:24 minutes)
-fn test_binomial() {
+pub fn test_binomial() {
     assert_reaches(binomial_re1(), binomial_re2(), 40);
 }
