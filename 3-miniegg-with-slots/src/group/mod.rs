@@ -39,11 +39,17 @@ impl Group {
         Self::new(omega, HashSet::default())
     }
 
-    pub fn generators(&self) -> HashSet<Perm> {
+    fn generators_impl(&self) -> HashSet<Perm> {
         match &self.next {
             None => HashSet::default(),
-            Some(n) => &n.ot.values().cloned().collect::<HashSet<_>>() | &n.g.generators(),
+            Some(n) => &n.ot.values().cloned().collect::<HashSet<_>>() | &n.g.generators_impl(),
         }
+    }
+
+    pub fn generators(&self) -> HashSet<Perm> {
+        let mut out = self.generators_impl();
+        out.remove(&SlotMap::identity(&self.omega));
+        out
     }
 
     // Should be very rarely called.
