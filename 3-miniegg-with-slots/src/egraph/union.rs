@@ -41,17 +41,31 @@ impl<L: Language> EGraph<L> {
 
     // A directed union from `from` to `to`.
     // `from.id` gets deprecated, if it's different from `to.id`.
+    //
+    // Only gets called with from.slots() superset to.slots().
     fn merge_into_eclass(&mut self, from: &AppliedId, to: &AppliedId) -> bool {
+        if CHECKS {
+            assert!(from.slots().is_superset(&to.slots()));
+        }
+
         let from = self.find_applied_id(from);
         let to = self.find_applied_id(to);
 
-        /* TODO
-        let set = self.classes[&from.id].group.generators()
-            .into_iter()
-            .map(|x| change_permutation_from_from_to_to(x))
-            .collect();
-        self.classes.get_mut(&to.id).unwrap().group.add_set(set);
-        */
+        // move over the group perms from `from` to `to`.
+        {
+            // from.m :: slots(from.id) -> C
+            // to.m :: slots(to.id) -> C
+            let tmp = from.m.compose_partial(&to.m.inverse());
+            let change_permutation_from_from_to_to = |x: Perm| -> Perm {
+                x.iter().map(|(x, y)| (tmp[x], tmp[y])).collect()
+            };
+
+            let set = self.classes[&from.id].group.generators()
+                .into_iter()
+                .map(change_permutation_from_from_to_to)
+                .collect();
+            self.classes.get_mut(&to.id).unwrap().group.add_set(set);
+        }
 
         // self-symmetries:
         if from.id == to.id {
