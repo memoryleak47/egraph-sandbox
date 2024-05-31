@@ -8,13 +8,13 @@ pub use with_ord::*;
 
 use std::collections::BinaryHeap;
 
-pub fn ast_size_extract<L: Language>(i: Id, eg: &EGraph<L>) -> RecExpr<L> {
+pub fn ast_size_extract<L: Language>(i: AppliedId, eg: &EGraph<L>) -> RecExpr<L> {
     extract::<L, AstSize<L>>(i, eg)
 }
 
-// `i` is not allowed to have free variables, hence prefer `Id` over `AppliedId`.
-pub fn extract<L: Language, CF: CostFunction<L>>(i: Id, eg: &EGraph<L>) -> RecExpr<L> {
-    let i = eg.find_id(i);
+// Does this work with non-trivial AppliedIds?
+pub fn extract<L: Language, CF: CostFunction<L>>(i: AppliedId, eg: &EGraph<L>) -> RecExpr<L> {
+    let i = eg.find_applied_id(&i);
 
     // maps eclass id to their optimal RecExpr.
     // TODO the map doesn't need RecExpr<L>. Just storing L would be enough.
@@ -50,7 +50,11 @@ pub fn extract<L: Language, CF: CostFunction<L>>(i: Id, eg: &EGraph<L>) -> RecEx
         }
     }
 
-    map.remove(&i).unwrap().0
+    // TODO apply_slotmap correct?
+    let mut re = map.remove(&i.id).unwrap().0;
+    let rf: &mut L = re.node_dag.last_mut().unwrap();
+    *rf = rf.apply_slotmap(&i.m);
+    re
 }
 
 fn extract_step<L: Language>(enode: L, map: &impl Fn(Id) -> RecExpr<L>) -> RecExpr<L> {

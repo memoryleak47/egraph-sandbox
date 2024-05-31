@@ -1,8 +1,8 @@
 use crate::*;
 
 impl<L: Language> EGraph<L> {
-    // returns Id instead of AppliedId, as the re isn't allowed to have free variables.
-    pub fn add_expr(&mut self, re: RecExpr<L>) -> Id {
+    // Does this work with non-trivial AppliedIds?
+    pub fn add_expr(&mut self, re: RecExpr<L>) -> AppliedId {
         // re[i] should be "conceptually equivalent" to v[i].
         let mut v: Vec<AppliedId> = Vec::new();
 
@@ -46,7 +46,7 @@ impl<L: Language> EGraph<L> {
             assert!(res.m.is_empty(), "Free variables are not allowed!");
         }
 
-        res.id
+        res
     }
 
     pub fn add(&mut self, enode: L) -> AppliedId {

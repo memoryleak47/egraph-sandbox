@@ -3,7 +3,7 @@ use crate::*;
 pub struct LetReal(EGraph<LetENode>);
 
 impl Realization for LetReal {
-    type Id = Id;
+    type Id = AppliedId;
 
     fn new() -> Self {
         LetReal(EGraph::new())
@@ -20,7 +20,7 @@ impl Realization for LetReal {
     }
 
     fn find(&self, id: Self::Id) -> Self::Id {
-        self.0.find_id(id)
+        self.0.find_applied_id(&id)
     }
 
     fn step(&mut self) {

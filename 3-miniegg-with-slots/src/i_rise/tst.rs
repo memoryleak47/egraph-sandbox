@@ -7,13 +7,13 @@ fn assert_reaches(start: RecExpr2<RiseENode>, goal: RecExpr2<RiseENode>, steps: 
     for _ in 0..steps {
         rewrite_rise(&mut eg);
         if let Some(i2) = lookup_rec_expr2(&goal, &eg) {
-            if eg.find_id(i1.id) == eg.find_id(i2.id) {
+            if eg.eq(&i1, &i2) {
                 return;
             }
         }
     }
 
-    dbg!(extract::<_, AstSizeNoLet>(i1.id, &eg));
+    dbg!(extract::<_, AstSizeNoLet>(i1, &eg));
     dbg!(&goal);
     assert!(false);
 }

@@ -15,7 +15,7 @@ fn assert_reaches(start: RecExpr2<ArithENode>, goal: RecExpr2<ArithENode>, steps
 
     eg.dump();
 
-    dbg!(extract::<_, AstSizeNoLet>(i1.id, &eg));
+    dbg!(extract::<_, AstSizeNoLet>(i1, &eg));
     dbg!(&goal);
     assert!(false);
 }

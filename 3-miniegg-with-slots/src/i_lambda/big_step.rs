@@ -64,7 +64,7 @@ pub fn candidates(eg: &EGraph<ENode>) -> Vec<Candidate> {
 pub struct LambdaRealBig(EGraph<ENode>);
 
 impl Realization for LambdaRealBig {
-    type Id = Id;
+    type Id = AppliedId;
 
     fn new() -> Self {
         LambdaRealBig(EGraph::new())
@@ -81,7 +81,7 @@ impl Realization for LambdaRealBig {
     }
 
     fn find(&self, id: Self::Id) -> Self::Id {
-        self.0.find_id(id)
+        self.0.find_applied_id(&id)
     }
 
     fn step(&mut self) {

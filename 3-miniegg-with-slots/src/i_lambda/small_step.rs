@@ -60,7 +60,7 @@ fn step(x: Slot, t: AppliedId, b: &ENode, eg: &mut EGraph<ENode>) -> AppliedId {
 pub struct LambdaRealSmall(EGraph<ENode>);
 
 impl Realization for LambdaRealSmall {
-    type Id = Id;
+    type Id = AppliedId;
 
     fn new() -> Self {
         LambdaRealSmall(EGraph::new())
@@ -77,7 +77,7 @@ impl Realization for LambdaRealSmall {
     }
 
     fn find(&self, id: Self::Id) -> Self::Id {
-        self.0.find_id(id)
+        self.0.find_applied_id(&id)
     }
 
     fn step(&mut self) {
