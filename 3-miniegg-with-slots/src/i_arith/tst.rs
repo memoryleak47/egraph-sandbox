@@ -3,7 +3,7 @@ use crate::i_arith::build::*;
 
 fn assert_reaches(start: RecExpr2<ArithENode>, goal: RecExpr2<ArithENode>, steps: usize) {
     let mut eg = EGraph::new();
-    let i1 = add_rec_expr2(&start, &mut eg);
+    let i1 = eg.add_expr2(&start);
     for _ in 0..steps {
         rewrite_arith(&mut eg);
         if let Some(i2) = lookup_rec_expr2(&goal, &eg) {
