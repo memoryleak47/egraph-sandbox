@@ -1,16 +1,19 @@
 use crate::*;
 use crate::i_rise::build::*;
 
-pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
-    beta(eg);
-    // beta_extr(eg);
+pub fn rewrite_rise(eg: &mut EGraph<RiseENode>, extraction: bool) {
+    if extraction {
+        beta_extr(eg);
+    } else {
+        beta(eg);
+        my_let_unused(eg);
+        let_var_same(eg);
+        let_app(eg);
+        let_lam_diff(eg);
+    }
+
     eta(eg);
     // eta_expansion(eg);
-
-    my_let_unused(eg);
-    let_var_same(eg);
-    let_app(eg);
-    let_lam_diff(eg);
 
     map_fusion(eg);
     map_fission(eg);

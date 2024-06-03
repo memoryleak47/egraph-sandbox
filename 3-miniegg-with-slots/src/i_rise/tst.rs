@@ -1,13 +1,15 @@
 use crate::*;
 use crate::i_rise::build::*;
 
-fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: usize) {
+fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: usize, extraction: bool) {
     let mut eg = EGraph::new();
     let i1 = eg.add_expr(start);
     for _ in 0..steps {
-        rewrite_rise(&mut eg);
+        rewrite_rise(&mut eg, extraction);
         if let Some(i2) = lookup_rec_expr(&goal, &eg) {
             if eg.eq(&i1, &i2) {
+                println!("Number of e-nodes: {}", eg.total_size());
+                println!("Number of e-classes: {}", eg.ids().len());
                 return;
             }
         }
@@ -70,9 +72,8 @@ fn reduction_re2() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
-#[test]
-fn test_reduction() {
-    assert_reaches(reduction_re1(), reduction_re2(), 40);
+pub fn test_reduction(extraction: bool) {
+    assert_reaches(reduction_re1(), reduction_re2(), 40, extraction);
 }
 
 // FISSION //
@@ -103,9 +104,8 @@ fn fission_re2() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
-#[test]
-fn test_fission() {
-    assert_reaches(fission_re1(), fission_re2(), 40);
+pub fn test_fission(extraction: bool) {
+    assert_reaches(fission_re1(), fission_re2(), 40, extraction);
 }
 
 // BINOMIAL //
@@ -141,6 +141,6 @@ fn binomial_re2() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
-pub fn test_binomial() {
-    assert_reaches(binomial_re1(), binomial_re2(), 40);
+pub fn test_binomial(extraction: bool) {
+    assert_reaches(binomial_re1(), binomial_re2(), 40, extraction);
 }
