@@ -1,4 +1,4 @@
-cargo b --release
+cargo b --release &> /dev/null
 
 function run() {
     echo Running $*

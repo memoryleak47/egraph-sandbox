@@ -1,0 +1,30 @@
+Running reduction
+Number of e-nodes: 315
+Number of e-classes: 70
+0:00.20, 3896 Kbytes
+
+Running fission
+Number of e-nodes: 380
+Number of e-classes: 152
+0:00.08, 3740 Kbytes
+
+Running binomial
+Number of e-nodes: 20716
+Number of e-classes: 6817
+0:26.72, 116028 Kbytes
+
+Running reduction --extraction
+Number of e-nodes: 96
+Number of e-classes: 61
+0:00.04, 3732 Kbytes
+
+Running fission --extraction
+Number of e-nodes: 149
+Number of e-classes: 90
+0:00.02, 3904 Kbytes
+
+Running binomial --extraction
+Number of e-nodes: 4961
+Number of e-classes: 1964
+0:01.74, 33108 Kbytes
+
