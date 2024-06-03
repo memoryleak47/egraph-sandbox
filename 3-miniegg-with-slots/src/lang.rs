@@ -148,6 +148,21 @@ pub trait Language: Debug + Clone + Hash + Eq {
         }
         c
     }
+
+    // refreshes private and redundant slots.
+    // The public slots are given by `public`.
+    // TODO add an EGraph::{...} function for this, so that it can automatically compute the `public` set.
+    fn refresh_internals(&self, public: HashSet<Slot>) -> Self {
+        let mut c = self.clone();
+        let internals = &c.all_slot_occurences().into_iter().collect::<HashSet<_>>() - &public;
+        let fresh = SlotMap::bijection_from_fresh_to(&internals).inverse();
+        for x in c.all_slot_occurences_mut() {
+            if internals.contains(x) {
+                *x = fresh[*x];
+            }
+        }
+        c
+    }
 }
 
 // sorts as_set(v) by their first usage in v.
