@@ -42,30 +42,30 @@ impl RecExpr<LetENode> {
 }
 
 fn to_let(re: &RecExpr<ENode>) -> RecExpr<LetENode> {
-    let mut out = RecExpr::empty();
-    for x in re.node_dag.clone() {
-        let x = match x {
-            ENode::Var(x) => LetENode::Var(x),
-            ENode::App(l, r) => LetENode::App(l, r),
-            ENode::Lam(x, b) => LetENode::Lam(x, b),
-        };
-        out.push(x);
+    let new_node = match re.node.clone() {
+        ENode::Var(x) => LetENode::Var(x),
+        ENode::App(l, r) => LetENode::App(l, r),
+        ENode::Lam(x, b) => LetENode::Lam(x, b),
+    };
+
+    RecExpr {
+        node: new_node,
+        children: re.children.iter().map(to_let).collect(),
     }
-    out
 }
 
 fn from_let(re: &RecExpr<LetENode>) -> RecExpr<ENode> {
-    let mut out = RecExpr::empty();
-    for x in re.node_dag.clone() {
-        let x = match x {
-            LetENode::Var(x) => ENode::Var(x),
-            LetENode::App(l, r) => ENode::App(l, r),
-            LetENode::Lam(x, b) => ENode::Lam(x, b),
-            LetENode::Let(..) => panic!("it contains let!"),
-        };
-        out.push(x);
+    let new_node = match re.node.clone() {
+        LetENode::Var(x) => ENode::Var(x),
+        LetENode::App(l, r) => ENode::App(l, r),
+        LetENode::Lam(x, b) => ENode::Lam(x, b),
+        LetENode::Let(..) => panic!("it contains let!"),
+    };
+
+    RecExpr {
+        node: new_node,
+        children: re.children.iter().map(from_let).collect(),
     }
-    out
 }
 
 lamcalc::unpack_tests!(LetReal);

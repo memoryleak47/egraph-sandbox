@@ -15,50 +15,7 @@ impl<L: Language> EGraph<L> {
 
     // Does this work with non-trivial AppliedIds?
     pub fn add_expr(&mut self, re: RecExpr<L>) -> AppliedId {
-        // re[i] should be "conceptually equivalent" to v[i].
-        let mut v: Vec<AppliedId> = Vec::new();
-
-        for enode in &re.node_dag {
-            // `enode = ENode::Lam(si, a);` might be the hard part.
-            let enode = enode.map_applied_ids(|a: AppliedId| {
-                // a is an AppliedId to be interpreted within `re`.
-                // - a.id.0 expresses the index in re.node_dag where you can find the underlying ENode `a_enode`, and
-                // - a.m maps its internal slots (`a_enode.slots()`) to its exposed slots.
-                let a_enode = re.node_dag[a.id.0].clone();
-                if CHECKS {
-                    assert_eq!(a.m.keys(), a_enode.slots()); // we call this set I.
-                }
-
-                // v_a is an AppliedId to be interpreted within the EGraph.
-                // It shares the same exposed slots as `a_enode`.
-                let v_a: AppliedId = v[a.id.0].clone();
-                // assert_eq!(v_a.slots(), a_enode.slots()); // might also be a subset relation.
-
-                // I = a_enode.slots() = a.m.keys() = v_a.slots() = AppliedId(a.id, identity) in re;
-                // EX = a.m.values() = a.slots() union out.slots()
-                //      The set of slots that we want to expose in this function.
-                //      Should be a subset of what `a` exposes.
-                // V1 = self.slots(v_a.id) = v_a.m.keys();
-                // a.m :: I -> EX;
-                // v_a.m :: V1 -> I;
-
-                // f :: V1 -> EX;
-                let f = |x| a.m[v_a.m[x]];
-
-                AppliedId::new(
-                    v_a.id,
-                    self.slots(v_a.id).iter().map(|x| (*x, f(*x))).collect(),
-                )
-            });
-            v.push(self.add(enode));
-        }
-
-        let res = v.pop().unwrap();
-        if CHECKS {
-            assert!(res.m.is_empty(), "Free variables are not allowed!");
-        }
-
-        res
+        self.add_expr2(&re)
     }
 
     pub fn add(&mut self, enode: L) -> AppliedId {

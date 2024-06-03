@@ -2,12 +2,12 @@ use crate::*;
 
 use std::collections::BinaryHeap;
 
-pub fn ast_size_extract2<L: Language>(i: AppliedId, eg: &EGraph<L>) -> RecExpr2<L> {
-    extract2::<L, AstSize<L>>(i, eg)
+pub fn ast_size_extract<L: Language>(i: AppliedId, eg: &EGraph<L>) -> RecExpr2<L> {
+    extract::<L, AstSize<L>>(i, eg)
 }
 
 // `i` is not allowed to have free variables, hence prefer `Id` over `AppliedId`.
-pub fn extract2<L: Language, CF: CostFunction<L>>(i: AppliedId, eg: &EGraph<L>) -> RecExpr2<L> {
+pub fn extract<L: Language, CF: CostFunction<L>>(i: AppliedId, eg: &EGraph<L>) -> RecExpr2<L> {
     let i = eg.find_applied_id(&i);
 
     // maps eclass id to their optimal RecExpr.

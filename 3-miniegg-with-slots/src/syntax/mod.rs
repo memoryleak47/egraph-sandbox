@@ -75,20 +75,6 @@ fn to_string_impl(re: &RecExpr2<ENode>, m: &mut impl FnMut(Slot) -> String) -> S
     }
 }
 
-///// parse
-
-impl RecExpr<ENode> {
-    pub fn parse(s: &str) -> Self {
-        todo!()
-    }
-}
-
-impl RecExpr<ENode> {
-    pub fn to_string(&self) -> String {
-        todo!()
-    }
-}
-
 #[test]
 fn test_parse_roundtrip() {
     let s1 = "(app (lam x0 x0) (lam x1 x1))";
