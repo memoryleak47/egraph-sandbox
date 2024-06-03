@@ -9,6 +9,8 @@ pub use subst::*;
 mod small_step;
 pub use small_step::*;
 
+mod parse;
+
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ENode {
     Lam(Slot, AppliedId),

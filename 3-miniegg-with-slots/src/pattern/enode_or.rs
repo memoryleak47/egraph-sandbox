@@ -1,7 +1,7 @@
 use crate::*;
 
-pub type Pattern<L> = RecExpr2<ENodeOrPVar<L>>;
-pub type SemiRecExpr<L> = RecExpr2<ENodeOrAppId<L>>;
+pub type Pattern<L> = RecExpr<ENodeOrPVar<L>>;
+pub type SemiRecExpr<L> = RecExpr<ENodeOrAppId<L>>;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 // PVar = pattern variable.

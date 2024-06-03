@@ -23,7 +23,14 @@ pub struct AppliedId {
     pub m: SlotMap,
 }
 
-pub type RecExpr<L> = RecExpr2<L>;
+// The AppliedIds in `node` are ignored. They are replaced by the children RecExpr.
+// A non-fancy version of RecExpr that uses the slots as "names".
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct RecExpr<L: Language> {
+    pub node: L,
+    pub children: Vec<RecExpr<L>>,
+}
+
 
 impl AppliedId {
     pub fn new(id: Id, m: SlotMap) -> Self {

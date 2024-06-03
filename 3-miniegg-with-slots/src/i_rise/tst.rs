@@ -1,12 +1,12 @@
 use crate::*;
 use crate::i_rise::build::*;
 
-fn assert_reaches(start: RecExpr2<RiseENode>, goal: RecExpr2<RiseENode>, steps: usize) {
+fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: usize) {
     let mut eg = EGraph::new();
-    let i1 = eg.add_expr2(&start);
+    let i1 = eg.add_expr(start);
     for _ in 0..steps {
         rewrite_rise(&mut eg);
-        if let Some(i2) = lookup_rec_expr2(&goal, &eg) {
+        if let Some(i2) = lookup_rec_expr(&goal, &eg) {
             if eg.eq(&i1, &i2) {
                 return;
             }
@@ -20,7 +20,7 @@ fn assert_reaches(start: RecExpr2<RiseENode>, goal: RecExpr2<RiseENode>, steps: 
 
 // REDUCTION //
 
-fn reduction_re1() -> RecExpr2<RiseENode> {
+fn reduction_re1() -> RecExpr<RiseENode> {
     let comp = 0;
     let add1 = 1;
     let y = 2;
@@ -58,7 +58,7 @@ fn reduction_re1() -> RecExpr2<RiseENode> {
     pattern_to_re(&out)
 }
 
-fn reduction_re2() -> RecExpr2<RiseENode> {
+fn reduction_re2() -> RecExpr<RiseENode> {
     let x = 0;
     let mut it = var(x);
     for _ in 0..7 {
@@ -87,12 +87,12 @@ fn fchain(fs: impl Iterator<Item=usize>) -> Pattern<RiseENode> {
     lam(x, it)
 }
 
-fn fission_re1() -> RecExpr2<RiseENode> {
+fn fission_re1() -> RecExpr<RiseENode> {
     let out = app(symb("map"), fchain(1..=5));
     pattern_to_re(&out)
 }
 
-fn fission_re2() -> RecExpr2<RiseENode> {
+fn fission_re2() -> RecExpr<RiseENode> {
     let y = 1;
 
     let left = map1(fchain(3..=5));
@@ -110,7 +110,7 @@ fn test_fission() {
 
 // BINOMIAL //
 
-fn binomial_re1() -> RecExpr2<RiseENode> {
+fn binomial_re1() -> RecExpr<RiseENode> {
     let nbh = 0;
     let dt = dot2(
             join1(symb("weights2d")),
@@ -125,7 +125,7 @@ fn binomial_re1() -> RecExpr2<RiseENode> {
     pattern_to_re(&out)
 }
 
-fn binomial_re2() -> RecExpr2<RiseENode> {
+fn binomial_re2() -> RecExpr<RiseENode> {
     let nbhL = 0;
     let nbhH = 1;
     let nbhV = 2;

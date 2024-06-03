@@ -58,20 +58,21 @@ pub fn add_semi<L: Language>(semi: &SemiRecExpr<L>, eg: &mut EGraph<L>) -> Appli
     }
 }
 
-pub fn lookup_rec_expr2<L: Language>(re: &RecExpr2<L>, eg: &EGraph<L>) -> Option<AppliedId> {
+// TODO maybe move into EGraph API?
+pub fn lookup_rec_expr<L: Language>(re: &RecExpr<L>, eg: &EGraph<L>) -> Option<AppliedId> {
     let mut n = re.node.clone();
     let mut refs: Vec<&mut AppliedId> = n.applied_id_occurences_mut();
     assert_eq!(re.children.len(), refs.len());
     for i in 0..refs.len() {
-        *(refs[i]) = lookup_rec_expr2(&re.children[i], eg)?;
+        *(refs[i]) = lookup_rec_expr(&re.children[i], eg)?;
     }
     eg.lookup(&n)
 }
 
-pub fn pattern_to_re<L: Language>(pat: &Pattern<L>) -> RecExpr2<L> {
+pub fn pattern_to_re<L: Language>(pat: &Pattern<L>) -> RecExpr<L> {
     let ENodeOrPVar::ENode(n) = &pat.node else { panic!() };
-    let children: Vec<RecExpr2<L>> = pat.children.iter().map(|x| pattern_to_re(x)).collect();
-    RecExpr2 {
+    let children: Vec<RecExpr<L>> = pat.children.iter().map(|x| pattern_to_re(x)).collect();
+    RecExpr {
         node: n.clone(),
         children,
     }

@@ -19,9 +19,6 @@ pub use i_rise::*;
 mod i_arith;
 pub use i_arith::*;
 
-mod syntax;
-use syntax::*;
-
 mod slotmap;
 use slotmap::*;
 

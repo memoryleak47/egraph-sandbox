@@ -1,21 +1,16 @@
 use crate::*;
 
 impl<L: Language> EGraph<L> {
-    pub fn add_expr2(&mut self, re: &RecExpr2<L>) -> AppliedId {
-        let mut n = re.node.clone();
+    pub fn add_expr(&mut self, re: RecExpr<L>) -> AppliedId {
+        let mut n = re.node;
         let mut refs: Vec<&mut AppliedId> = n.applied_id_occurences_mut();
         if CHECKS {
             assert_eq!(re.children.len(), refs.len());
         }
-        for i in 0..refs.len() {
-            *(refs[i]) = self.add_expr2(&re.children[i]);
+        for (i, child) in re.children.into_iter().enumerate() {
+            *(refs[i]) = self.add_expr(child);
         }
         self.add(n)
-    }
-
-    // Does this work with non-trivial AppliedIds?
-    pub fn add_expr(&mut self, re: RecExpr<L>) -> AppliedId {
-        self.add_expr2(&re)
     }
 
     pub fn add(&mut self, enode: L) -> AppliedId {
