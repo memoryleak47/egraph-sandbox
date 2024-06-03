@@ -2,10 +2,10 @@ use symbol_table::GlobalSymbol as Symbol;
 use lamcalc::*;
 
 mod types;
-use types::*;
+pub use types::*;
 
 mod lang;
-use lang::*;
+pub use lang::*;
 
 mod i_lambda;
 pub use i_lambda::*;
@@ -20,18 +20,18 @@ mod i_arith;
 pub use i_arith::*;
 
 mod slotmap;
-use slotmap::*;
+pub use slotmap::*;
 
 mod debug;
 
 mod egraph;
-use egraph::*;
+pub use egraph::*;
 
 mod extract;
-use extract::*;
+pub use extract::*;
 
 mod pattern;
-use pattern::*;
+pub use pattern::*;
 
 mod group;
 use group::*;

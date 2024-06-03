@@ -151,7 +151,6 @@ pub trait Language: Debug + Clone + Hash + Eq {
 
     // refreshes private and redundant slots.
     // The public slots are given by `public`.
-    // TODO add an EGraph::{...} function for this, so that it can automatically compute the `public` set.
     fn refresh_internals(&self, public: HashSet<Slot>) -> Self {
         let mut c = self.clone();
         let internals = &c.all_slot_occurences().into_iter().collect::<HashSet<_>>() - &public;

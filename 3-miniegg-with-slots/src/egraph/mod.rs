@@ -235,6 +235,25 @@ impl<L: Language> EGraph<L> {
         self.find_id(i) == i
     }
 
+    // refreshes all internal slots of l.
+    pub fn refresh_internals(&self, l: &L) -> L {
+        let i = self.lookup(l).unwrap();
+        l.refresh_internals(i.slots())
+    }
+
+    // converts l to its class normal form, so that calling lookup on it yields the identity AppliedId.
+    pub fn class_nf(&self, l: &L) -> L {
+        let l = self.refresh_internals(l);
+        let i = self.lookup(&l).unwrap();
+        let l = l.apply_slotmap(&i.m);
+
+        if CHECKS {
+            assert!(self.lookup(&l).unwrap().m.iter().all(|(x, y)| x == y));
+        }
+
+        l
+    }
+
     pub fn dump(&self) {
         println!("");
 
