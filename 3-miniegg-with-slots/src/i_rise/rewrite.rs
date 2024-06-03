@@ -37,15 +37,21 @@ fn beta(eg: &mut EGraph<RiseENode>) {
 fn beta_extr(eg: &mut EGraph<RiseENode>) {
     let pat = app(lam(1, pvar("?b")), pvar("?t"));
     let s = Slot::new(1);
-    for subst in ematch_all(eg, &pat) {
-        let orig = pattern_subst(eg, &pat, &subst);
 
-        let b = ast_size_extract(subst["?b"].clone(), eg);
-        let t = ast_size_extract(subst["?t"].clone(), eg);
+    let extractor = Extractor::<_, AstSize<_>>::new(eg);
+
+    let mut after = Vec::new();
+    for subst in ematch_all(eg, &pat) {
+        let b = extractor.extract(subst["?b"].clone());
+        let t = extractor.extract(subst["?t"].clone());
 
         let out = re_subst(s, b, &t);
-        let out = eg.add_expr(out);
+        after.push((subst, out));
+    }
 
+    for (subst, out) in after {
+        let orig = pattern_subst(eg, &pat, &subst);
+        let out = eg.add_expr(out);
         eg.union(&orig, &out);
     }
 }

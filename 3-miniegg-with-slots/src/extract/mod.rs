@@ -55,7 +55,7 @@ impl<'a, L: Language, CF: CostFunction<L>> Extractor<'a, L, CF> {
         Self { map, eg }
     }
 
-    fn extract(&self, i: AppliedId) -> RecExpr<L> {
+    pub fn extract(&self, i: AppliedId) -> RecExpr<L> {
         let i = self.eg.find_applied_id(&i);
 
         let mut children = Vec::new();
