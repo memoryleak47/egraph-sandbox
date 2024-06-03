@@ -3,6 +3,7 @@ use crate::i_rise::build::*;
 
 pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     beta(eg);
+    // beta_extr(eg);
     eta(eg);
     // eta_expansion(eg);
 
@@ -30,6 +31,42 @@ fn beta(eg: &mut EGraph<RiseENode>) {
     let outpat = let_(1, pvar("?t"), pvar("?b"));
 
     rewrite(eg, pat, outpat);
+}
+
+// extraction-based beta reduction.
+fn beta_extr(eg: &mut EGraph<RiseENode>) {
+    let pat = app(lam(1, pvar("?b")), pvar("?t"));
+    let s = Slot::new(1);
+    for subst in ematch_all(eg, &pat) {
+        let orig = pattern_subst(eg, &pat, &subst);
+
+        let b = ast_size_extract(subst["?b"].clone(), eg);
+        let t = ast_size_extract(subst["?t"].clone(), eg);
+
+        let out = re_subst(s, b, &t);
+        let out = eg.add_expr(out);
+
+        eg.union(&orig, &out);
+    }
+}
+
+fn re_subst(s: Slot, b: RecExpr<RiseENode>, t: &RecExpr<RiseENode>) -> RecExpr<RiseENode> {
+    let new_node = match b.node {
+        RiseENode::Var(s2) if s == s2 => return t.clone(),
+        RiseENode::Lam(s2, _) if s == s2 => panic!("This shouldn't be possible!"),
+        RiseENode::Let(..) => panic!("This shouldn't be here!"),
+        old => old,
+    };
+
+    let mut children = Vec::new();
+    for child in b.children {
+        children.push(re_subst(s, child, t));
+    }
+
+    RecExpr {
+        node: new_node,
+        children,
+    }
 }
 
 fn eta(eg: &mut EGraph<RiseENode>) {
