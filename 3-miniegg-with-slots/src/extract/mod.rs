@@ -6,6 +6,9 @@ pub use cost::*;
 mod with_ord;
 pub use with_ord::*;
 
+mod e2;
+pub use e2::*;
+
 use std::collections::BinaryHeap;
 
 pub fn ast_size_extract<L: Language>(i: AppliedId, eg: &EGraph<L>) -> RecExpr<L> {
