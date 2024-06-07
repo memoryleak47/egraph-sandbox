@@ -2,12 +2,12 @@ use crate::*;
 use std::any::Any;
 
 pub struct RewriteT<L: Language, T: Any> {
-    searcher: Box<dyn Fn(&EGraph<L>) -> T>,
-    applier: Box<dyn Fn(T, &mut EGraph<L>)>,
+    pub searcher: Box<dyn Fn(&EGraph<L>) -> T>,
+    pub applier: Box<dyn Fn(T, &mut EGraph<L>)>,
 }
 
 impl<L: Language + 'static, T: 'static> RewriteT<L, T> {
-    fn into(self) -> Rewrite<L> {
+    pub fn into(self) -> Rewrite<L> {
         let searcher = self.searcher;
         let applier = self.applier;
         Rewrite {

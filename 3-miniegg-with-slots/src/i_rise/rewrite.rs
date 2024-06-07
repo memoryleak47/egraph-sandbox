@@ -2,11 +2,13 @@ use crate::*;
 use crate::i_rise::build::*;
 
 // Whether we use extraction-based substitution.
-const EXTRACT: bool = true;
+const EXTRACT: bool = false;
 
 fn rules() -> Vec<Rewrite<RiseENode>> {
     let mut rewrites = Vec::new();
-    if !EXTRACT {
+    if EXTRACT {
+        rewrites.push(beta_extr());
+    } else {
         rewrites.push(beta());
         rewrites.push(my_let_unused());
         rewrites.push(let_var_same());
@@ -33,10 +35,6 @@ pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
     let rewrites = rules();
 
     do_rewrites(eg, &rewrites);
-
-    if EXTRACT {
-        beta_extr(eg);
-    }
 }
 
 fn beta() -> Rewrite<RiseENode> {
@@ -50,26 +48,35 @@ fn beta() -> Rewrite<RiseENode> {
 }
 
 // extraction-based beta reduction.
-fn beta_extr(eg: &mut EGraph<RiseENode>) {
+fn beta_extr() -> Rewrite<RiseENode> {
     let pat = app(lam(1, pvar("?b")), pvar("?t"));
     let s = Slot::new(1);
 
-    let extractor = Extractor::<_, AstSize<_>>::new(eg);
+    let a = pat.clone();
+    let a2 = pat.clone();
 
-    let mut after = Vec::new();
-    for subst in ematch_all(eg, &pat) {
-        let b = extractor.extract(subst["?b"].clone());
-        let t = extractor.extract(subst["?t"].clone());
+    let rt: RewriteT<RiseENode, Vec<(Subst, RecExpr<RiseENode>)>> = RewriteT {
+        searcher: Box::new(move |eg| {
+            let extractor = Extractor::<_, AstSize<_>>::new(eg);
 
-        let out = re_subst(s, b, &t);
-        after.push((subst, out));
-    }
-
-    for (subst, out) in after {
-        let orig = pattern_subst(eg, &pat, &subst);
-        let out = eg.add_expr(out);
-        eg.union(&orig, &out);
-    }
+            let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
+            for subst in ematch_all(eg, &a) {
+                let b = extractor.extract(subst["?b"].clone());
+                let t = extractor.extract(subst["?t"].clone());
+                let res = re_subst(s, b, &t);
+                out.push((subst, res));
+            }
+            out
+        }),
+        applier: Box::new(move |substs, eg| {
+            for (subst, res) in substs {
+                let orig = pattern_subst(eg, &pat, &subst);
+                let res = eg.add_expr(res);
+                eg.union(&orig, &res);
+            }
+        }),
+    };
+    rt.into()
 }
 
 fn re_subst(s: Slot, b: RecExpr<RiseENode>, t: &RecExpr<RiseENode>) -> RecExpr<RiseENode> {
