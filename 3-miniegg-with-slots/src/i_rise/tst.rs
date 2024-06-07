@@ -8,7 +8,6 @@ fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: us
     let i1 = eg.add_expr(start);
     for _ in 0..steps {
         do_rewrites(&mut eg, &rules);
-        dbg!(eg.total_size());
         if let Some(i2) = lookup_rec_expr(&goal, &eg) {
             if eg.eq(&i1, &i2) {
                 return;
