@@ -1,19 +1,24 @@
 use crate::*;
 use crate::i_rise::build::*;
 
-// Whether we use extraction-based substitution.
-const EXTRACT: bool = false;
+pub enum SubstMethod {
+    Extraction,
+    SmallStep,
+}
 
-pub fn rise_rules() -> Vec<Rewrite<RiseENode>> {
+pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
     let mut rewrites = Vec::new();
-    if EXTRACT {
-        rewrites.push(beta_extr());
-    } else {
-        rewrites.push(beta());
-        rewrites.push(my_let_unused());
-        rewrites.push(let_var_same());
-        rewrites.push(let_app());
-        rewrites.push(let_lam_diff());
+    match subst_m {
+        SubstMethod::Extraction => {
+            rewrites.push(beta_extr());
+        },
+        SubstMethod::SmallStep => {
+            rewrites.push(beta());
+            rewrites.push(my_let_unused());
+            rewrites.push(let_var_same());
+            rewrites.push(let_app());
+            rewrites.push(let_lam_diff());
+        },
     }
 
     rewrites.push(eta());
