@@ -17,7 +17,7 @@ pub fn do_rewrites<L: Language>(eg: &mut EGraph<L>, rewrites: &[Rewrite<L>]) {
 
 // Indirect rewrites.
 
-pub fn mk_rewrite_if<L: Language + 'static>(eg: &mut EGraph<L>, a: Pattern<L>, b: Pattern<L>, cond: impl Fn(&Subst) -> bool + 'static) -> Rewrite<L> {
+pub fn mk_rewrite_if<L: Language + 'static>(a: Pattern<L>, b: Pattern<L>, cond: impl Fn(&Subst) -> bool + 'static) -> Rewrite<L> {
     Rewrite {
         searcher: a.clone(),
         applier: Box::new(move |subst, eg| {
@@ -30,8 +30,8 @@ pub fn mk_rewrite_if<L: Language + 'static>(eg: &mut EGraph<L>, a: Pattern<L>, b
     }
 }
 
-pub fn mk_rewrite<L: Language + 'static>(eg: &mut EGraph<L>, a: Pattern<L>, b: Pattern<L>) -> Rewrite<L> {
-    mk_rewrite_if(eg, a, b, |_| true)
+pub fn mk_rewrite<L: Language + 'static>(a: Pattern<L>, b: Pattern<L>) -> Rewrite<L> {
+    mk_rewrite_if(a, b, |_| true)
 }
 
 // Direct rewrites.
