@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 use symbol_table::GlobalSymbol as Symbol;
 use lamcalc::*;
 
