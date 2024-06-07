@@ -198,7 +198,7 @@ impl<L: Language> EGraph<L> {
         }
 
         // check that no EClass has Slot(0) in its API.
-        for (i, c) in &self.classes {
+        for (_, c) in &self.classes {
             assert!(!c.slots.contains(&Slot::new(0)));
         }
 
@@ -208,7 +208,7 @@ impl<L: Language> EGraph<L> {
         }
 
         // Check that all ENodes are valid.
-        for (i, c) in &self.classes {
+        for (_, c) in &self.classes {
             for (sh, bij) in &c.nodes {
                 let real = sh.apply_slotmap(bij);
                 assert!(real.slots().is_superset(&c.slots));

@@ -68,7 +68,7 @@ fn subst_impl2(b: AppliedId, x: Slot, t: AppliedId, eg: &mut EGraph<ENode>, unio
 // we return an eclass containing `enode[x := t]`
 //
 // The resulting AppliedId has slots "(slots(enode) - {x}) | slots(t)"
-fn enode_subst(enode: ENode, b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph<ENode>, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
+fn enode_subst(enode: ENode, _b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph<ENode>, union_cmds: &mut Vec<(AppliedId, AppliedId)>, map: &mut Map) -> AppliedId {
     let out = match enode.clone() {
         ENode::Var(x2) => {
             // We know that b.slots().contains(x) as if would otherwise have been filtered out in the trivial-substitution-check.

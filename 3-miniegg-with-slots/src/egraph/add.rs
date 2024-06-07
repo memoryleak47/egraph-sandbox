@@ -63,7 +63,7 @@ impl<L: Language> EGraph<L> {
 
         // Note that ENodes in an EClass can have redundant slots.
         // They shouldn't come up in the AppliedId.
-        let out = out.iter().filter(|(x, y)| c.slots.contains(x)).collect();
+        let out = out.iter().filter(|(x, _)| c.slots.contains(x)).collect();
 
         let app_id = self.mk_applied_id(
             *i,
@@ -114,7 +114,7 @@ impl<L: Language> EGraph<L> {
     }
 
     // TODO: the bijection here is probably useless and error-prone. Let's only get Id and Shape as arguments here.
-    pub(in crate::egraph) fn raw_remove_from_class(&mut self, id: Id, (sh, bij): (L, Bijection)) {
+    pub(in crate::egraph) fn raw_remove_from_class(&mut self, id: Id, (sh, _bij): (L, Bijection)) {
         let tmp1 = self.classes.get_mut(&id).unwrap().nodes.remove(&sh);
         let tmp2 = self.hashcons.remove(&sh);
         if CHECKS {

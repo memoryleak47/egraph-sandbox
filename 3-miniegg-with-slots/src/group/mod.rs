@@ -115,7 +115,7 @@ fn build_ot(stab: Slot, omega: &HashSet<Slot>, generators: &HashSet<Perm>) -> Ha
         let len = ot.len();
 
         for g in generators {
-            for (k, v) in ot.clone() {
+            for (_, v) in ot.clone() {
                 let new = v.compose(g);
                 let target = new[stab];
                 if !ot.contains_key(&target) {

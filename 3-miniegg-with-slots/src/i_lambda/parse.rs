@@ -70,8 +70,8 @@ impl RecExpr<ENode> {
 fn to_string_impl(re: &RecExpr<ENode>, m: &mut impl FnMut(Slot) -> String) -> String {
     match &re.node {
         ENode::Var(x) => m(*x),
-        ENode::App(l, r) => format!("(app {} {})", to_string_impl(&re.children[0], m), to_string_impl(&re.children[1], m)),
-        ENode::Lam(x, y) => format!("(lam {} {})", m(*x), to_string_impl(&re.children[0], m)),
+        ENode::App(_, _) => format!("(app {} {})", to_string_impl(&re.children[0], m), to_string_impl(&re.children[1], m)),
+        ENode::Lam(x, _) => format!("(lam {} {})", m(*x), to_string_impl(&re.children[0], m)),
     }
 }
 

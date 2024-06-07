@@ -94,7 +94,7 @@ fn final_subst(s: State) -> Subst {
 
     // Previously, the subst uses `egraph`-based slot names.
     // Afterwards, the subst uses `pattern`-based slot names.
-    for (k, v) in subst.iter_mut() {
+    for (_, v) in subst.iter_mut() {
         // All slots that are not covered by the pattern, need a fresh new name.
         for s in v.slots() {
             if !slotmap.contains_key(s) {
