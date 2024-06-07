@@ -2,7 +2,7 @@ use crate::*;
 use crate::i_rise::build::*;
 
 // Whether we use extraction-based substitution.
-const EXTRACT: bool = false;
+const EXTRACT: bool = true;
 
 fn rules() -> Vec<Rewrite<RiseENode>> {
     let mut rewrites = Vec::new();
