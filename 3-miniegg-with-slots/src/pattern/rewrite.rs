@@ -17,7 +17,7 @@ impl<L: Language + 'static, T: 'static> RewriteT<L, T> {
     }
 }
 
-pub type Rewrite<L: Language> = RewriteT<L, Box<dyn Any>>;
+pub type Rewrite<L> = RewriteT<L, Box<dyn Any>>;
 
 fn any_to_t<T: Any>(t: Box<dyn Any>) -> T {
     *t.downcast().unwrap()

@@ -161,6 +161,7 @@ impl SlotMap {
     }
 
     // checks invariants.
+    #[allow(unused)]
     fn check(&self) {
         // sortedness.
         let mut sorted = self.map.clone();

@@ -4,7 +4,7 @@ use crate::i_rise::build::*;
 // Whether we use extraction-based substitution.
 const EXTRACT: bool = false;
 
-fn rules() -> Vec<Rewrite<RiseENode>> {
+pub fn rise_rules() -> Vec<Rewrite<RiseENode>> {
     let mut rewrites = Vec::new();
     if EXTRACT {
         rewrites.push(beta_extr());
@@ -28,13 +28,6 @@ fn rules() -> Vec<Rewrite<RiseENode>> {
     rewrites.push(separate_dot_vh_simplified());
     rewrites.push(separate_dot_hv_simplified());
     rewrites
-}
-
-pub fn rewrite_rise(eg: &mut EGraph<RiseENode>) {
-    // There is no need to compute this in every iteration again.
-    let rewrites = rules();
-
-    do_rewrites(eg, &rewrites);
 }
 
 fn beta() -> Rewrite<RiseENode> {
