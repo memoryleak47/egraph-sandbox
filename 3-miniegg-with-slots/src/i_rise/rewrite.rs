@@ -8,18 +8,6 @@ pub enum SubstMethod {
 
 pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
     let mut rewrites = Vec::new();
-    match subst_m {
-        SubstMethod::Extraction => {
-            rewrites.push(beta_extr());
-        },
-        SubstMethod::SmallStep => {
-            rewrites.push(beta());
-            rewrites.push(my_let_unused());
-            rewrites.push(let_var_same());
-            rewrites.push(let_app());
-            rewrites.push(let_lam_diff());
-        },
-    }
 
     rewrites.push(eta());
 
@@ -32,6 +20,20 @@ pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
     rewrites.push(slide_before_map_map_f());
     rewrites.push(separate_dot_vh_simplified());
     rewrites.push(separate_dot_hv_simplified());
+
+    match subst_m {
+        SubstMethod::Extraction => {
+            rewrites.push(beta_extr_direct());
+        },
+        SubstMethod::SmallStep => {
+            rewrites.push(beta());
+            rewrites.push(my_let_unused());
+            rewrites.push(let_var_same());
+            rewrites.push(let_app());
+            rewrites.push(let_lam_diff());
+        },
+    }
+
     rewrites
 }
 
@@ -68,6 +70,37 @@ fn beta_extr() -> Rewrite<RiseENode> {
         }),
         applier: Box::new(move |substs, eg| {
             for (subst, res) in substs {
+                let orig = pattern_subst(eg, &pat, &subst);
+                let res = eg.add_expr(res);
+                eg.union(&orig, &res);
+            }
+        }),
+    };
+    rt.into()
+}
+
+// TODO why is this faster than beta_extr?
+// Probably because it can extract smaller terms after more rewrites?
+fn beta_extr_direct() -> Rewrite<RiseENode> {
+    let pat = app(lam(1, pvar("?b")), pvar("?t"));
+    let s = Slot::new(1);
+
+    let a = pat.clone();
+    let a2 = pat.clone();
+
+    let rt: RewriteT<RiseENode, ()> = RewriteT {
+        searcher: Box::new(|_| ()),
+        applier: Box::new(move |(), eg| {
+            let extractor = Extractor::<_, AstSize<_>>::new(eg);
+
+            let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
+            for subst in ematch_all(eg, &a) {
+                let b = extractor.extract(subst["?b"].clone());
+                let t = extractor.extract(subst["?t"].clone());
+                let res = re_subst(s, b, &t);
+                out.push((subst, res));
+            }
+            for (subst, res) in out {
                 let orig = pattern_subst(eg, &pat, &subst);
                 let res = eg.add_expr(res);
                 eg.union(&orig, &res);
