@@ -9,6 +9,7 @@ edition = "2021"
 lamcalc = { path = "../lamcalc" }
 fnv = "*"
 symbol_table = { version = "0.3", features = ["global"]}
+lazy_static = "*"
 
 [profile.release]
 debug = true

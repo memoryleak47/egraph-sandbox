@@ -8,13 +8,12 @@ pub use with_ord::*;
 
 use std::collections::BinaryHeap;
 
-pub struct Extractor<'a, L: Language, CF: CostFunction<L>> {
-    map: HashMap<Id, WithOrdRev<L, CF::Cost>>,
-    eg: &'a EGraph<L>,
+pub struct Extractor<L: Language, CF: CostFunction<L>> {
+    pub map: HashMap<Id, WithOrdRev<L, CF::Cost>>,
 }
 
-impl<'a, L: Language, CF: CostFunction<L>> Extractor<'a, L, CF> {
-    pub fn new(eg: &'a EGraph<L>) -> Self {
+impl<L: Language, CF: CostFunction<L>> Extractor<L, CF> {
+    pub fn new(eg: &EGraph<L>) -> Self {
         // all the L in `map` and `queue` have to be
         // - in "normal-form", i.e. calling lookup on them yields an identity AppliedId.
         // - every internal slot needs to be refreshed.
@@ -52,18 +51,18 @@ impl<'a, L: Language, CF: CostFunction<L>> Extractor<'a, L, CF> {
             }
         }
 
-        Self { map, eg }
+        Self { map }
     }
 
-    pub fn extract(&self, i: AppliedId) -> RecExpr<L> {
-        let i = self.eg.find_applied_id(&i);
+    pub fn extract(&self, i: AppliedId, eg: &EGraph<L>) -> RecExpr<L> {
+        let i = eg.find_applied_id(&i);
 
         let mut children = Vec::new();
 
         // do I need to refresh some slots here?
         let l = self.map[&i.id].0.apply_slotmap(&i.m);
         for child in l.applied_id_occurences() {
-            let n = self.extract(child);
+            let n = self.extract(child, eg);
             children.push(n);
         }
 
@@ -80,5 +79,5 @@ pub fn ast_size_extract<L: Language>(i: AppliedId, eg: &EGraph<L>) -> RecExpr<L>
 
 // `i` is not allowed to have free variables, hence prefer `Id` over `AppliedId`.
 pub fn extract<L: Language, CF: CostFunction<L>>(i: AppliedId, eg: &EGraph<L>) -> RecExpr<L> {
-    Extractor::<L, CF>::new(eg).extract(i)
+    Extractor::<L, CF>::new(eg).extract(i, eg)
 }

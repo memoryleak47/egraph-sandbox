@@ -7,6 +7,7 @@ pub trait CostFunction<L: Language> {
     fn cost<C>(enode: &L, costs: C) -> Self::Cost where C: Fn(Id) -> Self::Cost;
 }
 
+// TODO remove useless parameter L.
 pub struct AstSize<L: Language>(PhantomData<L>);
 
 impl<L: Language> CostFunction<L> for AstSize<L> {

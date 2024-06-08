@@ -23,7 +23,7 @@ pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
 
     match subst_m {
         SubstMethod::Extraction => {
-            rewrites.push(beta_extr_direct());
+            rewrites.push(beta_extr_preserving());
         },
         SubstMethod::SmallStep => {
             rewrites.push(beta());
@@ -45,88 +45,6 @@ fn beta() -> Rewrite<RiseENode> {
     let outpat = let_(1, pvar("?t"), pvar("?b"));
 
     mk_rewrite(pat, outpat)
-}
-
-// extraction-based beta reduction.
-fn beta_extr() -> Rewrite<RiseENode> {
-    let pat = app(lam(1, pvar("?b")), pvar("?t"));
-    let s = Slot::new(1);
-
-    let a = pat.clone();
-    let a2 = pat.clone();
-
-    let rt: RewriteT<RiseENode, Vec<(Subst, RecExpr<RiseENode>)>> = RewriteT {
-        searcher: Box::new(move |eg| {
-            let extractor = Extractor::<_, AstSize<_>>::new(eg);
-
-            let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
-            for subst in ematch_all(eg, &a) {
-                let b = extractor.extract(subst["?b"].clone());
-                let t = extractor.extract(subst["?t"].clone());
-                let res = re_subst(s, b, &t);
-                out.push((subst, res));
-            }
-            out
-        }),
-        applier: Box::new(move |substs, eg| {
-            for (subst, res) in substs {
-                let orig = pattern_subst(eg, &pat, &subst);
-                let res = eg.add_expr(res);
-                eg.union(&orig, &res);
-            }
-        }),
-    };
-    rt.into()
-}
-
-// TODO why is this faster than beta_extr?
-// Probably because it can extract smaller terms after more rewrites?
-fn beta_extr_direct() -> Rewrite<RiseENode> {
-    let pat = app(lam(1, pvar("?b")), pvar("?t"));
-    let s = Slot::new(1);
-
-    let a = pat.clone();
-    let a2 = pat.clone();
-
-    let rt: RewriteT<RiseENode, ()> = RewriteT {
-        searcher: Box::new(|_| ()),
-        applier: Box::new(move |(), eg| {
-            let extractor = Extractor::<_, AstSize<_>>::new(eg);
-
-            let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
-            for subst in ematch_all(eg, &a) {
-                let b = extractor.extract(subst["?b"].clone());
-                let t = extractor.extract(subst["?t"].clone());
-                let res = re_subst(s, b, &t);
-                out.push((subst, res));
-            }
-            for (subst, res) in out {
-                let orig = pattern_subst(eg, &pat, &subst);
-                let res = eg.add_expr(res);
-                eg.union(&orig, &res);
-            }
-        }),
-    };
-    rt.into()
-}
-
-fn re_subst(s: Slot, b: RecExpr<RiseENode>, t: &RecExpr<RiseENode>) -> RecExpr<RiseENode> {
-    let new_node = match b.node {
-        RiseENode::Var(s2) if s == s2 => return t.clone(),
-        RiseENode::Lam(s2, _) if s == s2 => panic!("This shouldn't be possible!"),
-        RiseENode::Let(..) => panic!("This shouldn't be here!"),
-        old => old,
-    };
-
-    let mut children = Vec::new();
-    for child in b.children {
-        children.push(re_subst(s, child, t));
-    }
-
-    RecExpr {
-        node: new_node,
-        children,
-    }
 }
 
 fn eta() -> Rewrite<RiseENode> {
@@ -313,4 +231,148 @@ fn separate_dot_hv_simplified() -> Rewrite<RiseENode> {
         ),
     );
     mk_rewrite(pat, outpat)
+}
+
+// subst using extraction
+fn beta_extr() -> Rewrite<RiseENode> {
+    let pat = app(lam(1, pvar("?b")), pvar("?t"));
+    let s = Slot::new(1);
+
+    let a = pat.clone();
+    let a2 = pat.clone();
+
+    let rt: RewriteT<RiseENode, Vec<(Subst, RecExpr<RiseENode>)>> = RewriteT {
+        searcher: Box::new(move |eg| {
+            let extractor = Extractor::<_, AstSize<_>>::new(eg);
+
+            let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
+            for subst in ematch_all(eg, &a) {
+                let b = extractor.extract(subst["?b"].clone(), eg);
+                let t = extractor.extract(subst["?t"].clone(), eg);
+                let res = re_subst(s, b, &t);
+                out.push((subst, res));
+            }
+            out
+        }),
+        applier: Box::new(move |substs, eg| {
+            for (subst, res) in substs {
+                let orig = pattern_subst(eg, &pat, &subst);
+                let res = eg.add_expr(res);
+                eg.union(&orig, &res);
+            }
+        }),
+    };
+    rt.into()
+}
+
+// TODO why is this faster than beta_extr?
+// Probably because it can extract smaller terms after more rewrites?
+fn beta_extr_direct() -> Rewrite<RiseENode> {
+    let pat = app(lam(1, pvar("?b")), pvar("?t"));
+    let s = Slot::new(1);
+
+    let a = pat.clone();
+    let a2 = pat.clone();
+
+    let rt: RewriteT<RiseENode, ()> = RewriteT {
+        searcher: Box::new(|_| ()),
+        applier: Box::new(move |(), eg| {
+            let extractor = Extractor::<_, AstSize<_>>::new(eg);
+
+            let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
+            for subst in ematch_all(eg, &a) {
+                let b = extractor.extract(subst["?b"].clone(), eg);
+                let t = extractor.extract(subst["?t"].clone(), eg);
+                let res = re_subst(s, b, &t);
+                out.push((subst, res));
+            }
+            for (subst, res) in out {
+                let orig = pattern_subst(eg, &pat, &subst);
+                let res = eg.add_expr(res);
+                eg.union(&orig, &res);
+            }
+        }),
+    };
+    rt.into()
+}
+
+type Ext = Extractor<RiseENode, AstSize<RiseENode>>;
+
+use std::sync::Mutex;
+lazy_static::lazy_static! {
+    // I have sinned. But this is a hack anyways.
+    static ref EXT: Mutex<Ext> = Mutex::new(Ext { map: Default::default() });
+}
+
+fn beta_extr_preserving() -> Rewrite<RiseENode> {
+    let pat = app(lam(1, pvar("?b")), pvar("?t"));
+    let s = Slot::new(1);
+
+    let a = pat.clone();
+    let a2 = pat.clone();
+
+    let rt: RewriteT<RiseENode, Vec<(Subst, RecExpr<RiseENode>)>> = RewriteT {
+        searcher: Box::new(move |eg| {
+            let mut guard = EXT.lock().unwrap();
+            let extractor = Extractor::<_, AstSize<_>>::new(eg);
+            let extractor = merge_extractors(extractor, &*guard, eg);
+
+            let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
+            for subst in ematch_all(eg, &a) {
+                let b = extractor.extract(subst["?b"].clone(), eg);
+                let t = extractor.extract(subst["?t"].clone(), eg);
+                let res = re_subst(s, b, &t);
+                out.push((subst, res));
+            }
+
+            *guard = extractor;
+
+            out
+        }),
+        applier: Box::new(move |substs, eg| {
+            for (subst, res) in substs {
+                let orig = pattern_subst(eg, &pat, &subst);
+                let res = eg.add_expr(res);
+                eg.union(&orig, &res);
+            }
+        }),
+    };
+    rt.into()
+}
+
+// All shapes from `old` that are still optimal in `new` should be used in it.
+fn merge_extractors(mut new: Ext, old: &Ext, eg: &EGraph<RiseENode>) -> Ext {
+    for (_, WithOrdRev(enode, _)) in &old.map {
+        let enode = eg.find_enode(enode);
+        if let Some(i) = eg.lookup(&enode) {
+            // converts enode to "normal-form".
+            let enode = eg.enodes(i.id).into_iter().find(|x| x.shape().0 == enode.shape().0).unwrap();
+
+            let c1: u64 = AstSize::<RiseENode>::cost(&enode, |i| new.map[&i].1);
+            let WithOrdRev(enode2, c2) = &new.map[&i.id];
+            if c1 == *c2 {
+                new.map.insert(i.id, WithOrdRev(enode, *c2));
+            }
+        }
+    }
+    new
+}
+
+fn re_subst(s: Slot, b: RecExpr<RiseENode>, t: &RecExpr<RiseENode>) -> RecExpr<RiseENode> {
+    let new_node = match b.node {
+        RiseENode::Var(s2) if s == s2 => return t.clone(),
+        RiseENode::Lam(s2, _) if s == s2 => panic!("This shouldn't be possible!"),
+        RiseENode::Let(..) => panic!("This shouldn't be here!"),
+        old => old,
+    };
+
+    let mut children = Vec::new();
+    for child in b.children {
+        children.push(re_subst(s, child, t));
+    }
+
+    RecExpr {
+        node: new_node,
+        children,
+    }
 }
