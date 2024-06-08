@@ -304,6 +304,9 @@ lazy_static::lazy_static! {
     static ref EXT: Mutex<Ext> = Mutex::new(Ext { map: Default::default() });
 }
 
+// It's the same rule as beta_extr, but it remembers its Extractor from the previous iteration.
+// It will keep the same choices from the iteration before, as long as it's possible.
+// This shrinks the extraction coverage and yields a smaller egraph. (at least in theory)
 fn beta_extr_preserving() -> Rewrite<RiseENode> {
     let pat = app(lam(1, pvar("?b")), pvar("?t"));
     let s = Slot::new(1);
