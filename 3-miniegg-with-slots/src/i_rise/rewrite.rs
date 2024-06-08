@@ -243,7 +243,7 @@ fn beta_extr() -> Rewrite<RiseENode> {
 
     let rt: RewriteT<RiseENode, Vec<(Subst, RecExpr<RiseENode>)>> = RewriteT {
         searcher: Box::new(move |eg| {
-            let extractor = Extractor::<_, AstSize<_>>::new(eg);
+            let extractor = Extractor::<_, AstSize>::new(eg);
 
             let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
             for subst in ematch_all(eg, &a) {
@@ -277,7 +277,7 @@ fn beta_extr_direct() -> Rewrite<RiseENode> {
     let rt: RewriteT<RiseENode, ()> = RewriteT {
         searcher: Box::new(|_| ()),
         applier: Box::new(move |(), eg| {
-            let extractor = Extractor::<_, AstSize<_>>::new(eg);
+            let extractor = Extractor::<_, AstSize>::new(eg);
 
             let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
             for subst in ematch_all(eg, &a) {
@@ -296,7 +296,7 @@ fn beta_extr_direct() -> Rewrite<RiseENode> {
     rt.into()
 }
 
-type Ext = Extractor<RiseENode, AstSize<RiseENode>>;
+type Ext = Extractor<RiseENode, AstSize>;
 
 use std::sync::Mutex;
 lazy_static::lazy_static! {
@@ -317,7 +317,7 @@ fn beta_extr_preserving() -> Rewrite<RiseENode> {
     let rt: RewriteT<RiseENode, Vec<(Subst, RecExpr<RiseENode>)>> = RewriteT {
         searcher: Box::new(move |eg| {
             let mut guard = EXT.lock().unwrap();
-            let extractor = Extractor::<_, AstSize<_>>::new(eg);
+            let extractor = Extractor::<_, AstSize>::new(eg);
             let extractor = merge_extractors(extractor, &*guard, eg);
 
             let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
@@ -351,7 +351,7 @@ fn merge_extractors(mut new: Ext, old: &Ext, eg: &EGraph<RiseENode>) -> Ext {
             // converts enode to "normal-form".
             let enode = eg.enodes(i.id).into_iter().find(|x| x.shape().0 == enode.shape().0).unwrap();
 
-            let c1: u64 = AstSize::<RiseENode>::cost(&enode, |i| new.map[&i].1);
+            let c1: u64 = AstSize::cost(&enode, |i| new.map[&i].1);
             let WithOrdRev(enode2, c2) = &new.map[&i.id];
             if c1 == *c2 {
                 new.map.insert(i.id, WithOrdRev(enode, *c2));

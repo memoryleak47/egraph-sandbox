@@ -76,7 +76,7 @@ impl Realization for LambdaRealBig {
     }
 
     fn extract_ast(&self, id: Self::Id) -> Ast {
-        let out = extract::<ENode, AstSize<ENode>>(id, &self.0);
+        let out = extract::<ENode, AstSize>(id, &self.0);
         Ast::parse(&out.to_string())
     }
 

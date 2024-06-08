@@ -74,7 +74,7 @@ impl<L: Language, CF: CostFunction<L>> Extractor<L, CF> {
 }
 
 pub fn ast_size_extract<L: Language>(i: AppliedId, eg: &EGraph<L>) -> RecExpr<L> {
-    extract::<L, AstSize<L>>(i, eg)
+    extract::<L, AstSize>(i, eg)
 }
 
 // `i` is not allowed to have free variables, hence prefer `Id` over `AppliedId`.
