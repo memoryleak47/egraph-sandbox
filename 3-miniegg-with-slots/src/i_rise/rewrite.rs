@@ -23,7 +23,7 @@ pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
 
     match subst_m {
         SubstMethod::Extraction => {
-            rewrites.push(beta_extr_preserving());
+            rewrites.push(beta_extr_direct());
         },
         SubstMethod::SmallStep => {
             rewrites.push(beta());
@@ -265,7 +265,7 @@ fn beta_extr() -> Rewrite<RiseENode> {
     rt.into()
 }
 
-// TODO why is this faster than beta_extr?
+// why is this faster than beta_extr?
 // Probably because it can extract smaller terms after more rewrites?
 fn beta_extr_direct() -> Rewrite<RiseENode> {
     let pat = app(lam(1, pvar("?b")), pvar("?t"));
@@ -294,71 +294,6 @@ fn beta_extr_direct() -> Rewrite<RiseENode> {
         }),
     };
     rt.into()
-}
-
-type Ext = Extractor<RiseENode, AstSize>;
-
-use std::sync::Mutex;
-lazy_static::lazy_static! {
-    // I have sinned. But this is a hack anyways.
-    static ref EXT: Mutex<Ext> = Mutex::new(Ext { map: Default::default() });
-}
-
-// It's the same rule as beta_extr, but it remembers its Extractor from the previous iteration.
-// It will keep the same choices from the iteration before, as long as it's possible.
-// This shrinks the extraction coverage and yields a smaller egraph. (at least in theory)
-fn beta_extr_preserving() -> Rewrite<RiseENode> {
-    let pat = app(lam(1, pvar("?b")), pvar("?t"));
-    let s = Slot::new(1);
-
-    let a = pat.clone();
-    let a2 = pat.clone();
-
-    let rt: RewriteT<RiseENode, Vec<(Subst, RecExpr<RiseENode>)>> = RewriteT {
-        searcher: Box::new(move |eg| {
-            let mut guard = EXT.lock().unwrap();
-            let extractor = Extractor::<_, AstSize>::new(eg);
-            let extractor = merge_extractors(extractor, &*guard, eg);
-
-            let mut out: Vec<(Subst, RecExpr<RiseENode>)> = Vec::new();
-            for subst in ematch_all(eg, &a) {
-                let b = extractor.extract(subst["?b"].clone(), eg);
-                let t = extractor.extract(subst["?t"].clone(), eg);
-                let res = re_subst(s, b, &t);
-                out.push((subst, res));
-            }
-
-            *guard = extractor;
-
-            out
-        }),
-        applier: Box::new(move |substs, eg| {
-            for (subst, res) in substs {
-                let orig = pattern_subst(eg, &pat, &subst);
-                let res = eg.add_expr(res);
-                eg.union(&orig, &res);
-            }
-        }),
-    };
-    rt.into()
-}
-
-// All shapes from `old` that are still optimal in `new` should be used in it.
-fn merge_extractors(mut new: Ext, old: &Ext, eg: &EGraph<RiseENode>) -> Ext {
-    for (_, WithOrdRev(enode, _)) in &old.map {
-        let enode = eg.find_enode(enode);
-        if let Some(i) = eg.lookup(&enode) {
-            // converts enode to "normal-form".
-            let enode = eg.enodes(i.id).into_iter().find(|x| x.shape().0 == enode.shape().0).unwrap();
-
-            let c1: u64 = AstSize::cost(&enode, |i| new.map[&i].1);
-            let WithOrdRev(enode2, c2) = &new.map[&i.id];
-            if c1 == *c2 {
-                new.map.insert(i.id, WithOrdRev(enode, *c2));
-            }
-        }
-    }
-    new
 }
 
 fn re_subst(s: Slot, b: RecExpr<RiseENode>, t: &RecExpr<RiseENode>) -> RecExpr<RiseENode> {
