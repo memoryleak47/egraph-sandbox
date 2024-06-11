@@ -1,10 +1,19 @@
 use crate::*;
 
+pub enum Child {
+    AppliedId(AppliedId),
+    Slot(Slot),
+}
+
 pub trait Language: Debug + Clone + Hash + Eq {
     // returns non-deduplicated lists of all occurences of these things, in order.
     fn all_slot_occurences_mut(&mut self) -> Vec<&mut Slot>;
     fn public_slot_occurences_mut(&mut self) -> Vec<&mut Slot>;
     fn applied_id_occurences_mut(&mut self) -> Vec<&mut AppliedId>;
+
+    // for parsing and pretty-printing.
+    fn from_op(op: &str, children: Vec<Child>) -> Result<Self, Box<dyn Error>> { todo!() }
+    fn to_op(&self) -> (String, Vec<Child>) { todo!() }
 
     #[track_caller]
     fn check(&self) {

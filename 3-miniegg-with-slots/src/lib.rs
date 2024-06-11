@@ -3,6 +3,16 @@
 use symbol_table::GlobalSymbol as Symbol;
 use lamcalc::*;
 
+use std::hash::Hash;
+use std::fmt::Debug;
+use std::error::Error;
+
+pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
+pub type HashSet<T> = fnv::FnvHashSet<T>;
+
+// Whether to enable invariant-checks.
+const CHECKS: bool = false;
+
 mod types;
 pub use types::*;
 
@@ -40,12 +50,3 @@ pub use pattern::*;
 
 mod group;
 use group::*;
-
-// Whether to enable invariant-checks.
-const CHECKS: bool = false;
-
-use std::hash::Hash;
-use std::fmt::Debug;
-
-pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
-pub type HashSet<T> = fnv::FnvHashSet<T>;
