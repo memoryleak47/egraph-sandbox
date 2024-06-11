@@ -21,6 +21,9 @@ pub use i_rise::*;
 mod i_arith;
 pub use i_arith::*;
 
+mod i_spores;
+pub use i_spores::*;
+
 mod slotmap;
 pub use slotmap::*;
 
