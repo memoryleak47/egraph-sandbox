@@ -35,11 +35,13 @@ impl<L: Language> RecExpr<L> {
 
 fn parse_rec_expr<L: Language>(s: &str) -> Option<(RecExpr<L>, &str)> {
     if s.starts_with('(') {
+        let s = &s[1..];
         let (op, rest) = op_str(s);
         let mut rest = rest;
         let mut children = Vec::new();
         while rest.starts_with(" ") {
-            let (child, rest2) = parse_child(&rest[1..])?;
+            rest = &rest[1..];
+            let (child, rest2) = parse_child(rest)?;
             rest = rest2;
             children.push(child);
         }
