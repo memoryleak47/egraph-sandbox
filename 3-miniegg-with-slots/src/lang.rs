@@ -12,8 +12,8 @@ pub trait Language: Debug + Clone + Hash + Eq {
     fn applied_id_occurences_mut(&mut self) -> Vec<&mut AppliedId>;
 
     // for parsing and pretty-printing.
-    fn from_op(op: &str, children: Vec<Child>) -> Option<Self> { todo!() }
-    fn to_op(&self) -> (String, Vec<Child>) { todo!() }
+    fn to_op(&self) -> (String, Vec<Child>);
+    fn from_op(op: &str, children: Vec<Child>) -> Option<Self>;
 
     #[track_caller]
     fn check(&self) {

@@ -9,11 +9,13 @@ impl<L: Language> std::fmt::Display for RecExpr<L> {
         }
 
         write!(f, "({} ", x)?;
+        let mut child_idx = 0;
         let n = rest.len();
         for (i, r) in rest.into_iter().enumerate() {
             match r {
                 Child::AppliedId(_) => {
-                    write!(f, "{}", &self.children[i])?;
+                    write!(f, "{}", &self.children[child_idx])?;
+                    child_idx += 1;
                 },
                 Child::Slot(slot) => {
                     write!(f, "{}", slot.to_string())?;

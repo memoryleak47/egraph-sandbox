@@ -86,6 +86,9 @@ impl Language for RiseENode {
             RiseENode::Symbol(_) => vec![],
         }
     }
+
+    fn to_op(&self) -> (String, Vec<Child>) { todo!() }
+    fn from_op(op: &str, children: Vec<Child>) -> Option<Self> { todo!() }
 }
 
 

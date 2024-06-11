@@ -1,7 +1,6 @@
 use crate::*;
 
 pub type Pattern<L> = RecExpr<ENodeOrPVar<L>>;
-pub type SemiRecExpr<L> = RecExpr<ENodeOrAppId<L>>;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 // PVar = pattern variable.
@@ -31,21 +30,20 @@ impl<L: Language> Language for ENodeOrPVar<L> {
             ENodeOrPVar::PVar(_) => vec![],
         }
     }
-}
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum ENodeOrAppId<L: Language> {
-    ENode(L),
-    AppliedId(AppliedId),
-}
+    fn to_op(&self) -> (String, Vec<Child>) {
+        match self {
+            ENodeOrPVar::ENode(l) => l.to_op(),
+            ENodeOrPVar::PVar(s) => (format!("?{}", s), vec![]),
+        }
+    }
 
-#[track_caller]
-fn panic() -> ! {
-    panic!("Pattern match on this! Don't use these methods")
-}
-
-impl<L: Language> Language for ENodeOrAppId<L> {
-    fn all_slot_occurences_mut(&mut self) -> Vec<&mut Slot> { panic() }
-    fn public_slot_occurences_mut(&mut self) -> Vec<&mut Slot> { panic() }
-    fn applied_id_occurences_mut(&mut self) -> Vec<&mut AppliedId> { panic() }
+    fn from_op(op: &str, children: Vec<Child>) -> Option<Self> {
+        if children.len() == 0 && op.starts_with("?") {
+            let var = &op[1..];
+            Some(ENodeOrPVar::PVar(var.to_string()))
+        } else {
+            L::from_op(op, children).map(ENodeOrPVar::ENode)
+        }
+    }
 }

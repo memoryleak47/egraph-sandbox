@@ -32,4 +32,8 @@ impl Language for SporesENode {
             _ => todo!(),
         }
     }
+
+    fn to_op(&self) -> (String, Vec<Child>) { todo!() }
+    fn from_op(op: &str, children: Vec<Child>) -> Option<Self> { todo!() }
+
 }

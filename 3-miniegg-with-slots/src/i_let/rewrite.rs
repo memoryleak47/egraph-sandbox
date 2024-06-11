@@ -9,12 +9,8 @@ pub fn rewrite_let(eg: &mut EGraph<LetENode>) {
 }
 
 fn beta(eg: &mut EGraph<LetENode>) {
-    // (\s1. ?b) ?t
-    let pat = app_pat(lam_pat(Slot::new(1), pvar_pat("?b")), pvar_pat("?t"));
-
-    // let s1 ?t ?b
-    let outpat = let_pat(Slot::new(1), pvar_pat("?t"), pvar_pat("?b"));
-
+    let pat = Pattern::parse("(app (lam s1 ?b) ?t)").unwrap();
+    let outpat = Pattern::parse("(let s1 ?t ?b)").unwrap();
     rewrite(eg, pat, outpat);
 }
 
