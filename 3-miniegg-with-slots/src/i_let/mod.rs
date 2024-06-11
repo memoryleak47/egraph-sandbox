@@ -70,6 +70,25 @@ impl Language for LetENode {
             LetENode::Let(_, t, b) => vec![t, b],
         }
     }
+
+    fn from_op(op: &str, children: Vec<Child>) -> Option<Self> {
+        match (op, &*children) {
+            ("lam", [Child::Slot(s), Child::AppliedId(a)]) => Some(LetENode::Lam(*s, a.clone())),
+            ("app", [Child::AppliedId(l), Child::AppliedId(r)]) => Some(LetENode::App(l.clone(), r.clone())),
+            ("var", [Child::Slot(s)]) => Some(LetENode::Var(*s)),
+            ("let", [Child::Slot(s), Child::AppliedId(t), Child::AppliedId(b)]) => Some(LetENode::Let(*s, t.clone(), b.clone())),
+            _ => None,
+        }
+    }
+
+    fn to_op(&self) -> (String, Vec<Child>) {
+        match self.clone() {
+            LetENode::Lam(s, a) => (String::from("lam"), vec![Child::Slot(s), Child::AppliedId(a)]),
+            LetENode::App(l, r) => (String::from("app"), vec![Child::AppliedId(l), Child::AppliedId(r)]),
+            LetENode::Var(s) => (String::from("var"), vec![Child::Slot(s)]),
+            LetENode::Let(s, t, b) => (String::from("let"), vec![Child::Slot(s), Child::AppliedId(t), Child::AppliedId(b)]),
+        }
+    }
 }
 
 
