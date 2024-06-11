@@ -99,6 +99,10 @@ impl Slot {
     pub fn to_string(&self) -> String {
         format!("s{}", self.0)
     }
+
+    pub fn new_unchecked(i: i64) -> Slot {
+        Slot(i)
+    }
 }
 
 
