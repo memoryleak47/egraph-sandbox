@@ -10,7 +10,7 @@ impl Realization for LetReal {
     }
 
     fn add_ast(&mut self, ast: &Ast) -> Self::Id {
-        let re = RecExpr::<LetENode>::parse(&ast.to_string());
+        let re = RecExpr::<LetENode>::parse2(&ast.to_string());
         self.0.add_expr(re)
     }
 
@@ -33,11 +33,11 @@ impl Realization for LetReal {
 
 impl RecExpr<LetENode> {
     pub fn to_string(&self) -> String {
-        from_let(self).to_string()
+        from_let(self).to_string2()
     }
 
-    pub fn parse(s: &str) -> Self {
-        to_let(&RecExpr::<ENode>::parse(s))
+    pub fn parse2(s: &str) -> Self {
+        to_let(&RecExpr::<ENode>::parse2(s))
     }
 }
 

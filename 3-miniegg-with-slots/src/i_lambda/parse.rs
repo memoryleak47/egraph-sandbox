@@ -1,7 +1,7 @@
 use crate::*;
 
 impl RecExpr<ENode> {
-    pub fn parse(s: &str) -> Self {
+    pub fn parse2(s: &str) -> Self {
         let ast = Ast::parse(s);
         parse_impl(&ast, &mut Default::default())
     }
@@ -44,7 +44,7 @@ fn parse_impl(ast: &Ast, m: &mut HashMap<String, Slot>) -> RecExpr<ENode> {
 }
 
 impl RecExpr<ENode> {
-    pub fn to_string(&self) -> String {
+    pub fn to_string2(&self) -> String {
         let mut name_id = 0;
         let mut namegen = || {
             let name = format!("x{name_id}");
@@ -76,9 +76,9 @@ fn to_string_impl(re: &RecExpr<ENode>, m: &mut impl FnMut(Slot) -> String) -> St
 }
 
 #[test]
-fn test_parse_roundtrip() {
+fn test_parse_roundtrip2() {
     let s1 = "(app (lam x0 x0) (lam x1 x1))";
-    let p = RecExpr::<ENode>::parse(s1);
-    let s2 = p.to_string();
+    let p = RecExpr::<ENode>::parse2(s1);
+    let s2 = p.to_string2();
     assert_eq!(s1, s2);
 }

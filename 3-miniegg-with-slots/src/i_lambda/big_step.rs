@@ -71,13 +71,13 @@ impl Realization for LambdaRealBig {
     }
 
     fn add_ast(&mut self, ast: &Ast) -> Self::Id {
-        let re = RecExpr::<ENode>::parse(&ast.to_string());
+        let re = RecExpr::<ENode>::parse2(&ast.to_string());
         self.0.add_expr(re)
     }
 
     fn extract_ast(&self, id: Self::Id) -> Ast {
         let out = extract::<ENode, AstSize>(id, &self.0);
-        Ast::parse(&out.to_string())
+        Ast::parse(&out.to_string2())
     }
 
     fn find(&self, id: Self::Id) -> Self::Id {

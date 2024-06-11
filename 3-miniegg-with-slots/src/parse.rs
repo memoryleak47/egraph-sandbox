@@ -26,7 +26,7 @@ impl<L: Language> std::fmt::Display for RecExpr<L> {
 }
 
 impl<L: Language> RecExpr<L> {
-    pub fn parse2(s: &str) -> Option<Self> {
+    pub fn parse(s: &str) -> Option<Self> {
         let (re, rest) = parse_rec_expr(s)?;
         assert!(rest.is_empty());
         Some(re)
