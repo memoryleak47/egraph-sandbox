@@ -73,7 +73,7 @@ fn ematch_impl<L: Language>(pattern: &Pattern<L>, st: State, i: AppliedId, eg: &
 fn clear_app_ids<L: Language>(l: &L) -> L {
     let mut l = l.clone();
     for x in l.applied_id_occurences_mut() {
-        *x = AppliedId::new(Id(0), SlotMap::new());
+        *x = AppliedId::null();
     }
     l
 }

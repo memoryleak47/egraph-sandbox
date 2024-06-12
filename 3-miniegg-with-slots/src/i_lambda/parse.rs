@@ -8,7 +8,6 @@ impl RecExpr<ENode> {
 }
 
 fn parse_impl(ast: &Ast, m: &mut HashMap<String, Slot>) -> RecExpr<ENode> {
-    let boring = || AppliedId::new(Id(0), SlotMap::new());
     let mut getname = |n: &str| -> Slot {
         match m.get(n) {
             Some(i) => *i,
@@ -29,14 +28,14 @@ fn parse_impl(ast: &Ast, m: &mut HashMap<String, Slot>) -> RecExpr<ENode> {
         },
         Ast::App(l, r) => {
             RecExpr {
-                node: ENode::App(boring(), boring()),
+                node: ENode::App(AppliedId::null(), AppliedId::null()),
                 children: vec![parse_impl(l, m), parse_impl(r, m)],
             }
         },
         Ast::Lam(x, b) => {
             let x = getname(x);
             RecExpr {
-                node: ENode::Lam(x, boring()),
+                node: ENode::Lam(x, AppliedId::null()),
                 children: vec![parse_impl(b, m)],
             }
         },

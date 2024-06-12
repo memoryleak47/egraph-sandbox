@@ -9,7 +9,7 @@ pub fn pvar(s: &str) -> Pattern<ArithENode> {
 
 pub fn app(l: Pattern<ArithENode>, r: Pattern<ArithENode>) -> Pattern<ArithENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(ArithENode::App(empty_app_id(), empty_app_id())),
+        node: ENodeOrPVar::ENode(ArithENode::App(AppliedId::null(), AppliedId::null())),
         children: vec![l, r],
     }
 }
@@ -31,28 +31,28 @@ pub fn lam(s: usize, b: Pattern<ArithENode>) -> Pattern<ArithENode> {
 
 pub fn lam_slot(s: Slot, b: Pattern<ArithENode>) -> Pattern<ArithENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(ArithENode::Lam(s, empty_app_id())),
+        node: ENodeOrPVar::ENode(ArithENode::Lam(s, AppliedId::null())),
         children: vec![b],
     }
 }
 
 pub fn let_(s: usize, t: Pattern<ArithENode>, b: Pattern<ArithENode>) -> Pattern<ArithENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(ArithENode::Let(Slot::new(s), empty_app_id(), empty_app_id())),
+        node: ENodeOrPVar::ENode(ArithENode::Let(Slot::new(s), AppliedId::null(), AppliedId::null())),
         children: vec![t, b],
     }
 }
 
 pub fn add2(l: Pattern<ArithENode>, r: Pattern<ArithENode>) -> Pattern<ArithENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(ArithENode::Add(empty_app_id(), empty_app_id())),
+        node: ENodeOrPVar::ENode(ArithENode::Add(AppliedId::null(), AppliedId::null())),
         children: vec![l, r],
     }
 }
 
 pub fn mul2(l: Pattern<ArithENode>, r: Pattern<ArithENode>) -> Pattern<ArithENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(ArithENode::Mul(empty_app_id(), empty_app_id())),
+        node: ENodeOrPVar::ENode(ArithENode::Mul(AppliedId::null(), AppliedId::null())),
         children: vec![l, r],
     }
 }
@@ -71,7 +71,3 @@ pub fn symb(s: &str) -> Pattern<ArithENode> {
         children: vec![],
     }
 }
-
-// helper:
-
-fn empty_app_id() -> AppliedId { AppliedId::new(Id(0), SlotMap::new()) }

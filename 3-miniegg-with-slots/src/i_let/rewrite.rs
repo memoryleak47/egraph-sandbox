@@ -59,7 +59,7 @@ fn pvar_pat(s: &str) -> Pattern<LetENode> {
 
 fn app_pat(l: Pattern<LetENode>, r: Pattern<LetENode>) -> Pattern<LetENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(LetENode::App(empty_app_id(), empty_app_id())),
+        node: ENodeOrPVar::ENode(LetENode::App(AppliedId::null(), AppliedId::null())),
         children: vec![l, r],
     }
 }
@@ -73,16 +73,14 @@ fn var_pat(s: Slot) -> Pattern<LetENode> {
 
 fn lam_pat(s: Slot, b: Pattern<LetENode>) -> Pattern<LetENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(LetENode::Lam(s, empty_app_id())),
+        node: ENodeOrPVar::ENode(LetENode::Lam(s, AppliedId::null())),
         children: vec![b],
     }
 }
 
 fn let_pat(s: Slot, t: Pattern<LetENode>, b: Pattern<LetENode>) -> Pattern<LetENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(LetENode::Let(s, empty_app_id(), empty_app_id())),
+        node: ENodeOrPVar::ENode(LetENode::Let(s, AppliedId::null(), AppliedId::null())),
         children: vec![t, b],
     }
 }
-
-fn empty_app_id() -> AppliedId { AppliedId::new(Id(0), SlotMap::new()) }

@@ -53,7 +53,7 @@ fn parse_rec_expr<L: Language>(s: &str) -> Option<(RecExpr<L>, &str)> {
         let children_mock = children.iter().map(|x|
             match x {
                 ChildImpl::Slot(s) => Child::Slot(*s),
-                ChildImpl::RecExpr(_) => Child::AppliedId(AppliedId::new(Id(0), SlotMap::new())),
+                ChildImpl::RecExpr(_) => Child::AppliedId(AppliedId::null()),
             }
         ).collect();
         let node = L::from_op(op, children_mock)?;

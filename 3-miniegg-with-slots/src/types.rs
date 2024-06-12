@@ -23,7 +23,7 @@ pub struct AppliedId {
     pub m: SlotMap,
 }
 
-// The AppliedIds in `node` are ignored. They are replaced by the children RecExpr.
+// The AppliedIds in `node` are ignored (any typically set to AppliedId::null()). They are replaced by the children RecExpr.
 // A non-fancy version of RecExpr that uses the slots as "names".
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct RecExpr<L: Language> {
@@ -64,6 +64,10 @@ impl AppliedId {
     // ordered!
     pub fn slots_mut(&mut self) -> Vec<&mut Slot> {
         self.m.values_mut().collect()
+    }
+
+    pub fn null() -> Self {
+        AppliedId { id: Id(0), m: SlotMap::new() }
     }
 }
 

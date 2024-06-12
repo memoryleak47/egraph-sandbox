@@ -80,7 +80,7 @@ pub fn pvar(s: &str) -> Pattern<RiseENode> {
 
 pub fn app(l: Pattern<RiseENode>, r: Pattern<RiseENode>) -> Pattern<RiseENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(RiseENode::App(empty_app_id(), empty_app_id())),
+        node: ENodeOrPVar::ENode(RiseENode::App(AppliedId::null(), AppliedId::null())),
         children: vec![l, r],
     }
 }
@@ -103,14 +103,14 @@ pub fn lam(s: usize, b: Pattern<RiseENode>) -> Pattern<RiseENode> {
 
 pub fn lam_slot(s: Slot, b: Pattern<RiseENode>) -> Pattern<RiseENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(RiseENode::Lam(s, empty_app_id())),
+        node: ENodeOrPVar::ENode(RiseENode::Lam(s, AppliedId::null())),
         children: vec![b],
     }
 }
 
 pub fn let_(s: usize, t: Pattern<RiseENode>, b: Pattern<RiseENode>) -> Pattern<RiseENode> {
     Pattern {
-        node: ENodeOrPVar::ENode(RiseENode::Let(Slot::new(s), empty_app_id(), empty_app_id())),
+        node: ENodeOrPVar::ENode(RiseENode::Let(Slot::new(s), AppliedId::null(), AppliedId::null())),
         children: vec![t, b],
     }
 }
@@ -128,7 +128,3 @@ pub fn symb(s: &str) -> Pattern<RiseENode> {
         children: vec![],
     }
 }
-
-// helper:
-
-fn empty_app_id() -> AppliedId { AppliedId::new(Id(0), SlotMap::new()) }
