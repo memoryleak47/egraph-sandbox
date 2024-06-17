@@ -91,29 +91,26 @@ fn let_lam_diff() -> Rewrite<RiseENode> {
 }
 
 fn map_fusion() -> Rewrite<RiseENode> {
-    let f = || pvar("?f");
-    let g = || pvar("?g");
-    let arg = || pvar("?arg");
-    let x = 0;
-    let pat = map2(f(),
-                map2(g(), arg())
-              );
-    let outpat = map2(
-            lam(x, app(f(), app(g(), var(x)))),
-        arg());
+    let mfu = "s0";
+    let pat = Pattern::parse("(app (app sym_map ?f) (app (app sym_map ?g) ?arg))").unwrap();
+    let outpat = Pattern::parse(&format!("(app (app sym_map (lam {mfu} (app ?f (app ?g (var {mfu}))))) ?arg)")).unwrap();
     mk_rewrite(pat, outpat)
 }
 
 fn map_fission() -> Rewrite<RiseENode> {
-    let f = || pvar("?f");
-    let gx = || pvar("?gx");
     let x = 0;
-    let y = 1;
+    let mfi = 1;
 
-    let pat = map1(lam(x, app(f(), gx())));
-    let outpat = lam(y, map2(f(), map2(lam(x, gx()), var(y))));
+    let pat = Pattern::parse(&format!(
+        "(app sym_map (lam s{x} (app ?f ?gx)))"
+    )).unwrap();
+
+    let outpat = Pattern::parse(&format!(
+        "(lam s{mfi} (app (app sym_map ?f) (app (app sym_map (lam s{x} ?gx)) (var s{mfi}))))"
+    )).unwrap();
+
     mk_rewrite_if(pat, outpat, move |subst| {
-        !subst["?f"].slots().contains(&Slot::new(x))
+        !subst["f"].slots().contains(&Slot::new(x))
     })
 }
 
