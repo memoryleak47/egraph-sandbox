@@ -93,8 +93,8 @@ impl Language for RiseENode {
             RiseENode::App(l, r) => (String::from("app"), vec![Child::AppliedId(l), Child::AppliedId(r)]),
             RiseENode::Var(s) => (String::from("var"), vec![Child::Slot(s)]),
             RiseENode::Let(s, t, b) => (String::from("let"), vec![Child::Slot(s), Child::AppliedId(t), Child::AppliedId(b)]),
-            RiseENode::Number(n) => (format!("num{}", n), vec![]),
-            RiseENode::Symbol(s) => (format!("sym{}", s), vec![]),
+            RiseENode::Number(n) => (format!("num_{}", n), vec![]),
+            RiseENode::Symbol(s) => (format!("sym_{}", s), vec![]),
         }
     }
 
@@ -104,12 +104,12 @@ impl Language for RiseENode {
             ("app", [Child::AppliedId(l), Child::AppliedId(r)]) => Some(RiseENode::App(l.clone(), r.clone())),
             ("var", [Child::Slot(s)]) => Some(RiseENode::Var(*s)),
             ("let", [Child::Slot(s), Child::AppliedId(t), Child::AppliedId(b)]) => Some(RiseENode::Let(*s, t.clone(), b.clone())),
-            (op, []) if op.starts_with("num") => {
-                let u: u32 = op[3..].parse().ok()?;
+            (op, []) if op.starts_with("num_") => {
+                let u: u32 = op[4..].parse().ok()?;
                 Some(RiseENode::Number(u))
             },
-            (op, []) if op.starts_with("sym") => {
-                let s: Symbol = op[3..].parse().ok()?;
+            (op, []) if op.starts_with("sym_") => {
+                let s: Symbol = op[4..].parse().ok()?;
                 Some(RiseENode::Symbol(s))
             },
             _ => None,

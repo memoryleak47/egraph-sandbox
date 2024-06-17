@@ -118,8 +118,8 @@ fn map_fission() -> Rewrite<RiseENode> {
 }
 
 fn remove_transpose_pair() -> Rewrite<RiseENode> {
-    let pat = transpose1(transpose1(pvar("?x")));
-    let outpat = pvar("?x");
+    let pat = Pattern::parse("(app sym_transpose (app sym_transpose ?x))").unwrap();
+    let outpat = Pattern::parse("?x").unwrap();
     mk_rewrite(pat, outpat)
 }
 
