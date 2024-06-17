@@ -2,7 +2,7 @@ use crate::*;
 use crate::i_rise::build::*;
 
 fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: usize) {
-    let rules = rise_rules(SubstMethod::Extraction);
+    let rules = rise_rules(SubstMethod::SmallStep);
 
     let mut eg = EGraph::new();
     let i1 = eg.add_expr(start);
