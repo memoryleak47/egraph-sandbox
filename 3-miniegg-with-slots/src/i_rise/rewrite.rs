@@ -61,10 +61,10 @@ fn eta_expansion() -> Rewrite<RiseENode> {
 }
 
 fn my_let_unused() -> Rewrite<RiseENode> {
-    let pat = let_(1, pvar("?t"), pvar("?b"));
-    let outpat = pvar("?b");
+    let pat = Pattern::parse("(let s1 ?t ?b)").unwrap();
+    let outpat = Pattern::parse("?b").unwrap();
     mk_rewrite_if(pat, outpat, |subst| {
-        !subst["?b"].slots().contains(&Slot::new(1))
+        !subst["b"].slots().contains(&Slot::new(1))
     })
 }
 
