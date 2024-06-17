@@ -38,8 +38,8 @@ pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
 }
 
 fn beta() -> Rewrite<RiseENode> {
-    let pat = Pattern::parse("(app (lam s1 ?b) ?t)").unwrap();
-    let outpat = Pattern::parse("(let s1 ?t ?b)").unwrap();
+    let pat = Pattern::parse("(app (lam s1 ?body) ?e)").unwrap();
+    let outpat = Pattern::parse("(let s1 ?e ?body)").unwrap();
 
     mk_rewrite(pat, outpat)
 }
