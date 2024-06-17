@@ -45,23 +45,17 @@ fn beta() -> Rewrite<RiseENode> {
 }
 
 fn eta() -> Rewrite<RiseENode> {
-    // \s1. ?b s1
-    let pat = lam(1, app(pvar("?b"), var(1)));
-
-    // ?b
-    let outpat = pvar("?b");
+    let pat = Pattern::parse("(lam s1 (app ?f (var s1)))").unwrap();
+    let outpat = Pattern::parse("?f").unwrap();
 
     mk_rewrite_if(pat, outpat, |subst| {
-        !subst["?b"].slots().contains(&Slot::new(1))
+        !subst["f"].slots().contains(&Slot::new(1))
     })
 }
 
 fn eta_expansion() -> Rewrite<RiseENode> {
-    // ?b
-    let pat = pvar("?b");
-
-    // \s1. ?b s1
-    let outpat = lam(1, app(pvar("?b"), var(1)));
+    let pat = Pattern::parse("?f").unwrap();
+    let outpat = Pattern::parse("(lam s1 (app ?f (var s1)))").unwrap();
 
     mk_rewrite(pat, outpat)
 }
