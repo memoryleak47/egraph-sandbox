@@ -36,19 +36,19 @@ impl<L: Language> RecExpr<L> {
 }
 
 fn parse_rec_expr<L: Language>(s: &str) -> Option<(RecExpr<L>, &str)> {
+    let s = s.trim();
     if s.starts_with('(') {
-        let s = &s[1..];
+        let s = s[1..].trim();
         let (op, rest) = op_str(s);
-        let mut rest = rest;
+        let mut rest = rest.trim();
         let mut children = Vec::new();
-        while rest.starts_with(" ") {
-            rest = &rest[1..];
+        while !rest.starts_with(")") {
             let (child, rest2) = parse_child(rest)?;
-            rest = rest2;
+            rest = rest2.trim();
             children.push(child);
         }
-        if !rest.starts_with(")") { return None; }
-        rest = &rest[1..];
+        assert!(rest.starts_with(")"));
+        rest = rest[1..].trim();
 
         let children_mock = children.iter().map(|x|
             match x {
@@ -96,7 +96,7 @@ fn parse_slot(s: &str) -> Option<(Slot, &str)> {
 // Returns the relevant substring for op parsing.
 // The operator is anything delimited by ' ', '(', ')', or '\n'.
 fn op_str(s: &str) -> (&str, &str) {
-    if let Some(i) = s.chars().position(|c| c == ' ' || c == '(' || c == ')' || c == '\n') {
+    if let Some(i) = s.chars().position(|c| c.is_whitespace() || c == '(' || c == ')') {
         (&s[..i], &s[i..])
     } else { (s, "") }
 }

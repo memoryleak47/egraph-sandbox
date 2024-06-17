@@ -142,64 +142,33 @@ fn slide_before_map_map_f() -> Rewrite<RiseENode> {
 }
 
 fn separate_dot_vh_simplified() -> Rewrite<RiseENode> {
-    let x = 0;
-    let sdvh = 1;
+    let x = "s0";
+    let sdvh = "s1";
 
-    let pat = reduce3(add0(), num(0),
-        map2(
-            lam(x, mul2(fst1(var(x)), snd1(var(x)))),
-            zip2(join1(symb("weights2d")), join1(pvar("?nbh"))),
-        ),
-    );
-    let outpat = reduce3(add0(), num(0),
-        map2(
-            lam(x, mul2(fst1(var(x)), snd1(var(x)))),
-            zip2(symb("weightsH"),
-                map2(
-                    lam(sdvh,
-                        reduce3(add0(), num(0),
-                            map2(
-                                lam(x, mul2(fst1(var(x)), snd1(var(x)))),
-                                zip2(symb("weightsV"), var(sdvh))
-                            ),
-                        ),
-                    ),
-                    transpose1(pvar("?nbh")),
-                ),
-            ),
-        ),
-    );
+    let pat = Pattern::parse(&format!(
+        "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
+         (app (app sym_zip (app sym_join sym_weights2d)) (app sym_join ?nbh))))")).unwrap();
+    let outpat = Pattern::parse(&format!(
+        "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
+         (app (app sym_zip sym_weightsH) (app (app sym_map (lam {sdvh} (app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
+          (app (app sym_zip sym_weightsV) (var {sdvh})))))) (app sym_transpose ?nbh)))))")).unwrap();
     mk_rewrite(pat, outpat)
 }
 
 fn separate_dot_hv_simplified() -> Rewrite<RiseENode> {
-    let x = 0;
-    let sdhv = 1;
+    let x = "s0";
+    let sdhv = "s1";
 
-    let pat = reduce3(add0(), num(0),
-        map2(
-            lam(x, mul2(fst1(var(x)), snd1(var(x)))),
-            zip2(join1(symb("weights2d")), join1(pvar("?nbh"))),
-        ),
-    );
-    let outpat = reduce3(add0(), num(0),
-        map2(
-            lam(x, mul2(fst1(var(x)), snd1(var(x)))),
-            zip2(symb("weightsV"),
-                map2(
-                    lam(sdhv,
-                        reduce3(add0(), num(0),
-                            map2(
-                                lam(x, mul2(fst1(var(x)), snd1(var(x)))),
-                                zip2(symb("weightsH"), var(sdhv))
-                            ),
-                        ),
-                    ),
-                    pvar("?nbh"),
-                ),
-            ),
-        ),
-    );
+    let pat = Pattern::parse(&format!(
+            "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
+             (app (app sym_zip (app sym_join sym_weights2d)) (app sym_join ?nbh))))
+            ")).unwrap();
+    let outpat = Pattern::parse(&format!(
+               "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
+                (app (app sym_zip sym_weightsV) (app (app sym_map (lam {sdhv} (app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
+                (app (app sym_zip sym_weightsH) (var {sdhv})))))) ?nbh))))
+               ")).unwrap();
+
     mk_rewrite(pat, outpat)
 }
 
