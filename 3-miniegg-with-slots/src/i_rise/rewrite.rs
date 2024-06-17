@@ -147,11 +147,13 @@ fn separate_dot_vh_simplified() -> Rewrite<RiseENode> {
 
     let pat = Pattern::parse(&format!(
         "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-         (app (app sym_zip (app sym_join sym_weights2d)) (app sym_join ?nbh))))")).unwrap();
+         (app (app sym_zip (app sym_join sym_weights2d)) (app sym_join ?nbh))))
+        ")).unwrap();
     let outpat = Pattern::parse(&format!(
         "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
          (app (app sym_zip sym_weightsH) (app (app sym_map (lam {sdvh} (app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-          (app (app sym_zip sym_weightsV) (var {sdvh})))))) (app sym_transpose ?nbh)))))")).unwrap();
+         (app (app sym_zip sym_weightsV) (var {sdvh})))))) (app sym_transpose ?nbh)))))
+        ")).unwrap();
     mk_rewrite(pat, outpat)
 }
 
@@ -160,14 +162,14 @@ fn separate_dot_hv_simplified() -> Rewrite<RiseENode> {
     let sdhv = "s1";
 
     let pat = Pattern::parse(&format!(
-            "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-             (app (app sym_zip (app sym_join sym_weights2d)) (app sym_join ?nbh))))
-            ")).unwrap();
+        "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
+         (app (app sym_zip (app sym_join sym_weights2d)) (app sym_join ?nbh))))
+        ")).unwrap();
     let outpat = Pattern::parse(&format!(
-               "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-                (app (app sym_zip sym_weightsV) (app (app sym_map (lam {sdhv} (app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-                (app (app sym_zip sym_weightsH) (var {sdhv})))))) ?nbh))))
-               ")).unwrap();
+        "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
+         (app (app sym_zip sym_weightsV) (app (app sym_map (lam {sdhv} (app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
+         (app (app sym_zip sym_weightsH) (var {sdhv})))))) ?nbh))))
+        ")).unwrap();
 
     mk_rewrite(pat, outpat)
 }
