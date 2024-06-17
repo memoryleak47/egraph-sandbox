@@ -124,36 +124,20 @@ fn remove_transpose_pair() -> Rewrite<RiseENode> {
 }
 
 fn slide_before_map() -> Rewrite<RiseENode> {
-    let pat = app(
-                slide2(pvar("?sz"), pvar("?sp")),
-                map2(pvar("?f"), pvar("?y"))
-              );
-
-    let outpat = app(
-                map1(map1(pvar("?f"))),
-                slide3(pvar("?sz"), pvar("?sp"), pvar("?y")),
-              );
+    let pat = Pattern::parse("(app (app (app sym_slide ?sz) ?sp) (app (app sym_map ?f) ?y))").unwrap();
+    let outpat = Pattern::parse("(app (app sym_map (app sym_map ?f)) (app (app (app sym_slide ?sz) ?sp) ?y))").unwrap();
     mk_rewrite(pat, outpat)
 }
 
 fn map_slide_before_transpose() -> Rewrite<RiseENode> {
-    let pat = transpose1(map2(
-        slide2(pvar("?sz"), pvar("?sp")),
-        pvar("?y")
-    ));
-    let outpat = map2(transpose0(),
-        slide3(pvar("?sz"), pvar("?sp"), transpose1(pvar("?y")))
-    );
+    let pat = Pattern::parse("(app sym_transpose (app (app sym_map (app (app sym_slide ?sz) ?sp)) ?y))").unwrap();
+    let outpat = Pattern::parse("(app (app sym_map sym_transpose) (app (app (app sym_slide ?sz) ?sp) (app sym_transpose ?y)))").unwrap();
     mk_rewrite(pat, outpat)
 }
 
 fn slide_before_map_map_f() -> Rewrite<RiseENode> {
-    let pat = map2(map1(pvar("?f")),
-        slide3(pvar("?sz"), pvar("?sp"), pvar("?y"))
-    );
-    let outpat = slide3(pvar("?sz"), pvar("?sp"),
-        map2(pvar("?f"), pvar("?y"))
-    );
+    let pat = Pattern::parse("(app (app sym_map (app sym_map ?f)) (app (app (app sym_slide ?sz) ?sp) ?y))").unwrap();
+    let outpat = Pattern::parse("(app (app (app sym_slide ?sz) ?sp) (app (app sym_map ?f) ?y))").unwrap();
     mk_rewrite(pat, outpat)
 }
 
