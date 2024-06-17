@@ -69,29 +69,24 @@ fn my_let_unused() -> Rewrite<RiseENode> {
 }
 
 fn let_var_same() -> Rewrite<RiseENode> {
-    let pat = let_(1, pvar("?e"), var(1));
-    let outpat = pvar("?e");
+    let pat = Pattern::parse("(let s1 ?e (var s1))").unwrap();
+    let outpat = Pattern::parse("?e").unwrap();
     mk_rewrite(pat, outpat)
 }
 
 fn let_app() -> Rewrite<RiseENode> {
-    let pat = let_(1, pvar("?e"), app(pvar("?a"), pvar("?b")));
-    let outpat = app(
-        let_(1, pvar("?e"), pvar("?a")),
-        let_(1, pvar("?e"), pvar("?b"))
-    );
+    let pat = Pattern::parse("(let s1 ?e (app ?a ?b))").unwrap();
+    let outpat = Pattern::parse("(app (let s1 ?e ?a) (let s1 ?e ?b))").unwrap();
     mk_rewrite_if(pat, outpat, |subst| {
-        subst["?a"].slots().contains(&Slot::new(1)) || subst["?b"].slots().contains(&Slot::new(1))
+        subst["a"].slots().contains(&Slot::new(1)) || subst["b"].slots().contains(&Slot::new(1))
     })
 }
 
 fn let_lam_diff() -> Rewrite<RiseENode> {
-    let pat = let_(1, pvar("?e"), lam(2, pvar("?b")));
-    let outpat = lam(2,
-        let_(1, pvar("?e"), pvar("?b")),
-    );
+    let pat = Pattern::parse("(let s1 ?e (lam s2 ?body))").unwrap();
+    let outpat = Pattern::parse("(lam s2 (let s1 ?e ?body))").unwrap();
     mk_rewrite_if(pat, outpat, |subst| {
-        subst["?b"].slots().contains(&Slot::new(1))
+        subst["body"].slots().contains(&Slot::new(1))
     })
 }
 
