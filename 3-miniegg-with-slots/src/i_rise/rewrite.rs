@@ -4,6 +4,7 @@ use crate::i_rise::build::*;
 pub enum SubstMethod {
     Extraction,
     SmallStep,
+    SmallStepUnoptimized,
 }
 
 pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
@@ -31,6 +32,14 @@ pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
             rewrites.push(let_var_same());
             rewrites.push(let_app());
             rewrites.push(let_lam_diff());
+        },
+        SubstMethod::SmallStepUnoptimized => {
+            rewrites.push(beta());
+            rewrites.push(let_var_same());
+            rewrites.push(let_var_diff());
+            rewrites.push(let_app_unopt());
+            rewrites.push(let_lam_diff_unopt());
+            rewrites.push(let_const());
         },
     }
 
@@ -74,12 +83,24 @@ fn let_var_same() -> Rewrite<RiseENode> {
     mk_rewrite(pat, outpat)
 }
 
+fn let_var_diff() -> Rewrite<RiseENode> {
+    let pat = Pattern::parse("(let s1 ?e (var s2))").unwrap();
+    let outpat = Pattern::parse("(var s2)").unwrap();
+    mk_rewrite(pat, outpat)
+}
+
 fn let_app() -> Rewrite<RiseENode> {
     let pat = Pattern::parse("(let s1 ?e (app ?a ?b))").unwrap();
     let outpat = Pattern::parse("(app (let s1 ?e ?a) (let s1 ?e ?b))").unwrap();
     mk_rewrite_if(pat, outpat, |subst| {
         subst["a"].slots().contains(&Slot::new(1)) || subst["b"].slots().contains(&Slot::new(1))
     })
+}
+
+fn let_app_unopt() -> Rewrite<RiseENode> {
+    let pat = Pattern::parse("(let s1 ?e (app ?a ?b))").unwrap();
+    let outpat = Pattern::parse("(app (let s1 ?e ?a) (let s1 ?e ?b))").unwrap();
+    mk_rewrite(pat, outpat)
 }
 
 fn let_lam_diff() -> Rewrite<RiseENode> {
@@ -89,6 +110,32 @@ fn let_lam_diff() -> Rewrite<RiseENode> {
         subst["body"].slots().contains(&Slot::new(1))
     })
 }
+
+fn let_lam_diff_unopt() -> Rewrite<RiseENode> {
+    let pat = Pattern::parse("(let s1 ?e (lam s2 ?body))").unwrap();
+    let outpat = Pattern::parse("(lam s2 (let s1 ?e ?body))").unwrap();
+    mk_rewrite(pat, outpat)
+}
+
+fn let_const() -> Rewrite<RiseENode> {
+    // is the const-detection at the same time as the baseline? probably not relevant.
+    let pat = Pattern::parse("(let s1 ?t ?c)").unwrap();
+
+    let rt: RewriteT<RiseENode, ()> = RewriteT {
+        searcher: Box::new(|_| ()),
+        applier: Box::new(move |(), eg| {
+            for subst in ematch_all(eg, &pat) {
+                if eg.enodes_applied(&subst["c"]).iter().any(|n| matches!(n, RiseENode::Symbol(_) | RiseENode::Number(_))) {
+                    let orig = pattern_subst(eg, &pat, &subst);
+                    eg.union(&orig, &subst["c"]);
+                }
+            }
+        }),
+    };
+    rt.into()
+}
+
+/////////////////////
 
 fn map_fusion() -> Rewrite<RiseENode> {
     let mfu = "s0";
