@@ -32,7 +32,7 @@ impl Realization for LambdaRealImproved {
         std::mem::swap(&mut r.egraph, &mut self.0);
     }
 
-    fn enode_count(&self) -> usize { self.0.total_size() }
+    fn enode_count(&self) -> usize { self.0.total_number_of_nodes() }
     fn eclass_count(&self) -> usize { self.0.classes().filter(|x| x.id == self.find(x.id)).count() }
 }
 

@@ -129,7 +129,7 @@ impl<L: Language> EGraph<L> {
     }
 
     // number of enodes in the egraph.
-    pub fn total_size(&self) -> usize {
+    pub fn total_number_of_nodes(&self) -> usize {
         self.hashcons.len()
     }
 

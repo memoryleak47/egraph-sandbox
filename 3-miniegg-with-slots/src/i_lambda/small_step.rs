@@ -84,7 +84,7 @@ impl Realization for LambdaRealSmall {
         rewrite_small_step(&mut self.0);
     }
 
-    fn enode_count(&self) -> usize { self.0.total_size() }
+    fn enode_count(&self) -> usize { self.0.total_number_of_nodes() }
     fn eclass_count(&self) -> usize { self.0.ids().len() } 
 }
 
