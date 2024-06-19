@@ -31,6 +31,9 @@ pub use i_let::*;
 mod i_rise;
 pub use i_rise::*;
 
+mod i_array;
+pub use i_array::*;
+
 mod i_arith;
 pub use i_arith::*;
 

@@ -5,8 +5,8 @@ use crate::*;
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct SymbolENode {
-    op: Symbol,
-    children: Vec<AppliedId>,
+    pub op: Symbol,
+    pub children: Vec<AppliedId>,
 }
 
 impl Language for SymbolENode {
