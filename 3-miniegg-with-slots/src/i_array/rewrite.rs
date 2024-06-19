@@ -1,6 +1,6 @@
 use crate::*;
 
-pub fn array_rules() -> Vec<Rewrite<ArrayENode>> {
+pub fn array_rules(extra_rules: &[&'static str]) -> Vec<Rewrite<ArrayENode>> {
     let mut rewrites = Vec::new();
 
     rewrites.push(eta());
@@ -14,11 +14,14 @@ pub fn array_rules() -> Vec<Rewrite<ArrayENode>> {
     rewrites.push(let_app());
     rewrites.push(let_lam_diff());
 
-    // transpose-maps
-    rewrites.push(rew("(m ?n1 (m ?n2 ?f))", "(o T (o (m ?n2 (m ?n1 ?f)) T))"));
-
-    // split-map
-    rewrites.push(rew("(m (* ?n1 ?n2) ?f)", "(o j (o (m ?n1 (m ?n2 ?f)) (s ?n2)))"));
+    for r in extra_rules {
+        let rewrite = match *r {
+            "transpose-maps" => rew("(m ?n1 (m ?n2 ?f))", "(o T (o (m ?n2 (m ?n1 ?f)) T))"),
+            "split-map" => rew("(m (* ?n1 ?n2) ?f)", "(o j (o (m ?n1 (m ?n2 ?f)) (s ?n2)))"),
+            x => panic!("unknown rule: {x}"),
+        };
+        rewrites.push(rewrite);
+    }
 
     rewrites
 }
