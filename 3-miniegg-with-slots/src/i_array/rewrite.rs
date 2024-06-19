@@ -23,6 +23,9 @@ pub fn array_rules(extra_rules: &[&'static str]) -> Vec<Rewrite<ArrayENode>> {
         rewrites.push(rewrite);
     }
 
+    rewrites.push(rew("(o ?a (o ?b ?c))", "(o (o ?a ?b) ?c)"));
+    rewrites.push(rew("(o (o ?a ?b) ?c)", "(o ?a (o ?b ?c))"));
+
     rewrites
 }
 
