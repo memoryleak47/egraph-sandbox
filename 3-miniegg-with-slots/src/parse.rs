@@ -27,6 +27,12 @@ impl<L: Language> std::fmt::Display for RecExpr<L> {
     }
 }
 
+impl<L: Language> std::fmt::Debug for RecExpr<L> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "RE({})", self)
+    }
+}
+
 impl<L: Language> RecExpr<L> {
     pub fn parse(s: &str) -> Option<Self> {
         let (re, rest) = parse_rec_expr(s)?;
