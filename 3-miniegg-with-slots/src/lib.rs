@@ -37,6 +37,9 @@ pub use i_arith::*;
 mod i_spores;
 pub use i_spores::*;
 
+mod i_symbol;
+pub use i_symbol::*;
+
 mod slotmap;
 pub use slotmap::*;
 
