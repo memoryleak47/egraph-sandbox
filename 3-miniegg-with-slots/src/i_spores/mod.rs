@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 use crate::*;
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -35,5 +37,4 @@ impl Language for SporesENode {
 
     fn to_op(&self) -> (String, Vec<Child>) { todo!() }
     fn from_op(op: &str, children: Vec<Child>) -> Option<Self> { todo!() }
-
 }

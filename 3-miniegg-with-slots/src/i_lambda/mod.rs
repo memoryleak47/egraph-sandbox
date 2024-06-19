@@ -63,7 +63,7 @@ impl Language for ENode {
     }
 
     fn to_op(&self) -> (String, Vec<Child>) { todo!() }
-    fn from_op(op: &str, children: Vec<Child>) -> Option<Self> { todo!() }
+    fn from_op(_op: &str, _children: Vec<Child>) -> Option<Self> { todo!() }
 }
 
 use std::fmt::*;
