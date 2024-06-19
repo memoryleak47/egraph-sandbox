@@ -3,16 +3,28 @@ use crate::*;
 pub fn array_rules(extra_rules: &[&'static str]) -> Vec<Rewrite<ArrayENode>> {
     let mut rewrites = Vec::new();
 
-    rewrites.push(eta());
+    // should also work for X = true at some point.
+    const X: bool = false;
+    if X {
+        rewrites.push(beta());
+        rewrites.push(my_let_unused());
+        rewrites.push(let_var_same());
+        rewrites.push(let_app());
+        rewrites.push(let_lam_diff());
 
-    rewrites.push(map_fusion());
-    rewrites.push(map_fission());
+        rewrites.push(eta());
 
-    rewrites.push(beta());
-    rewrites.push(my_let_unused());
-    rewrites.push(let_var_same());
-    rewrites.push(let_app());
-    rewrites.push(let_lam_diff());
+        rewrites.push(map_fission());
+    } else {
+        // map-fission
+        rewrites.push(rew("(m ?n (o ?f ?g))", "(o (m ?n ?f) (m ?n ?g))"));
+
+        // associativity
+        rewrites.push(rew("(o ?a (o ?b ?c))", "(o (o ?a ?b) ?c)"));
+        rewrites.push(rew("(o (o ?a ?b) ?c)", "(o ?a (o ?b ?c))"));
+    }
+
+    // rewrites.push(map_fusion());
 
     for r in extra_rules {
         let rewrite = match *r {
@@ -22,9 +34,6 @@ pub fn array_rules(extra_rules: &[&'static str]) -> Vec<Rewrite<ArrayENode>> {
         };
         rewrites.push(rewrite);
     }
-
-    rewrites.push(rew("(o ?a (o ?b ?c))", "(o (o ?a ?b) ?c)"));
-    rewrites.push(rew("(o (o ?a ?b) ?c)", "(o ?a (o ?b ?c))"));
 
     rewrites
 }
