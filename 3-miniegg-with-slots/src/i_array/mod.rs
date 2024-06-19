@@ -12,6 +12,8 @@ pub use my_cost::*;
 mod parse;
 pub use parse::*;
 
+mod tst;
+
 // This is a close-as possible to SymbolLang to be comparable with https://github.com/Bastacyclop/egg-sketches/blob/main/tests/maps.rs
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum ArrayENode {

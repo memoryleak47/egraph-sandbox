@@ -25,6 +25,7 @@ fn translate(p: Pattern<SymbolENode>) -> Pattern<ArrayENode> {
                     let s = Slot::fresh().to_string();
                     Pattern::parse(&format!("(lam {s} (app {f} (app {g} (var {s}))))")).unwrap()
                 },
+                ("o", _) => panic!(),
                 (x, children) => {
                     let mut re = RecExpr {
                         node: ENodeOrPVar::ENode(ArrayENode::Symbol(Symbol::from(x))),
