@@ -88,8 +88,8 @@ fn let_lam_diff() -> Rewrite<ArrayENode> {
 
 fn map_fusion() -> Rewrite<ArrayENode> {
     let mfu = "s0";
-    let pat = Pattern::parse("(app (app m ?f) (app (app m ?g) ?arg))").unwrap();
-    let outpat = Pattern::parse(&format!("(app (app m (lam {mfu} (app ?f (app ?g (var {mfu}))))) ?arg)")).unwrap();
+    let pat = Pattern::parse("(app (app (app m ?nn) ?f) (app (app (app m ?nn) ?g) ?arg))").unwrap();
+    let outpat = Pattern::parse(&format!("(app (app (app m ?nn) (lam {mfu} (app ?f (app ?g (var {mfu}))))) ?arg)")).unwrap();
     mk_rewrite(pat, outpat)
 }
 
@@ -98,11 +98,11 @@ fn map_fission() -> Rewrite<ArrayENode> {
     let mfi = 1;
 
     let pat = Pattern::parse(&format!(
-        "(app m (lam s{x} (app ?f ?gx)))"
+        "(app (app m ?nn) (lam s{x} (app ?f ?gx)))"
     )).unwrap();
 
     let outpat = Pattern::parse(&format!(
-        "(lam s{mfi} (app (app m ?f) (app (app m (lam s{x} ?gx)) (var s{mfi}))))"
+        "(lam s{mfi} (app (app (app m ?nn) ?f) (app (app (app m ?nn) (lam s{x} ?gx)) (var s{mfi}))))"
     )).unwrap();
 
     mk_rewrite_if(pat, outpat, move |subst| {
