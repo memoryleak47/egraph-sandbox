@@ -14,8 +14,23 @@ pub fn array_rules() -> Vec<Rewrite<ArrayENode>> {
     rewrites.push(let_app());
     rewrites.push(let_lam_diff());
 
+    // transpose-maps
+    rewrites.push(rew("(m ?n1 (m ?n2 ?f))", "(o T (o (m ?n2 (m ?n1 ?f)) T))"));
+
+    // split-map
+    rewrites.push(rew("(m (* ?n1 ?n2) ?f)", "(o j (o (m ?n1 (m ?n2 ?f)) (s ?n2)))"));
+
     rewrites
 }
+
+fn rew(s1: &str, s2: &str) -> Rewrite<ArrayENode> {
+    let pat = array_parse_pattern(s1);
+    let outpat = array_parse_pattern(s2);
+
+    mk_rewrite(pat, outpat)
+}
+
+//////////////////////
 
 fn beta() -> Rewrite<ArrayENode> {
     let pat = Pattern::parse("(app (lam s1 ?body) ?e)").unwrap();
