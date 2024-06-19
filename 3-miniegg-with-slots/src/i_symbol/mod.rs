@@ -3,6 +3,8 @@
 
 use crate::*;
 
+mod tst;
+
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct SymbolENode {
     pub op: Symbol,
