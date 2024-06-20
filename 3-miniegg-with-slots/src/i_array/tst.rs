@@ -35,7 +35,10 @@ fn assert_reaches(start: &str, goal: &str, steps: usize, rules: &[&'static str])
     assert!(false);
 }
 
-static FIRST: &[&'static str] = &["beta", "eta", "map-fission", "split-map"];
+static FIRST: &[&'static str] = &["beta", "eta", "map-fission", "split-map",
+    // NOTE: Just added this because it performs better.
+    "map-fusion"
+];
 static SECOND: &[&'static str] = &["beta", "eta", "map-fission", "transpose-maps"];
 
 #[test]
