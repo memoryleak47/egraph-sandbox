@@ -1,41 +1,30 @@
 use crate::*;
 
-pub fn array_lam_rules() -> Vec<Rewrite<ArrayENode>> {
-    let mut rewrites = Vec::new();
-    rewrites.push(beta());
-    rewrites.push(my_let_unused());
-    rewrites.push(let_var_same());
-    rewrites.push(let_app());
-    rewrites.push(let_lam_diff());
-
-    rewrites.push(eta());
-    rewrites
-}
-
-pub fn array_rules(extra_rules: &[&'static str]) -> Vec<Rewrite<ArrayENode>> {
+pub fn array_rules(rules: &[&'static str]) -> Vec<Rewrite<ArrayENode>> {
     let mut rewrites = Vec::new();
 
-    // should also work for X = true at some point.
-    const X: bool = true;
-    if X {
-        rewrites.extend(array_lam_rules());
-
-        rewrites.push(map_fission());
-    } else {
-        // map-fission
-        rewrites.push(rew("(m ?n (o ?f ?g))", "(o (m ?n ?f) (m ?n ?g))"));
-
-        // associativity
-        rewrites.push(rew("(o ?a (o ?b ?c))", "(o (o ?a ?b) ?c)"));
-        rewrites.push(rew("(o (o ?a ?b) ?c)", "(o ?a (o ?b ?c))"));
-    }
-
-    // rewrites.push(map_fusion());
-
-    for r in extra_rules {
+    for r in rules {
         let rewrite = match *r {
+            "beta" => {
+                rewrites.push(my_let_unused());
+                rewrites.push(let_var_same());
+                rewrites.push(let_app());
+                rewrites.push(let_lam_diff());
+                beta()
+            },
+            "eta" => eta(),
+
+            "map-fission" => map_fission(),
+            "map-fusion" => map_fusion(),
+
             "transpose-maps" => rew("(m ?n1 (m ?n2 ?f))", "(o T (o (m ?n2 (m ?n1 ?f)) T))"),
             "split-map" => rew("(m (* ?n1 ?n2) ?f)", "(o j (o (m ?n1 (m ?n2 ?f)) (s ?n2)))"),
+
+            "o-map-fission" => rew("(m ?n (o ?f ?g))", "(o (m ?n ?f) (m ?n ?g))"),
+            "o-map-fusion" => rew("(o (m ?n ?f) (m ?n ?g))", "(m ?n (o ?f ?g))"),
+
+            "assoc1" => rew("(o ?a (o ?b ?c))", "(o (o ?a ?b) ?c)"),
+            "assoc2" => rew("(o (o ?a ?b) ?c)", "(o ?a (o ?b ?c))"),
             x => panic!("unknown rule: {x}"),
         };
         rewrites.push(rewrite);
