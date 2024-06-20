@@ -6,7 +6,7 @@ pub type Problem = (RecExpr<RiseENode>, RecExpr<RiseENode>);
 
 // REDUCTION //
 
-fn reduction_re1() -> RecExpr<RiseENode> {
+pub fn reduction_re1() -> RecExpr<RiseENode> {
     let comp = 0;
     let add1 = 1;
     let y = 2;
@@ -44,7 +44,7 @@ fn reduction_re1() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
-fn reduction_re2() -> RecExpr<RiseENode> {
+pub fn reduction_re2() -> RecExpr<RiseENode> {
     let x = 0;
     let mut it = var(x);
     for _ in 0..7 {
@@ -78,12 +78,12 @@ fn fchain(fs: impl Iterator<Item=usize>) -> Pattern<RiseENode> {
     lam(x, it)
 }
 
-fn fission_re1() -> RecExpr<RiseENode> {
+pub fn fission_re1() -> RecExpr<RiseENode> {
     let out = app(symb("map"), fchain(1..=5));
     pattern_to_re(&out)
 }
 
-fn fission_re2() -> RecExpr<RiseENode> {
+pub fn fission_re2() -> RecExpr<RiseENode> {
     let y = 1;
 
     let left = map1(fchain(3..=5));
@@ -100,7 +100,7 @@ pub fn fission_problem() -> Problem {
 
 // BINOMIAL //
 
-fn binomial_re1() -> RecExpr<RiseENode> {
+pub fn binomial_re1() -> RecExpr<RiseENode> {
     let nbh = 0;
     let dt = dot2(
             join1(symb("weights2d")),
@@ -115,7 +115,7 @@ fn binomial_re1() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
-fn binomial_re2() -> RecExpr<RiseENode> {
+pub fn binomial_re2() -> RecExpr<RiseENode> {
     let nbhL = 0;
     let nbhH = 1;
     let nbhV = 2;
