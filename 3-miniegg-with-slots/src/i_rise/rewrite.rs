@@ -1,29 +1,33 @@
 use crate::*;
 use crate::i_rise::build::*;
 
-pub fn rise_rules(exp: WithExpansion) -> Vec<Rewrite<RiseENode>> {
+pub fn rise_rules(rules: &[&str]) -> Vec<Rewrite<RiseENode>> {
     let mut rewrites = Vec::new();
 
-    rewrites.push(eta());
-    if let WithExpansion::Yes = exp {
-        rewrites.push(eta_expansion());
+    for r in rules {
+        let rew = match *r {
+            "beta" => {
+                rewrites.push(my_let_unused());
+                rewrites.push(let_var_same());
+                rewrites.push(let_app());
+                rewrites.push(let_lam_diff());
+                beta()
+            }
+            "eta" => eta(),
+            "eta-expansion" => eta_expansion(),
+
+            "map-fusion" => map_fusion(),
+            "map-fission" => map_fission(),
+            "remove-transpose-pair" => remove_transpose_pair(),
+            "slide-before-map" => slide_before_map(),
+            "map-slide-before-transpose" => map_slide_before_transpose(),
+            "slide-before-map-map-f" => slide_before_map_map_f(),
+            "separate-dot-vh-simplified" => separate_dot_vh_simplified(),
+            "separate-dot-hv-simplified" => separate_dot_hv_simplified(),
+            x => panic!("unexpected rule {x}"),
+        };
+        rewrites.push(rew);
     }
-
-    rewrites.push(map_fusion());
-    rewrites.push(map_fission());
-
-    rewrites.push(remove_transpose_pair());
-    rewrites.push(slide_before_map());
-    rewrites.push(map_slide_before_transpose());
-    rewrites.push(slide_before_map_map_f());
-    rewrites.push(separate_dot_vh_simplified());
-    rewrites.push(separate_dot_hv_simplified());
-
-    rewrites.push(beta());
-    rewrites.push(my_let_unused());
-    rewrites.push(let_var_same());
-    rewrites.push(let_app());
-    rewrites.push(let_lam_diff());
 
     rewrites
 }

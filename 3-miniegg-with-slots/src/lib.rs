@@ -59,3 +59,6 @@ pub use pattern::*;
 
 mod group;
 use group::*;
+
+mod slottify;
+pub use slottify::*;
