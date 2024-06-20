@@ -57,7 +57,13 @@ fn reduction_re2() -> RecExpr<RiseENode> {
 }
 
 pub fn reduction_problem() -> Problem {
-    (reduction_re1(), reduction_re2())
+    let start = "(app (lam s0 (app (lam s1 (app (app (var s0) (var s1)) (app (app (var s0) (var s1)) (app (app (var s0) (var s1)) (app (app (var s0) (var s1)) (app (app (var s0) (var s1)) (app (app (var s0) (var s1)) (var s1)))))))) (lam s2 (app (app add (var s2)) 1)))) (lam s4 (lam s5 (lam s3 (app (var s4) (app (var s5) (var s3)))))))".into();
+    let goal = "(lam s0 (app (app add (app (app add (app (app add (app (app add (app (app add (app (app add (app (app add (var s0)) 1)) 1)) 1)) 1)) 1)) 1)) 1))".into();
+
+    let start = RecExpr::parse(start).unwrap();
+    let goal = RecExpr::parse(goal).unwrap();
+
+    (start, goal)
 }
 
 // FISSION //
