@@ -1,18 +1,24 @@
 use crate::*;
 
+pub fn array_lam_rules() -> Vec<Rewrite<ArrayENode>> {
+    let mut rewrites = Vec::new();
+    rewrites.push(beta());
+    rewrites.push(my_let_unused());
+    rewrites.push(let_var_same());
+    rewrites.push(let_app());
+    rewrites.push(let_lam_diff());
+
+    rewrites.push(eta());
+    rewrites
+}
+
 pub fn array_rules(extra_rules: &[&'static str]) -> Vec<Rewrite<ArrayENode>> {
     let mut rewrites = Vec::new();
 
     // should also work for X = true at some point.
-    const X: bool = false;
+    const X: bool = true;
     if X {
-        rewrites.push(beta());
-        rewrites.push(my_let_unused());
-        rewrites.push(let_var_same());
-        rewrites.push(let_app());
-        rewrites.push(let_lam_diff());
-
-        rewrites.push(eta());
+        rewrites.extend(array_lam_rules());
 
         rewrites.push(map_fission());
     } else {

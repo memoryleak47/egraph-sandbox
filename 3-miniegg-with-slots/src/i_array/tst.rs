@@ -1,8 +1,19 @@
 use crate::*;
 
+fn normalize(re: RecExpr<ArrayENode>) -> RecExpr<ArrayENode> {
+    let rules = array_lam_rules();
+
+    let mut eg = EGraph::new();
+    let i = eg.add_expr(re);
+    for _ in 0..40 {
+        do_rewrites(&mut eg, &rules);
+    }
+    extract::<_, AstSizeNoLet>(i, &eg)
+}
+
 fn assert_reaches(start: &str, goal: &str, steps: usize, extra_rules: &[&'static str]) {
     let start = array_parse(start);
-    let goal = array_parse(goal);
+    let goal = normalize(array_parse(goal));
 
     let rules = array_rules(extra_rules);
 
