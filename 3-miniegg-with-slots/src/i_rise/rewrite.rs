@@ -1,17 +1,13 @@
 use crate::*;
 use crate::i_rise::build::*;
 
-pub enum SubstMethod {
-    Extraction,
-    SmallStep,
-    SmallStepUnoptimized,
-}
-
-pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
+pub fn rise_rules(exp: WithExpansion) -> Vec<Rewrite<RiseENode>> {
     let mut rewrites = Vec::new();
 
     rewrites.push(eta());
-    rewrites.push(eta_expansion());
+    if let WithExpansion::Yes = exp {
+        rewrites.push(eta_expansion());
+    }
 
     rewrites.push(map_fusion());
     rewrites.push(map_fission());
@@ -23,26 +19,11 @@ pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
     rewrites.push(separate_dot_vh_simplified());
     rewrites.push(separate_dot_hv_simplified());
 
-    match subst_m {
-        SubstMethod::Extraction => {
-            rewrites.push(beta_extr_direct());
-        },
-        SubstMethod::SmallStep => {
-            rewrites.push(beta());
-            rewrites.push(my_let_unused());
-            rewrites.push(let_var_same());
-            rewrites.push(let_app());
-            rewrites.push(let_lam_diff());
-        },
-        SubstMethod::SmallStepUnoptimized => {
-            rewrites.push(beta());
-            rewrites.push(let_var_same());
-            rewrites.push(let_var_diff());
-            rewrites.push(let_app_unopt());
-            rewrites.push(let_lam_diff_unopt());
-            rewrites.push(let_const());
-        },
-    }
+    rewrites.push(beta());
+    rewrites.push(my_let_unused());
+    rewrites.push(let_var_same());
+    rewrites.push(let_app());
+    rewrites.push(let_lam_diff());
 
     rewrites
 }

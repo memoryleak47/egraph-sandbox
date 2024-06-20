@@ -1,26 +1,8 @@
 use crate::*;
 use crate::i_rise::build::*;
 
-fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: usize) {
-    let rules = rise_rules(SubstMethod::SmallStep);
-
-    let mut eg = EGraph::new();
-    let i1 = eg.add_expr(start);
-    for _ in 0..steps {
-        do_rewrites(&mut eg, &rules);
-        dbg!(eg.total_number_of_nodes());
-        if let Some(i2) = lookup_rec_expr(&goal, &eg) {
-            if eg.eq(&i1, &i2) {
-                dbg!(eg.total_number_of_nodes());
-                return;
-            }
-        }
-    }
-
-    dbg!(extract::<_, AstSizeNoLet>(i1, &eg));
-    dbg!(&goal);
-    assert!(false);
-}
+pub enum WithExpansion { Yes, No }
+pub type Problem = (RecExpr<RiseENode>, RecExpr<RiseENode>);
 
 // REDUCTION //
 
@@ -74,9 +56,8 @@ fn reduction_re2() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
-#[test]
-fn test_reduction() {
-    assert_reaches(reduction_re1(), reduction_re2(), 40);
+pub fn reduction_problem() -> Problem {
+    (reduction_re1(), reduction_re2())
 }
 
 // FISSION //
@@ -107,9 +88,8 @@ fn fission_re2() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
-#[test]
-fn test_fission() {
-    assert_reaches(fission_re1(), fission_re2(), 40);
+pub fn fission_problem() -> Problem {
+    (fission_re1(), fission_re2())
 }
 
 // BINOMIAL //
@@ -145,6 +125,6 @@ fn binomial_re2() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
-pub fn test_binomial() {
-    assert_reaches(binomial_re1(), binomial_re2(), 40);
+pub fn binomial_problem() -> Problem {
+    (binomial_re1(), binomial_re2())
 }
