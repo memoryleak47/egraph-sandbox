@@ -15,13 +15,13 @@ fn run(name: &str, exp: WithExpansion) {
         "reduction" => {
             let start = "(app (lam compose (app (lam add1 (app (app (var compose) (var add1)) (app (app (var compose) (var add1)) (app (app (var compose) (var add1)) (app (app (var compose) (var add1)) (app (app (var compose) (var add1)) (app (app (var compose) (var add1)) (var add1)))))))) (lam y (app (app add (var y)) 1)))) (lam f (lam g (lam x (app (var f) (app (var g) (var x)))))))";
             let goal = "(lam x (app (app add (app (app add (app (app add (app (app add (app (app add (app (app add (app (app add (var x)) 1)) 1)) 1)) 1)) 1)) 1)) 1))";
-            bench(start, goal, &rules, false)
+            bench(start, goal, &rules)
         },
         "fission" => {
             let start = "(lam f1 (lam f2 (lam f3 (lam f4 (lam f5 (app map (lam x11 (app (var f5) (app (var f4) (app (var f3) (app (var f2) (app (var f1) (var x11)))))))))))))";
             let goal =  "(lam f1 (lam f2 (lam f3 (lam f4 (lam f5 (lam x7 (app (app map (lam x6 (app (var f5) (app (var f4) (app (var f3) (var x6)))))) (app (app map (lam x4 (app (var f2) (app (var f1) (var x4))))) (var x7)))))))))";
             rules.extend(["map-fusion", "map-fission"]);
-            bench(start, goal, &rules, true)
+            bench(start, goal, &rules)
         },
         "binomial" => {
             let start = "(lam x17 (app (app map (app map (lam nbh (app (app (app reduce add) 0) (app (app map (lam mt (app (app mul (app fst (var mt))) (app snd (var mt))))) (app (app zip (app join weights2d)) (app join (var nbh)))))))) (app (app map transpose) (app (app (app slide 3) 1) (app (app map (app (app slide 3) 1)) (var x17))))))";
@@ -32,13 +32,13 @@ fn run(name: &str, exp: WithExpansion) {
                 "slide-before-map", "map-slide-before-transpose", "slide-before-map-map-f",
                 "separate-dot-vh-simplified", "separate-dot-hv-simplified"
             ]);
-            bench(start, goal, &rules, true)
+            bench(start, goal, &rules)
         },
         _ => panic!("did not expect {}", name)
     }
 }
 
-fn bench(start: &str, goal: &str, rules: &[&str], normalize: bool) {
+fn bench(start: &str, goal: &str, rules: &[&str]) {
     let start = RecExpr::parse(&slottify(start.into()).0).unwrap();
     let goal = RecExpr::parse(&slottify(goal.into()).0).unwrap();
 
