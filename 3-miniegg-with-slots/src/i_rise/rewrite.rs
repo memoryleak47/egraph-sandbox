@@ -121,8 +121,8 @@ fn let_const() -> Rewrite<RiseENode> {
 
 fn map_fusion() -> Rewrite<RiseENode> {
     let mfu = "s0";
-    let pat = Pattern::parse("(app (app sym_map ?f) (app (app sym_map ?g) ?arg))").unwrap();
-    let outpat = Pattern::parse(&format!("(app (app sym_map (lam {mfu} (app ?f (app ?g (var {mfu}))))) ?arg)")).unwrap();
+    let pat = Pattern::parse("(app (app map ?f) (app (app map ?g) ?arg))").unwrap();
+    let outpat = Pattern::parse(&format!("(app (app map (lam {mfu} (app ?f (app ?g (var {mfu}))))) ?arg)")).unwrap();
     mk_rewrite(pat, outpat)
 }
 
@@ -131,11 +131,11 @@ fn map_fission() -> Rewrite<RiseENode> {
     let mfi = 1;
 
     let pat = Pattern::parse(&format!(
-        "(app sym_map (lam s{x} (app ?f ?gx)))"
+        "(app map (lam s{x} (app ?f ?gx)))"
     )).unwrap();
 
     let outpat = Pattern::parse(&format!(
-        "(lam s{mfi} (app (app sym_map ?f) (app (app sym_map (lam s{x} ?gx)) (var s{mfi}))))"
+        "(lam s{mfi} (app (app map ?f) (app (app map (lam s{x} ?gx)) (var s{mfi}))))"
     )).unwrap();
 
     mk_rewrite_if(pat, outpat, move |subst| {
@@ -144,26 +144,26 @@ fn map_fission() -> Rewrite<RiseENode> {
 }
 
 fn remove_transpose_pair() -> Rewrite<RiseENode> {
-    let pat = Pattern::parse("(app sym_transpose (app sym_transpose ?x))").unwrap();
+    let pat = Pattern::parse("(app transpose (app transpose ?x))").unwrap();
     let outpat = Pattern::parse("?x").unwrap();
     mk_rewrite(pat, outpat)
 }
 
 fn slide_before_map() -> Rewrite<RiseENode> {
-    let pat = Pattern::parse("(app (app (app sym_slide ?sz) ?sp) (app (app sym_map ?f) ?y))").unwrap();
-    let outpat = Pattern::parse("(app (app sym_map (app sym_map ?f)) (app (app (app sym_slide ?sz) ?sp) ?y))").unwrap();
+    let pat = Pattern::parse("(app (app (app slide ?sz) ?sp) (app (app map ?f) ?y))").unwrap();
+    let outpat = Pattern::parse("(app (app map (app map ?f)) (app (app (app slide ?sz) ?sp) ?y))").unwrap();
     mk_rewrite(pat, outpat)
 }
 
 fn map_slide_before_transpose() -> Rewrite<RiseENode> {
-    let pat = Pattern::parse("(app sym_transpose (app (app sym_map (app (app sym_slide ?sz) ?sp)) ?y))").unwrap();
-    let outpat = Pattern::parse("(app (app sym_map sym_transpose) (app (app (app sym_slide ?sz) ?sp) (app sym_transpose ?y)))").unwrap();
+    let pat = Pattern::parse("(app transpose (app (app map (app (app slide ?sz) ?sp)) ?y))").unwrap();
+    let outpat = Pattern::parse("(app (app map transpose) (app (app (app slide ?sz) ?sp) (app transpose ?y)))").unwrap();
     mk_rewrite(pat, outpat)
 }
 
 fn slide_before_map_map_f() -> Rewrite<RiseENode> {
-    let pat = Pattern::parse("(app (app sym_map (app sym_map ?f)) (app (app (app sym_slide ?sz) ?sp) ?y))").unwrap();
-    let outpat = Pattern::parse("(app (app (app sym_slide ?sz) ?sp) (app (app sym_map ?f) ?y))").unwrap();
+    let pat = Pattern::parse("(app (app map (app map ?f)) (app (app (app slide ?sz) ?sp) ?y))").unwrap();
+    let outpat = Pattern::parse("(app (app (app slide ?sz) ?sp) (app (app map ?f) ?y))").unwrap();
     mk_rewrite(pat, outpat)
 }
 
@@ -172,13 +172,13 @@ fn separate_dot_vh_simplified() -> Rewrite<RiseENode> {
     let sdvh = "s1";
 
     let pat = Pattern::parse(&format!(
-        "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-         (app (app sym_zip (app sym_join sym_weights2d)) (app sym_join ?nbh))))
+        "(app (app (app reduce add) 0) (app (app map (lam {x} (app (app mul (app fst (var {x}))) (app snd (var {x})))))
+         (app (app zip (app join weights2d)) (app join ?nbh))))
         ")).unwrap();
     let outpat = Pattern::parse(&format!(
-        "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-         (app (app sym_zip sym_weightsH) (app (app sym_map (lam {sdvh} (app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-         (app (app sym_zip sym_weightsV) (var {sdvh})))))) (app sym_transpose ?nbh)))))
+        "(app (app (app reduce add) 0) (app (app map (lam {x} (app (app mul (app fst (var {x}))) (app snd (var {x})))))
+         (app (app zip weightsH) (app (app map (lam {sdvh} (app (app (app reduce add) 0) (app (app map (lam {x} (app (app mul (app fst (var {x}))) (app snd (var {x})))))
+         (app (app zip weightsV) (var {sdvh})))))) (app transpose ?nbh)))))
         ")).unwrap();
     mk_rewrite(pat, outpat)
 }
@@ -188,13 +188,13 @@ fn separate_dot_hv_simplified() -> Rewrite<RiseENode> {
     let sdhv = "s1";
 
     let pat = Pattern::parse(&format!(
-        "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-         (app (app sym_zip (app sym_join sym_weights2d)) (app sym_join ?nbh))))
+        "(app (app (app reduce add) 0) (app (app map (lam {x} (app (app mul (app fst (var {x}))) (app snd (var {x})))))
+         (app (app zip (app join weights2d)) (app join ?nbh))))
         ")).unwrap();
     let outpat = Pattern::parse(&format!(
-        "(app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-         (app (app sym_zip sym_weightsV) (app (app sym_map (lam {sdhv} (app (app (app sym_reduce sym_add) num_0) (app (app sym_map (lam {x} (app (app sym_mul (app sym_fst (var {x}))) (app sym_snd (var {x})))))
-         (app (app sym_zip sym_weightsH) (var {sdhv})))))) ?nbh))))
+        "(app (app (app reduce add) 0) (app (app map (lam {x} (app (app mul (app fst (var {x}))) (app snd (var {x})))))
+         (app (app zip weightsV) (app (app map (lam {sdhv} (app (app (app reduce add) 0) (app (app map (lam {x} (app (app mul (app fst (var {x}))) (app snd (var {x})))))
+         (app (app zip weightsH) (var {sdhv})))))) ?nbh))))
         ")).unwrap();
 
     mk_rewrite(pat, outpat)
