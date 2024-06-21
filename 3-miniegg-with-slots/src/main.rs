@@ -1,13 +1,13 @@
 use miniegg_with_slots::*;
 
 fn main() {
-    run("binomial", WithExpansion::No);
-}
+    let args: Vec<String> = std::env::args().skip(1).collect();
 
-fn run(name: &str, exp: WithExpansion) {
+    let name = &*args[0];
+
     let mut rules = vec!["beta", "eta"];
 
-    if let WithExpansion::Yes = exp {
+    if let Some("eta-exp") = args.get(1).map(|x| &**x) {
         rules.push("eta-expansion");
     }
 

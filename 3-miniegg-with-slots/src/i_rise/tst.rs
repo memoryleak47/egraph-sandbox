@@ -1,7 +1,6 @@
 use crate::*;
 use crate::i_rise::build::*;
 
-pub enum WithExpansion { Yes, No }
 pub type Problem = (RecExpr<RiseENode>, RecExpr<RiseENode>);
 
 // REDUCTION //
