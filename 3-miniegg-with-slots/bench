@@ -1,0 +1,32 @@
+named:
+- reduction: 335 nodes, 0:00.00, 2560 Kbytes
+- fission: TIMEOUT: 1811085 nodes, 5:01.55, 62372364 Kbytes
+- binomial: OOM: 1001856 nodes, 4:18.14, 64254252 Kbytes
+
+de-bruijn:
+- reduction: 574 nodes, 0:00.00, 3040 Kbytes
+- fission: 20820 nodes, 0:00.13, 37520 Kbytes
+- binomial: 33177 nodes, 0:00.76, 145944 Kbytes
+
+slotted:
+- reduction: 299 nodes, 0:00.06, 3360 Kbytes
+- fission: 184 nodes, 0:00.01, 2720 Kbytes
+- binomial: 19132 nodes, 0:08.03, 115664 Kbytes
+
+
+WITH ETA-EXP:
+
+named eta-exp:
+- reduction: OOM: 46668429 nodes, 4:37.76, 64281708 Kbytes
+- fission: OOM: 8369317 nodes, 2:02.55, 64337984 Kbytes
+- binomial: TIMEOUT: 3416996 nodes, 5:01.05, 43927204 Kbytes
+
+de-bruijn eta-exp:
+- reduction: TIMEOUT: 7997557 nodes, 5:00.87, 34351420 Kbytes
+- fission: TIMEOUT: 20452236 nodes, 5:01.26, 46099844 Kbytes
+- binomial: OOM: 6807192 nodes, 4:58.92, 64177036 Kbytes
+
+slotted eta-exp:
+- reduction: 4304 nodes, 0:02.56, 28296 Kbytes
+- fission: 1334 nodes, 0:00.34, 8640 Kbytes
+- binomial: 96523 nodes, 4:02.60, 561532 Kbytes
