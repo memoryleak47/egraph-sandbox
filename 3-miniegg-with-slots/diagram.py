@@ -30,7 +30,7 @@ ax.set_ylabel('Number of e-nodes (log-scale)')
 ax.set_xlabel('Rewrite Problem')
 ax.set_yscale('log')
 ax.set_xticks(x + width, problems)
-ax.set_ylim(0, 40000)
+ax.set_ylim(0, 100000)
 ax.legend(loc='upper left')
 
 plt.show()
