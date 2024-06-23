@@ -6,9 +6,9 @@ import numpy as np
 
 etaexp=True
 
-plt.rcParams['font.size'] = 22
+plt.rcParams['font.size'] = 28
 
-problems = ("Reduction", "Fission", "Binomial")
+problems = ("Reduction", "Binomial", "Fission")
 
 oom = 9999999999999
 
@@ -21,8 +21,8 @@ if etaexp:
 else:
     encodings = {
         'Named (egg)': (335, oom, oom),
-        'DeBruijn (egg)': (574, 20820, 33177),
-        'Slotted': (299, 184, 19132),
+        'DeBruijn (egg)': (574, 33177, 20820),
+        'Slotted': (299, 19132, 184),
     }
 
 
@@ -40,14 +40,11 @@ for attribute, measurement in encodings.items():
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('Number of e-nodes (log-scale)')
-ax.set_xlabel('Rewrite Problem')
+#ax.set_xlabel('Rewrite Problem')
 ax.set_yscale('log')
 ax.set_xticks(x + width, problems)
-if etaexp:
-    ax.set_ylim(0, 200000)
-    ax.legend(loc='lower left')
-else:
-    ax.set_ylim(0, 100000-1)
-    ax.legend(loc='upper left')
+ax.set_ylim(0, 20_000_000)
+ax.legend(loc="upper center", ncols=3, bbox_to_anchor=(0.5, 1.2))
+plt.axhline(y=8_000_000, color="r", linestyle="-", linewidth=4)
 
 plt.show()
