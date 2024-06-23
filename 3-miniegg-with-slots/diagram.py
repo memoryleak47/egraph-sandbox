@@ -31,18 +31,16 @@ multiplier = 0
 
 fig, ax = plt.subplots(layout='constrained')
 
-colors = [(8,8,156), (49,163,84), (166,54,3)]
-colors2 = [(107,174,214), (116,196,118), (253,141,60)]
-
-div = lambda x: (x[0]/255, x[1]/255, x[2]/255)
+colors = ["#ff7700", "#aa5500", "#aaaa00"]
 
 for i, (attribute, measurement) in enumerate(encodings1.items()):
     offset = width * multiplier
+    m2 = encodings2[attribute]
     if etaexp:
-        m2 = encodings2[attribute]
-        rects = ax.bar(x + offset, m2, width, bottom=measurement, color=div(colors2[i]))
+        delta = tuple(m2[j] - measurement[j] for j in range(3))
+        rects = ax.bar(x + offset, delta, width, bottom=measurement, color=(colors[i], 0.5))
         ax.bar_label(rects, padding=3)
-    rects = ax.bar(x + offset, measurement, width, label=attribute, color=div(colors[i]))
+    rects = ax.bar(x + offset, measurement, width, label=attribute, color=colors[i])
     ax.bar_label(rects, padding=3)
     multiplier += 1
 
@@ -53,6 +51,6 @@ ax.set_yscale('log')
 ax.set_xticks(x + width, problems)
 ax.set_ylim(1, 20_000_000)
 ax.legend(loc="upper center", ncols=3, bbox_to_anchor=(0.5, 1.2))
-plt.axhline(y=8_000_000, color="r", linestyle="-", linewidth=4)
+plt.axhline(y=8_000_000, color="r", linestyle="-", linewidth=8)
 
 plt.show()
