@@ -102,7 +102,7 @@ fn parse_slot(s: &str) -> Option<(Slot, &str)> {
 // Returns the relevant substring for op parsing.
 // The operator is anything delimited by ' ', '(', ')', or '\n'.
 fn op_str(s: &str) -> (&str, &str) {
-    if let Some(i) = s.chars().position(|c| c.is_whitespace() || c == '(' || c == ')') {
+    if let Some((i, _)) = s.char_indices().find(|(_, c)| c.is_whitespace() || *c == '(' || *c == ')') {
         (&s[..i], &s[i..])
     } else { (s, "") }
 }

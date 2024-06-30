@@ -42,7 +42,8 @@ impl Language for SymbolENode {
 
 #[test]
 fn symbol_lang_parse_roundtrip() {
-    let s = "(foo 32 (bar 32 (fooz ok)) (nice thing))";
+    let s = "(foo 32 (❤ 32 (fooz ok)) (nice Σ))";
+
     let x: RecExpr<SymbolENode> = RecExpr::parse(s).unwrap();
     assert_eq!(s, &*x.to_string());
 }
