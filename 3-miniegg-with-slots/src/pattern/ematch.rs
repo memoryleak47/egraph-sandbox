@@ -40,10 +40,10 @@ fn ematch_impl<L: Language>(pattern: &Pattern<L>, st: State, i: AppliedId, eg: &
             let mut out = Vec::new();
             'nodeloop: for n2 in eg.enodes_applied(&i) {
                 if CHECKS {
-                    assert_eq!(&clear_app_ids(n), n);
+                    assert_eq!(&nullify_app_ids(n), n);
                 }
 
-                let clear_n2 = clear_app_ids(&n2);
+                let clear_n2 = nullify_app_ids(&n2);
                 let (n_sh, _) = n.shape();
                 let (clear_n2_sh, _) = clear_n2.shape();
                 if n_sh != clear_n2_sh { continue 'nodeloop; }
@@ -70,7 +70,7 @@ fn ematch_impl<L: Language>(pattern: &Pattern<L>, st: State, i: AppliedId, eg: &
     }
 }
 
-fn clear_app_ids<L: Language>(l: &L) -> L {
+fn nullify_app_ids<L: Language>(l: &L) -> L {
     let mut l = l.clone();
     for x in l.applied_id_occurences_mut() {
         *x = AppliedId::null();
