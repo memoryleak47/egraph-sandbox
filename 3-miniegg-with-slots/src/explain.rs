@@ -1,0 +1,33 @@
+use crate::*;
+
+// In the context of explanations, there is a bijection between Ids and Terms.
+// Hence Ids uniquely identify certain concrete terms.
+
+#[derive(Debug)]
+pub struct Explain<L: Language> {
+    // These two form a bijection:
+    enode_to_term_id: HashMap<L, AppliedId>,
+    term_id_to_enode: HashMap<AppliedId, L>,
+
+    // invariant: the first input x (of justification_forest[x]), has to contain an identity permutation.
+    // justification_forest[x][y] returns the justification for unifying x and y.
+    // justification_forest[x][y] is stored redundantly with justification_forest[y][x].
+    justification_forest: HashMap<AppliedId, HashMap<AppliedId, Justification>>,
+}
+
+#[derive(Debug)]
+enum Justification {
+    Congruence,
+    Rule(String, /*forward / backward*/ bool),
+}
+
+impl<L: Language> Explain<L> {
+    pub fn justify_union(&mut self, a: AppliedId, b: AppliedId, j: Justification) {
+        todo!()
+    }
+
+    // panics, if a and b are not equal.
+    fn get_justification_chain(&self, a: AppliedId, b: AppliedId) -> Vec<Justification> {
+        todo!()
+    }
+}

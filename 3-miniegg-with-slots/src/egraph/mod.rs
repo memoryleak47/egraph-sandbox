@@ -47,6 +47,8 @@ pub struct EGraph<L: Language> {
 
     // For each shape contained in the EGraph, maps to the EClass that contains it.
     hashcons: HashMap<L, Id>,
+
+    explain: Option<Explain<L>>,
 }
 
 impl<L: Language> EGraph<L> {
@@ -55,6 +57,7 @@ impl<L: Language> EGraph<L> {
             unionfind: Default::default(),
             classes: Default::default(),
             hashcons: Default::default(),
+            explain: None,
         }
     }
 
