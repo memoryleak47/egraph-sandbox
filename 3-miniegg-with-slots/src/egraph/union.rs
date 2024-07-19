@@ -4,29 +4,36 @@ impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
-        let out = self.union_internal(l, r);
+        let out = self.union_internal(l, r, Some(Justification::Explicit));
         out
     }
 
-    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
+    // if j == None, we don't add anything to the Explain.
+    fn union_internal(&mut self, orig_l: &AppliedId, orig_r: &AppliedId, j: Option<Justification>) -> bool {
         // normalize inputs
-        let l = self.find_applied_id(&l);
-        let r = self.find_applied_id(&r);
+        let l = self.find_applied_id(&orig_l);
+        let r = self.find_applied_id(&orig_r);
 
         // early return, if union should not be made.
         if self.eq(&l, &r) { return false; }
+
+        if let Some(j) = j {
+            if let Some(explain) = &mut self.explain {
+                explain.add_equation(orig_l.clone(), orig_r.clone(), j);
+            }
+        }
 
         let cap = &l.slots() & &r.slots();
 
         if l.slots() != cap {
             self.shrink_slots(&l, &cap);
-            self.union_internal(&l, &r);
+            self.union_internal(&l, &r, None);
             return true;
         }
 
         if r.slots() != cap {
             self.shrink_slots(&r, &cap);
-            self.union_internal(&l, &r);
+            self.union_internal(&l, &r, None);
             return true;
         }
 
@@ -43,15 +50,16 @@ impl<L: Language> EGraph<L> {
             }
 
             let grp = &mut self.classes.get_mut(&id).unwrap().group;
-            if grp.contains(&perm) { return false; }
+
+            if CHECKS {
+                // if the group does contain `perm`, then the self.eq() check should have catched that!
+                assert!(!grp.contains(&perm));
+            }
 
             grp.add(perm);
 
             self.convert_eclass(id);
-
-            true
         } else {
-            // sort, s.t. size(l) >= size(r).
             let size = |i| {
                 let c = &self.classes[&i];
                 c.nodes.len() + c.usages.len()
@@ -62,8 +70,9 @@ impl<L: Language> EGraph<L> {
             } else {
                 self.move_to(&l, &r)
             }
-            true
         }
+
+        true
     }
 
     fn shrink_slots(&mut self, from: &AppliedId, cap: &HashSet<Slot>) {
@@ -100,9 +109,13 @@ impl<L: Language> EGraph<L> {
 
     // moves everything from `from` to `to`.
     fn move_to(&mut self, from: &AppliedId, to: &AppliedId) {
+        self.add_to_unionfind(from, to);
+        self.convert_eclass(from.id);
+    }
+
+    pub fn add_to_unionfind(&mut self, from: &AppliedId, to: &AppliedId) {
         let map = to.m.compose_partial(&from.m.inverse());
         self.unionfind.set(from.id, &self.mk_applied_id(to.id, map));
-        self.convert_eclass(from.id);
     }
 
     // Remove everything that references this e-class, and then re-add it using "semantic_add".
@@ -171,6 +184,7 @@ impl<L: Language> EGraph<L> {
     }
 
     // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
+    // TODO this is very inefficient, and there are probably better methods.
     fn get_group_compatible_variants(&self, enode: &L) -> HashSet<L> {
         let mut s = HashSet::default();
         s.insert(enode.clone());
@@ -206,7 +220,7 @@ impl<L: Language> EGraph<L> {
         let mut i = i.clone();
 
         if let Some(j) = self.lookup_internal(&enode) {
-            self.union_internal(&i, &j);
+            self.union_internal(&i, &j, Some(Justification::Congruence));
         } else {
             if !i.slots().is_subset(&enode.slots()) {
                 let cap = &enode.slots() & &i.slots();
@@ -228,4 +242,30 @@ impl<L: Language> EGraph<L> {
             self.raw_add_to_class(i.id, (sh, bij));
         }
     }
+
+    // union_instantiations and friends:
+    pub fn union_instantiations(&mut self, from_pat: &Pattern<L>, to_pat: &Pattern<L>, subst: &Subst, rule_name: String) {
+        let from = self.add_instantiation(from_pat, subst);
+        let to = self.add_instantiation(to_pat, subst);
+        self.union_internal(&from, &to, Some(Justification::Rule(rule_name)));
+    }
+
+    // adapted from the very similar function pattern_subst.
+    pub fn add_instantiation(&mut self, pattern: &Pattern<L>, subst: &Subst) -> AppliedId {
+        match &pattern.node {
+            ENodeOrPVar::ENode(n) => {
+                let mut n = n.clone();
+                let mut refs: Vec<&mut _> = n.applied_id_occurences_mut();
+                assert_eq!(pattern.children.len(), refs.len());
+                for i in 0..refs.len() {
+                    *(refs[i]) = self.add_instantiation(&pattern.children[i], subst);
+                }
+                self.add_uncanonical(n)
+            },
+            ENodeOrPVar::PVar(v) => {
+                subst[v].clone()
+            },
+        }
+    }
+
 }

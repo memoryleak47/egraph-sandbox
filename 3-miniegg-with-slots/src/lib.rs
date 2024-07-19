@@ -22,6 +22,9 @@ pub use parse::*;
 mod lang;
 pub use lang::*;
 
+mod explain;
+pub use explain::*;
+
 mod i_lambda;
 pub use i_lambda::*;
 

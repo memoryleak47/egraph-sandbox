@@ -10,22 +10,50 @@ impl<L: Language> EGraph<L> {
         for (i, child) in re.children.into_iter().enumerate() {
             *(refs[i]) = self.add_expr(child);
         }
-        self.add(n)
+        self.add_uncanonical(n)
     }
 
     pub fn add(&mut self, enode: L) -> AppliedId {
-        self.add_internal(enode)
+        let a = self.add_uncanonical(enode);
+
+        // this is unnecessary, if explain = None.
+        self.find_applied_id(&a)
     }
 
     // self.add(x) = y implies that x.slots() is a superset of y.slots().
     // x.slots() - y.slots() are redundant slots.
-    pub(in crate::egraph) fn add_internal(&mut self, enode: L) -> AppliedId {
-        let enode = self.find_enode(&enode);
+    // If explain == Some(_), it returns a (potentially non-canonical) `id`, where term_id_to_enode(id) == enode.
+    // if explain == None, it returns the canonical id.
+    pub(in crate::egraph) fn add_uncanonical(&mut self, enode: L) -> AppliedId {
+        let original = enode;
+        let enode = self.find_enode(&original);
 
-        if let Some(x) = self.lookup(&enode) {
-            return x;
-        }
+        let x = if let Some(x) = self.lookup(&enode) {
+            x
+        } else {
+            self.make_singleton_class(enode)
+        };
 
+        if let Some(explain) = &mut self.explain {
+            if let Some(y) = explain.enode_to_term_id(&original) {
+                return y;
+            }
+            let _ = explain;
+
+            let i = self.alloc_eclass_fresh(&original.slots());
+            self.add_to_unionfind(&i, &x);
+
+            let explain = self.explain.as_mut().unwrap();
+            explain.add_enode(original, i.clone());
+            explain.add_equation(i.clone(), x.clone(), Justification::Congruence);
+
+            i
+        } else { x }
+    }
+
+    // like add, but won't do lookup. also won't normalize the enode.
+    // It will however generate fresh slots.
+    fn make_singleton_class(&mut self, enode: L) -> AppliedId {
         let old_slots = enode.slots();
 
         let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
@@ -39,7 +67,13 @@ impl<L: Language> EGraph<L> {
         // calling semantic_add is a bit overkill here, we use it for the symmetries though.
         self.semantic_add(&fresh_enode, &app_id);
 
-        self.mk_applied_id(id, fresh_to_old)
+        let app_id = self.mk_applied_id(id, fresh_to_old);
+
+        if let Some(explain) = &mut self.explain {
+            explain.add_enode(enode, app_id.clone());
+        }
+
+        app_id
     }
 
     pub fn lookup(&self, n: &L) -> Option<AppliedId> {

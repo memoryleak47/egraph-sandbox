@@ -47,6 +47,8 @@ pub struct EGraph<L: Language> {
 
     // For each shape contained in the EGraph, maps to the EClass that contains it.
     hashcons: HashMap<L, Id>,
+
+    explain: Option<Explain<L>>,
 }
 
 impl<L: Language> EGraph<L> {
@@ -55,7 +57,16 @@ impl<L: Language> EGraph<L> {
             unionfind: Default::default(),
             classes: Default::default(),
             hashcons: Default::default(),
+            explain: None,
         }
+    }
+
+    pub fn with_explanations_enabled(mut self) -> Self {
+        if self.hashcons.len() > 0 {
+            panic!("Can only enable explanations for an empty Slotted E-Graph");
+        }
+        self.explain = Some(Explain::default());
+        self
     }
 
     pub fn slots(&self, id: Id) -> HashSet<Slot> {
@@ -286,5 +297,14 @@ impl<L: Language> EGraph<L> {
             out.push(x);
         }
         out
+    }
+
+    pub fn explain_equivalence(&mut self, l: &RecExpr<L>, r: &RecExpr<L>) -> Option<Explanation<L>> {
+        let l = self.add_expr(l.clone());
+        let r = self.add_expr(r.clone());
+
+        if !self.eq(&l, &r) { return None; }
+
+        self.explain.as_ref().expect("Explanations are disabled!").explain_equivalence(l, r)
     }
 }
