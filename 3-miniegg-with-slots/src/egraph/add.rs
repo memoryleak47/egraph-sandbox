@@ -10,16 +10,21 @@ impl<L: Language> EGraph<L> {
         for (i, child) in re.children.into_iter().enumerate() {
             *(refs[i]) = self.add_expr(child);
         }
-        self.add(n)
+        self.add_uncanonical(n)
     }
 
     pub fn add(&mut self, enode: L) -> AppliedId {
-        self.add_internal(enode)
+        let a = self.add_uncanonical(enode);
+
+        // this is unnecessary, if explain = None.
+        self.find_applied_id(&a)
     }
 
     // self.add(x) = y implies that x.slots() is a superset of y.slots().
     // x.slots() - y.slots() are redundant slots.
-    pub(in crate::egraph) fn add_internal(&mut self, enode: L) -> AppliedId {
+    // If explain == Some(_), it returns a (potentially non-canonical) `id`, where term_id_to_enode(id) == enode.
+    // if explain == None, it returns the canonical id.
+    pub(in crate::egraph) fn add_uncanonical(&mut self, enode: L) -> AppliedId {
         let original = enode;
         let enode = self.find_enode(&original);
 
