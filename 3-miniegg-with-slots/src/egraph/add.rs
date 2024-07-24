@@ -29,8 +29,8 @@ impl<L: Language> EGraph<L> {
         self.make_singleton_class(enode)
     }
 
-    // like add, but won't do lookup.
-    // it will however generate fresh slots.
+    // like add, but won't do lookup. also won't normalize the enode.
+    // It will however generate fresh slots.
     fn make_singleton_class(&mut self, enode: L) -> AppliedId {
         let old_slots = enode.slots();
 
