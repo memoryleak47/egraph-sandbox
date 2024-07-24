@@ -31,13 +31,15 @@ impl<L: Language> EGraph<L> {
 
         if let Some(explain) = &mut self.explain {
             if let Some(y) = explain.enode_to_term_id(&original) {
-                y
-            } else {
-                // TODO this shouldn't create a new class, if original == enode.
-                let y = self.make_singleton_class(original);
-                self.union(&x, &y);
-                y
+                return y;
             }
+            let _ = explain;
+
+            let i = self.alloc_eclass_fresh(&original.slots());
+            self.merge_into_eclass(&i, &x);
+            self.explain.as_mut().unwrap().add_enode(original, i.clone());
+
+            i
         } else { x }
     }
 
@@ -57,7 +59,13 @@ impl<L: Language> EGraph<L> {
         // calling semantic_add is a bit overkill here, we use it for the symmetries though.
         self.semantic_add(&fresh_enode, &app_id);
 
-        self.mk_applied_id(id, fresh_to_old)
+        let app_id = self.mk_applied_id(id, fresh_to_old);
+
+        if let Some(explain) = &mut self.explain {
+            explain.add_enode(enode, app_id.clone());
+        }
+
+        app_id
     }
 
     pub fn lookup(&self, n: &L) -> Option<AppliedId> {

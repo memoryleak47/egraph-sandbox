@@ -48,6 +48,11 @@ pub enum PermJustification {
 }
 
 impl<L: Language> Explain<L> {
+    // TODO add stuff to the bijection.
+    pub fn add_enode(&mut self, l: L, i: AppliedId) {
+        todo!()
+    }
+
     // TODO normalize slots somehow
     pub fn enode_to_term_id(&self, _: &L) -> Option<AppliedId> {
         todo!()
