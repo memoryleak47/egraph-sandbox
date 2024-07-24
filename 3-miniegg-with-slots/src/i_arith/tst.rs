@@ -39,7 +39,7 @@ fn arith_test1() { // x+y = y+x
 fn arith_test2() { // (x+y) * (x+y) = (x+y) * (y+x)
     let x = 0;
     let y = 1;
-    let z = 1;
+    let z = 2;
 
     let a = mul2(
                 add2(var(x), var(y)),
@@ -60,7 +60,7 @@ fn arith_test2() { // (x+y) * (x+y) = (x+y) * (y+x)
 fn arith_test3() { // (x+y) * (y+z) = (z+y) * (y+x)
     let x = 0;
     let y = 1;
-    let z = 1;
+    let z = 2;
 
     let a = mul2(
                 add2(var(x), var(y)),
@@ -81,7 +81,7 @@ fn arith_test3() { // (x+y) * (y+z) = (z+y) * (y+x)
 fn arith_test4() { // (x+y)**2 = x**2 + x*y + x*y + y**2
     let x = 0;
     let y = 1;
-    let z = 1;
+    let z = 2;
 
     let a = mul2(
                 add2(var(x), var(y)),
