@@ -67,6 +67,11 @@ impl Group {
                         out.insert(r.compose(l));
                     }
                 }
+
+                if CHECKS {
+                    assert_eq!(out.len(), self.count());
+                }
+
                 out
             }
         }
@@ -94,6 +99,13 @@ impl Group {
 
         if !perms.is_empty() {
             *self = Group::new(&self.omega, &self.generators() | &perms);
+        }
+    }
+
+    pub fn count(&self) -> usize {
+        match &self.next {
+            None => 1,
+            Some(n) => n.ot.len() * n.g.count(),
         }
     }
 }

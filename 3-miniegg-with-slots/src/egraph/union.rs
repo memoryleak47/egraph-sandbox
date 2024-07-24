@@ -52,7 +52,7 @@ impl<L: Language> EGraph<L> {
         let to = self.find_applied_id(to);
 
         // move over the group perms from `from` to `to`.
-        {
+        let group_grew = {
             // from.m :: slots(from.id) -> C
             // to.m :: slots(to.id) -> C
             let tmp = from.m.compose_partial(&to.m.inverse());
@@ -60,12 +60,16 @@ impl<L: Language> EGraph<L> {
                 x.iter().map(|(x, y)| (tmp[x], tmp[y])).collect()
             };
 
+            let old_size = self.classes[&to.id].group.count();
             let set = self.classes[&from.id].group.generators()
                 .into_iter()
                 .map(change_permutation_from_from_to_to)
                 .collect();
             self.classes.get_mut(&to.id).unwrap().group.add_set(set);
-        }
+            let new_size = self.classes[&to.id].group.count();
+
+            new_size > old_size
+        };
 
         // self-symmetries:
         if from.id == to.id {
@@ -91,6 +95,10 @@ impl<L: Language> EGraph<L> {
             let map = to.m.compose_partial(&from.m.inverse());
 
             self.unionfind.set(from.id, &self.mk_applied_id(to.id, map));
+
+            if group_grew {
+                self.convert_eclass(to.id);
+            }
             self.convert_eclass(from.id);
 
             true
