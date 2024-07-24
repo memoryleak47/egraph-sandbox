@@ -41,6 +41,7 @@ impl<L: Language> EGraph<L> {
             let _ = explain;
 
             let i = self.alloc_eclass_fresh(&original.slots());
+            // TODO add congruence justification here.
             self.merge_into_eclass(&i, &x);
             self.explain.as_mut().unwrap().add_enode(original, i.clone());
 
