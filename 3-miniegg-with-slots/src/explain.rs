@@ -11,10 +11,12 @@ pub struct Explain<L: Language> {
     enode_to_term_id: HashMap<L, AppliedId>,
     term_id_to_enode: HashMap<AppliedId, L>,
 
-    // invariant: the first input x (of justification_forest[x]), has to contain an identity permutation.
     // justification_forest[x][y] returns the justification for unifying x and y.
     // justification_forest[x][y] is stored redundantly with justification_forest[y][x].
-    justification_forest: HashMap<AppliedId, HashMap<AppliedId, Justification>>,
+    justification_forest: HashMap<Id, HashMap<AppliedId, Justification>>,
+
+    // For each permutation, remembers how we computed it.
+    perm_justifications: HashMap<Id, HashMap<Perm, Justification>>,
 }
 
 impl<L: Language> Default for Explain<L> {
@@ -23,6 +25,7 @@ impl<L: Language> Default for Explain<L> {
             enode_to_term_id: Default::default(),
             term_id_to_enode: Default::default(),
             justification_forest: Default::default(),
+            perm_justifications: Default::default(),
         }
     }
 }
