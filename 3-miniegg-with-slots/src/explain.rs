@@ -30,11 +30,20 @@ impl<L: Language> Default for Explain<L> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Justification {
     Congruence,
     Rule(String, /*forward / backward*/ bool),
     User,
+}
+
+impl Justification {
+    fn reverse(&self) -> Self {
+        if let Justification::Rule(x, fwd) = self {
+            return Justification::Rule(x.to_string(), !fwd);
+        }
+        self.clone()
+    }
 }
 
 #[derive(Debug)]
@@ -85,7 +94,18 @@ impl<L: Language> Explain<L> {
     }
 
     pub fn justify_union(&mut self, a: AppliedId, b: AppliedId, j: Justification) {
-        todo!()
+        // a == a.id * a.m
+        // a == b
+        // -> a.id == b * a.m^-1
+        // ... and analog, b.id == a * b.m^-1
+
+        let j_rev = j.reverse();
+
+        if !self.justification_forest.contains_key(&a.id) { self.justification_forest.insert(a.id, HashMap::default()); }
+        self.justification_forest.get_mut(&a.id).unwrap().insert(b.apply_slotmap(&a.m.inverse()), j);
+
+        if !self.justification_forest.contains_key(&b.id) { self.justification_forest.insert(b.id, HashMap::default()); }
+        self.justification_forest.get_mut(&b.id).unwrap().insert(a.apply_slotmap(&b.m.inverse()), j_rev);
     }
 
     // get_justification_chain(a, b).last().unwrap().1 == b, whereas a doesn't come up in the list.
