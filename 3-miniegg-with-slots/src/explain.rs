@@ -48,6 +48,16 @@ pub enum PermJustification {
 }
 
 impl<L: Language> Explain<L> {
+    // TODO normalize slots somehow
+    pub fn enode_to_term_id(&self, _: &L) -> Option<AppliedId> {
+        todo!()
+    }
+
+    // TODO normalize slots somehow
+    pub fn term_id_to_enode(&self, _: &AppliedId) -> Option<L> {
+        todo!()
+    }
+
     pub fn justify_union(&mut self, a: AppliedId, b: AppliedId, j: Justification) {
         todo!()
     }

@@ -20,13 +20,25 @@ impl<L: Language> EGraph<L> {
     // self.add(x) = y implies that x.slots() is a superset of y.slots().
     // x.slots() - y.slots() are redundant slots.
     pub(in crate::egraph) fn add_internal(&mut self, enode: L) -> AppliedId {
-        let enode = self.find_enode(&enode);
+        let original = enode;
+        let enode = self.find_enode(&original);
 
-        if let Some(x) = self.lookup(&enode) {
-            return x;
-        }
+        let x = if let Some(x) = self.lookup(&enode) {
+            x
+        } else {
+            self.make_singleton_class(enode)
+        };
 
-        self.make_singleton_class(enode)
+        if let Some(explain) = &mut self.explain {
+            if let Some(y) = explain.enode_to_term_id(&original) {
+                y
+            } else {
+                // TODO this shouldn't create a new class, if original == enode.
+                let y = self.make_singleton_class(original);
+                self.union(&x, &y);
+                y
+            }
+        } else { x }
     }
 
     // like add, but won't do lookup. also won't normalize the enode.
