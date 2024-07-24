@@ -26,6 +26,12 @@ impl<L: Language> EGraph<L> {
             return x;
         }
 
+        self.make_singleton_class(enode)
+    }
+
+    // like add, but won't do lookup.
+    // it will however generate fresh slots.
+    fn make_singleton_class(&mut self, enode: L) -> AppliedId {
         let old_slots = enode.slots();
 
         let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
