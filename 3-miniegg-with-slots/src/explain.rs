@@ -8,8 +8,8 @@ use crate::*;
 #[derive(Debug)]
 pub struct Explain<L: Language> {
     // These two form a bijection:
-    enode_to_term_id: HashMap<L, AppliedId>,
-    term_id_to_enode: HashMap<AppliedId, L>,
+    enode_to_term_id: HashMap<L/*shape*/, AppliedId>,
+    term_id_to_enode: HashMap<Id, L/*with identity perm*/>,
 
     // justification_forest[x][y] returns the justification for unifying x and y.
     // justification_forest[x][y] is stored redundantly with justification_forest[y][x].
@@ -48,19 +48,39 @@ pub enum PermJustification {
 }
 
 impl<L: Language> Explain<L> {
-    // TODO add stuff to the bijection.
     pub fn add_enode(&mut self, l: L, i: AppliedId) {
-        todo!()
+        { // enode_to_term_id
+            let (sh, bij) = l.shape();
+            //    l == i, and given l == sh * bij
+            // -> sh * bij == i
+            // -> sh == i * bij^-1
+            self.enode_to_term_id.insert(sh, i.apply_slotmap(&bij.inverse()));
+        }
+
+        { // term_id_to_enode
+            let l2 = l.apply_slotmap(&i.m.inverse());
+            //    l == i, and given i == i.id * i.m
+            // -> l == i.id * i.m
+            // -> l * i.m^-1 == i.id
+            self.term_id_to_enode.insert(i.id, l2);
+        }
     }
 
-    // TODO normalize slots somehow
-    pub fn enode_to_term_id(&self, _: &L) -> Option<AppliedId> {
-        todo!()
+    pub fn enode_to_term_id(&self, l: &L) -> Option<AppliedId> {
+        let (sh, bij) = l.shape();
+        let a = self.enode_to_term_id.get(&sh)?;
+        // a == sh by definition of a.
+        // sh * bij == l by definition of (sh, bij).
+        // -> a * bij == l
+        Some(a.apply_slotmap(&bij))
     }
 
-    // TODO normalize slots somehow
-    pub fn term_id_to_enode(&self, _: &AppliedId) -> Option<L> {
-        todo!()
+    pub fn term_id_to_enode(&self, a: &AppliedId) -> Option<L> {
+        let x = self.term_id_to_enode.get(&a.id)?;
+        // x == a.id by definition of x.
+        // a == a.id * a.m by definition of AppliedId.
+        // -> a == x * a.m
+        Some(x.apply_slotmap(&a.m))
     }
 
     pub fn justify_union(&mut self, a: AppliedId, b: AppliedId, j: Justification) {
