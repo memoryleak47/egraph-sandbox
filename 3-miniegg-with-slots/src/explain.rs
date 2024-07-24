@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use crate::*;
 
 // In the context of explanations, there is a bijection between Ids and Terms.
@@ -15,8 +17,18 @@ pub struct Explain<L: Language> {
     justification_forest: HashMap<AppliedId, HashMap<AppliedId, Justification>>,
 }
 
+impl<L: Language> Default for Explain<L> {
+    fn default() -> Self {
+        Self {
+            enode_to_term_id: Default::default(),
+            term_id_to_enode: Default::default(),
+            justification_forest: Default::default(),
+        }
+    }
+}
+
 #[derive(Debug)]
-enum Justification {
+pub enum Justification {
     Congruence,
     Rule(String, /*forward / backward*/ bool),
 }
@@ -26,8 +38,9 @@ impl<L: Language> Explain<L> {
         todo!()
     }
 
+    // get_justification_chain(a, b).last().unwrap().1 == b, whereas a doesn't come up in the list.
     // panics, if a and b are not equal.
-    fn get_justification_chain(&self, a: AppliedId, b: AppliedId) -> Vec<Justification> {
+    fn get_justification_chain(&self, a: AppliedId, b: AppliedId) -> Vec<(Justification, AppliedId)> {
         todo!()
     }
 }

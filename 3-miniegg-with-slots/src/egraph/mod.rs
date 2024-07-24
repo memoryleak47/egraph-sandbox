@@ -61,6 +61,14 @@ impl<L: Language> EGraph<L> {
         }
     }
 
+    pub fn with_explanations_enabled(mut self) -> Self {
+        if self.hashcons.len() > 0 {
+            panic!("Can only enable explanations for an empty Slotted E-Graph");
+        }
+        self.explain = Some(Explain::default());
+        self
+    }
+
     pub fn slots(&self, id: Id) -> HashSet<Slot> {
         self.classes[&id].slots.clone()
     }
