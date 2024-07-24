@@ -51,14 +51,14 @@ fn beta() -> Rewrite<RiseENode> {
     let pat = Pattern::parse("(app (lam s1 ?body) ?e)").unwrap();
     let outpat = Pattern::parse("(let s1 ?e ?body)").unwrap();
 
-    mk_rewrite(pat, outpat)
+    mk_named_rewrite("beta", pat, outpat)
 }
 
 fn eta() -> Rewrite<RiseENode> {
     let pat = Pattern::parse("(lam s1 (app ?f (var s1)))").unwrap();
     let outpat = Pattern::parse("?f").unwrap();
 
-    mk_rewrite_if(pat, outpat, |subst| {
+    mk_named_rewrite_if("eta", pat, outpat, |subst| {
         !subst["f"].slots().contains(&Slot::new(1))
     })
 }
