@@ -171,6 +171,7 @@ impl<L: Language> EGraph<L> {
     }
 
     // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
+    // TODO this is very inefficient, and there are probably better methods.
     fn get_group_compatible_variants(&self, enode: &L) -> HashSet<L> {
         let mut s = HashSet::default();
         s.insert(enode.clone());
