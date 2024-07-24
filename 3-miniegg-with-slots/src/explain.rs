@@ -16,7 +16,7 @@ pub struct Explain<L: Language> {
     justification_forest: HashMap<Id, HashMap<AppliedId, Justification>>,
 
     // For each permutation, remembers how we computed it.
-    perm_justifications: HashMap<Id, HashMap<Perm, Justification>>,
+    perm_justifications: HashMap<Id, HashMap<Perm, PermJustification>>,
 }
 
 impl<L: Language> Default for Explain<L> {
@@ -34,6 +34,17 @@ impl<L: Language> Default for Explain<L> {
 pub enum Justification {
     Congruence,
     Rule(String, /*forward / backward*/ bool),
+}
+
+#[derive(Debug)]
+pub enum PermJustification {
+    Rule(String, /*forward / backward*/ bool),
+
+    Composition(Perm, Perm),
+    Inverse(Perm),
+
+    // the perm was generated for another class, which was then unioned with this one.
+    Equality(Id),
 }
 
 impl<L: Language> Explain<L> {
