@@ -34,6 +34,7 @@ impl<L: Language> Default for Explain<L> {
 pub enum Justification {
     Congruence,
     Rule(String, /*forward / backward*/ bool),
+    User,
 }
 
 #[derive(Debug)]

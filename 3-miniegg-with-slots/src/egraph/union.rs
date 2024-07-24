@@ -4,11 +4,11 @@ impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
-        let out = self.union_internal(l, r);
+        let out = self.union_internal(l, r, Justification::User);
         out
     }
 
-    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
+    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId, j: Justification) -> bool {
         // normalize inputs
         let l = self.find_applied_id(&l);
         let r = self.find_applied_id(&r);
@@ -207,12 +207,12 @@ impl<L: Language> EGraph<L> {
         let mut i = i.clone();
 
         if let Some(j) = self.lookup_internal(&enode) {
-            self.union_internal(&i, &j);
+            self.union_internal(&i, &j, Justification::User); // TODO justification
         } else {
             if !i.slots().is_subset(&enode.slots()) {
                 let cap = &enode.slots() & &i.slots();
                 let c = self.alloc_eclass_fresh(&cap);
-                self.union_internal(&c, &i);
+                self.union_internal(&c, &i, Justification::User); // TODO justification
 
                 enode = self.find_enode(&enode);
                 i = self.find_applied_id(&i);
@@ -230,4 +230,30 @@ impl<L: Language> EGraph<L> {
             self.raw_add_to_class(i.id, (sh, bij));
         }
     }
+
+    // union_instantiations and friends:
+    pub fn union_instantiations(&mut self, from_pat: &Pattern<L>, to_pat: &Pattern<L>, subst: &Subst, rule_name: String) {
+        let from = self.add_instantiation(from_pat, subst);
+        let to = self.add_instantiation(to_pat, subst);
+        self.union_internal(&from, &to, Justification::Rule(rule_name, true));
+    }
+
+    // adapted from the very similar function pattern_subst.
+    pub fn add_instantiation(&mut self, pattern: &Pattern<L>, subst: &Subst) -> AppliedId {
+        match &pattern.node {
+            ENodeOrPVar::ENode(n) => {
+                let mut n = n.clone();
+                let mut refs: Vec<&mut _> = n.applied_id_occurences_mut();
+                assert_eq!(pattern.children.len(), refs.len());
+                for i in 0..refs.len() {
+                    *(refs[i]) = self.add_instantiation(&pattern.children[i], subst);
+                }
+                self.add_uncanonical(n)
+            },
+            ENodeOrPVar::PVar(v) => {
+                subst[v].clone()
+            },
+        }
+    }
+
 }
