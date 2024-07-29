@@ -3,11 +3,13 @@ use crate::*;
 impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
+    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
         let out = self.union_internal(l, r);
         out
     }
 
+    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
     fn union_internal(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
         // normalize inputs
         let l = self.find_applied_id(&l);
@@ -43,6 +45,7 @@ impl<L: Language> EGraph<L> {
     // `from.id` gets deprecated, if it's different from `to.id`.
     //
     // Only gets called with from.slots() superset to.slots().
+    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
     fn merge_into_eclass(&mut self, from: &AppliedId, to: &AppliedId) -> bool {
         if CHECKS {
             assert!(from.slots().is_superset(&to.slots()));
@@ -106,6 +109,7 @@ impl<L: Language> EGraph<L> {
     }
 
     // Remove everything that references this e-class, and then re-add it using "semantic_add".
+    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
     fn convert_eclass(&mut self, from: Id) {
         let mut adds: Vec<(L, AppliedId)> = Vec::new();
 
@@ -156,6 +160,7 @@ impl<L: Language> EGraph<L> {
         s
     }
 
+    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
     pub fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
         let enode = self.find_enode(&enode);
         let i = self.find_applied_id(i);
@@ -166,6 +171,7 @@ impl<L: Language> EGraph<L> {
     }
 
     // self.check() should hold before and after this.
+    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
     fn semantic_add_impl(&mut self, enode: &L, i: &AppliedId) {
         let mut enode = enode.clone();
         let mut i = i.clone();
