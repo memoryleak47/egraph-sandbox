@@ -35,7 +35,9 @@ impl<L: Language> EGraph<L> {
         } else {
             let c = self.alloc_eclass_fresh(&cap);
             self.merge_into_eclass(&l, &c);
-            self.merge_into_eclass(&r, &c);
+
+            // merge_into_eclass(r, c) isn't enough, as r might already be empty if l.id == r.id.
+            self.union_internal(&r, &c);
 
             true
         }

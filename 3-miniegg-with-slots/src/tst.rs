@@ -45,8 +45,9 @@ fn test_var() {
     let a = eg.add_expr(RecExpr::parse("(f s0 s1)").unwrap());
     let b = eg.add_expr(RecExpr::parse("(f s1 s2)").unwrap());
     eg.union(&a, &b);
+    eg.dump();
     let ids = eg.ids();
     assert_eq!(ids.len(), 1);
-    let id = ids[1];
+    let id = ids[0];
     assert!(eg.slots(id).is_empty());
 }
