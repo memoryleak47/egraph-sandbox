@@ -30,12 +30,6 @@ impl<L: Language> EGraph<L> {
             return true;
         }
 
-        // sort, s.t. size(l) >= size(r).
-        let size = |i| {
-            let c = &self.classes[&i];
-            c.nodes.len() + c.usages.len()
-        };
-
         if l.id == r.id {
             let id = l.id;
 
@@ -57,6 +51,12 @@ impl<L: Language> EGraph<L> {
 
             true
         } else {
+            // sort, s.t. size(l) >= size(r).
+            let size = |i| {
+                let c = &self.classes[&i];
+                c.nodes.len() + c.usages.len()
+            };
+
             if size(l.id) >= size(r.id) {
                 self.move_to(&r, &l)
             } else {
