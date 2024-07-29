@@ -39,6 +39,13 @@ impl Group {
         Self::new(omega, HashSet::default())
     }
 
+    pub fn orbit(&self, s: Slot) -> HashSet<Slot> {
+        build_ot(s, &self.omega, &self.generators())
+            .keys()
+            .cloned()
+            .collect()
+    }
+
     fn generators_impl(&self) -> HashSet<Perm> {
         match &self.next {
             None => HashSet::default(),

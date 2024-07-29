@@ -3,22 +3,32 @@ use crate::*;
 impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
-    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
         let out = self.union_internal(l, r);
         out
     }
 
-    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
     fn union_internal(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
         // normalize inputs
         let l = self.find_applied_id(&l);
         let r = self.find_applied_id(&r);
 
         // early return, if union should not be made.
-        if l == r { return false; }
+        if self.eq(&l, &r) { return false; }
 
         let cap = &l.slots() & &r.slots();
+
+        if l.slots() != cap {
+            self.shrink_slots(&l, &cap);
+            self.union_internal(&l, &r);
+            return true;
+        }
+
+        if r.slots() != cap {
+            self.shrink_slots(&r, &cap);
+            self.union_internal(&l, &r);
+            return true;
+        }
 
         // sort, s.t. size(l) >= size(r).
         let size = |i| {
@@ -26,63 +36,13 @@ impl<L: Language> EGraph<L> {
             c.nodes.len() + c.usages.len()
         };
 
-        let (l, r) = if size(l.id) >= size(r.id) { (l, r) } else { (r, l) };
+        if l.id == r.id {
+            let id = l.id;
 
-        if l.slots() == cap {
-            self.merge_into_eclass(&r, &l)
-        } else if r.slots() == cap {
-            self.merge_into_eclass(&l, &r)
-        } else {
-            let c = self.alloc_eclass_fresh(&cap);
-            self.merge_into_eclass(&l, &c);
-
-            // merge_into_eclass(r, c) isn't enough, as r might already be empty if l.id == r.id.
-            self.union_internal(&r, &c);
-
-            true
-        }
-    }
-
-    // A directed union from `from` to `to`.
-    // `from.id` gets deprecated, if it's different from `to.id`.
-    //
-    // Only gets called with from.slots() superset to.slots().
-    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
-    fn merge_into_eclass(&mut self, from: &AppliedId, to: &AppliedId) -> bool {
-        if CHECKS {
-            assert!(from.slots().is_superset(&to.slots()));
-        }
-
-        let from = self.find_applied_id(from);
-        let to = self.find_applied_id(to);
-
-        // move over the group perms from `from` to `to`.
-        let group_grew = {
-            // from.m :: slots(from.id) -> C
-            // to.m :: slots(to.id) -> C
-            let tmp = from.m.compose_partial(&to.m.inverse());
-            let change_permutation_from_from_to_to = |x: Perm| -> Perm {
-                x.iter().map(|(x, y)| (tmp[x], tmp[y])).collect()
-            };
-
-            let old_size = self.classes[&to.id].group.count();
-            let set = self.classes[&from.id].group.generators()
-                .into_iter()
-                .map(change_permutation_from_from_to_to)
-                .collect();
-            self.classes.get_mut(&to.id).unwrap().group.add_set(set);
-            let new_size = self.classes[&to.id].group.count();
-
-            new_size > old_size
-        };
-
-        // self-symmetries:
-        if from.id == to.id {
-            let id = from.id;
-
-            let fm = &from.m; // slots(id) -> X
-            let tm = &to.m; // slots(id) -> X
-            let perm = fm.compose_partial(&tm.inverse());
+            // l.m :: slots(id) -> X
+            // r.m :: slots(id) -> X
+            // perm :: slots(id) -> slots(id)
+            let perm = l.m.compose(&r.m.inverse());
             if CHECKS {
                 assert!(perm.is_perm());
                 assert_eq!(&perm.keys(), &self.classes[&id].slots);
@@ -97,21 +57,56 @@ impl<L: Language> EGraph<L> {
 
             true
         } else {
-            let map = to.m.compose_partial(&from.m.inverse());
-
-            self.unionfind.set(from.id, &self.mk_applied_id(to.id, map));
-
-            if group_grew {
-                self.convert_eclass(to.id);
+            if size(l.id) >= size(r.id) {
+                self.move_to(&r, &l)
+            } else {
+                self.move_to(&l, &r)
             }
-            self.convert_eclass(from.id);
-
             true
         }
     }
 
+    fn shrink_slots(&mut self, from: &AppliedId, cap: &HashSet<Slot>) {
+        let (id, cap) = {
+            // from.m :: slots(from.id) -> X
+            // cap :: set X
+
+            // m_inv :: X -> slots(from.id)
+            let m_inv = from.m.inverse();
+
+            // cap :: set slots(from.id)
+            let new_cap: HashSet<Slot> = cap.iter().map(|x| m_inv[*x]).collect();
+
+            (from.id, new_cap)
+        };
+
+        // cap :: set slots(id)
+
+        let c = &self.classes[&id];
+        let grp = &c.group;
+
+        let mut final_cap = cap.clone();
+
+        // d is a newly redundant slot.
+        for d in &c.slots - &cap {
+            // if d is redundant, then also the orbit of d is redundant.
+            final_cap = &final_cap - &grp.orbit(d);
+        }
+
+        let to = self.alloc_eclass_fresh(&final_cap);
+        let app_id = self.mk_identity_applied_id(id);
+        self.move_to(&app_id, &to);
+    }
+
+    // moves everything from `from` to `to`.
+    fn move_to(&mut self, from: &AppliedId, to: &AppliedId) {
+        let map = to.m.compose_partial(&from.m.inverse());
+        self.unionfind.set(from.id, &self.mk_applied_id(to.id, map));
+        self.convert_eclass(from.id);
+    }
+
     // Remove everything that references this e-class, and then re-add it using "semantic_add".
-    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
+    // Is typically called on e-classes that point to another e-class in the unionfind.
     fn convert_eclass(&mut self, from: Id) {
         let mut adds: Vec<(L, AppliedId)> = Vec::new();
 
@@ -139,6 +134,26 @@ impl<L: Language> EGraph<L> {
         for (enode, j) in adds {
             self.semantic_add(&enode, &j);
         }
+
+
+
+        // re-add the group equations as well.
+
+        // This basically calls self.union(from, from * perm) for each perm generator in the group of from.
+        let from = self.mk_identity_applied_id(from);
+        let to = self.find_applied_id(&from);
+        // from.m :: slots(from.id) -> C
+        // to.m :: slots(to.id) -> C
+        let tmp = from.m.compose_partial(&to.m.inverse());
+        let change_permutation_from_from_to_to = |x: Perm| -> Perm {
+            x.iter().map(|(x, y)| (tmp[x], tmp[y])).collect()
+        };
+
+        let set = self.classes[&from.id].group.generators()
+            .into_iter()
+            .map(change_permutation_from_from_to_to)
+            .collect();
+        self.classes.get_mut(&to.id).unwrap().group.add_set(set);
     }
 
     // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
@@ -162,7 +177,6 @@ impl<L: Language> EGraph<L> {
         s
     }
 
-    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
     pub fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
         let enode = self.find_enode(&enode);
         let i = self.find_applied_id(i);
@@ -173,7 +187,6 @@ impl<L: Language> EGraph<L> {
     }
 
     // self.check() should hold before and after this.
-    // SIDE-EFFECT: Might add arbitrary new unions (by hashcons collisions).
     fn semantic_add_impl(&mut self, enode: &L, i: &AppliedId) {
         let mut enode = enode.clone();
         let mut i = i.clone();
