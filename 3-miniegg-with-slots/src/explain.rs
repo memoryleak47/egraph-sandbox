@@ -7,6 +7,8 @@ use crate::*;
 
 type EquationId = usize;
 
+// Invariants:
+// - each Id from the egraph (dead or alive) has an associated e-node in term_id_to_enode.
 #[derive(Debug)]
 pub struct Explain<L: Language> {
     // These two form a bijection:
@@ -86,9 +88,15 @@ impl<L: Language> Explain<L> {
         self.incidence_map.get_mut(&b_id).unwrap().push(i);
     }
 
+    pub fn explain_equivalence(&self, a: AppliedId, b: AppliedId) -> Option<Explanation<L>> {
+        todo!()
+    }
+
     // get_justification_chain(a, b).last().unwrap().1 == b, whereas a doesn't come up in the list.
     // panics, if a and b are not equal.
     fn get_justification_chain(&self, a: AppliedId, b: AppliedId) -> Vec<(Justification, AppliedId)> {
         todo!()
     }
 }
+
+pub struct Explanation<L>(std::marker::PhantomData<L>);
