@@ -144,9 +144,23 @@ impl<L: Language> EGraph<L> {
         let to = self.find_applied_id(&from);
         // from.m :: slots(from.id) -> C
         // to.m :: slots(to.id) -> C
-        let tmp = from.m.compose_partial(&to.m.inverse());
+
+        // f :: slots(from.id) -> slots(to.id)
+        // Note that f is a partial map, because some slots might have become redundant.
+        let f = from.m.compose_partial(&to.m.inverse());
         let change_permutation_from_from_to_to = |x: Perm| -> Perm {
-            x.iter().map(|(x, y)| (tmp[x], tmp[y])).collect()
+            let perm: Perm = x.iter().filter_map(|(x, y)| {
+                if f.contains_key(x) && f.contains_key(y) {
+                    Some((f[x], f[y]))
+                } else { None }
+            }).collect();
+
+            if CHECKS {
+                assert!(perm.is_perm());
+                assert_eq!(perm.keys(), self.classes[&to.id].slots);
+            }
+
+            perm
         };
 
         let set = self.classes[&from.id].group.generators()
