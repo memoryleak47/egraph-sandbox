@@ -20,13 +20,13 @@ impl<L: Language> EGraph<L> {
 
         if l.slots() != cap {
             self.shrink_slots(&l, &cap);
-            self.union_internal(&l, &r);
+            self.union_internal(&l, &r, j);
             return true;
         }
 
         if r.slots() != cap {
             self.shrink_slots(&r, &cap);
-            self.union_internal(&l, &r);
+            self.union_internal(&l, &r, j);
             return true;
         }
 
@@ -100,9 +100,13 @@ impl<L: Language> EGraph<L> {
 
     // moves everything from `from` to `to`.
     fn move_to(&mut self, from: &AppliedId, to: &AppliedId) {
+        self.add_to_unionfind(from, to);
+        self.convert_eclass(from.id);
+    }
+
+    pub fn add_to_unionfind(&mut self, from: &AppliedId, to: &AppliedId) {
         let map = to.m.compose_partial(&from.m.inverse());
         self.unionfind.set(from.id, &self.mk_applied_id(to.id, map));
-        self.convert_eclass(from.id);
     }
 
     // Remove everything that references this e-class, and then re-add it using "semantic_add".
