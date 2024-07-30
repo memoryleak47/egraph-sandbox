@@ -4,29 +4,36 @@ impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
-        let out = self.union_internal(l, r, Justification::User);
+        let out = self.union_internal(l, r, Some(Justification::Explicit));
         out
     }
 
-    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId, j: Justification) -> bool {
+    // if j == None, we don't add anything to the Explain.
+    fn union_internal(&mut self, orig_l: &AppliedId, orig_r: &AppliedId, j: Option<Justification>) -> bool {
         // normalize inputs
-        let l = self.find_applied_id(&l);
-        let r = self.find_applied_id(&r);
+        let l = self.find_applied_id(&orig_l);
+        let r = self.find_applied_id(&orig_r);
 
         // early return, if union should not be made.
         if self.eq(&l, &r) { return false; }
+
+        if let Some(j) = j {
+            if let Some(explain) = &mut self.explain {
+                explain.add_equation(orig_l.clone(), orig_r.clone(), j);
+            }
+        }
 
         let cap = &l.slots() & &r.slots();
 
         if l.slots() != cap {
             self.shrink_slots(&l, &cap);
-            self.union_internal(&l, &r, j);
+            self.union_internal(&l, &r, None);
             return true;
         }
 
         if r.slots() != cap {
             self.shrink_slots(&r, &cap);
-            self.union_internal(&l, &r, j);
+            self.union_internal(&l, &r, None);
             return true;
         }
 
@@ -43,15 +50,16 @@ impl<L: Language> EGraph<L> {
             }
 
             let grp = &mut self.classes.get_mut(&id).unwrap().group;
-            if grp.contains(&perm) { return false; }
+
+            if CHECKS {
+                // if the group does contain `perm`, then the self.eq() check should have catched that!
+                assert!(!grp.contains(&perm));
+            }
 
             grp.add(perm);
 
             self.convert_eclass(id);
-
-            true
         } else {
-            // sort, s.t. size(l) >= size(r).
             let size = |i| {
                 let c = &self.classes[&i];
                 c.nodes.len() + c.usages.len()
@@ -62,8 +70,9 @@ impl<L: Language> EGraph<L> {
             } else {
                 self.move_to(&l, &r)
             }
-            true
         }
+
+        true
     }
 
     fn shrink_slots(&mut self, from: &AppliedId, cap: &HashSet<Slot>) {
@@ -211,12 +220,12 @@ impl<L: Language> EGraph<L> {
         let mut i = i.clone();
 
         if let Some(j) = self.lookup_internal(&enode) {
-            self.union_internal(&i, &j, Justification::User); // TODO justification
+            self.union_internal(&i, &j, Some(Justification::Congruence));
         } else {
             if !i.slots().is_subset(&enode.slots()) {
                 let cap = &enode.slots() & &i.slots();
                 let c = self.alloc_eclass_fresh(&cap);
-                self.union_internal(&c, &i, Justification::User); // TODO justification
+                self.union_internal(&c, &i, Some(Justification::Congruence));
 
                 enode = self.find_enode(&enode);
                 i = self.find_applied_id(&i);
@@ -239,7 +248,7 @@ impl<L: Language> EGraph<L> {
     pub fn union_instantiations(&mut self, from_pat: &Pattern<L>, to_pat: &Pattern<L>, subst: &Subst, rule_name: String) {
         let from = self.add_instantiation(from_pat, subst);
         let to = self.add_instantiation(to_pat, subst);
-        self.union_internal(&from, &to, Justification::Rule(rule_name, true));
+        self.union_internal(&from, &to, Some(Justification::Rule(rule_name)));
     }
 
     // adapted from the very similar function pattern_subst.

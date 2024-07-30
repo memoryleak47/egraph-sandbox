@@ -41,9 +41,11 @@ impl<L: Language> EGraph<L> {
             let _ = explain;
 
             let i = self.alloc_eclass_fresh(&original.slots());
-            // TODO add congruence justification here.
             self.add_to_unionfind(&i, &x);
-            self.explain.as_mut().unwrap().add_enode(original, i.clone());
+
+            let explain = self.explain.as_mut().unwrap();
+            explain.add_enode(original, i.clone());
+            explain.add_equation(i.clone(), x.clone(), Justification::Congruence);
 
             i
         } else { x }

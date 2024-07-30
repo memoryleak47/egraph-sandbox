@@ -5,18 +5,18 @@ use crate::*;
 // In the context of explanations, there is a bijection between Ids and Terms.
 // Hence Ids uniquely identify certain concrete terms.
 
+type EquationId = usize;
+
 #[derive(Debug)]
 pub struct Explain<L: Language> {
     // These two form a bijection:
     enode_to_term_id: HashMap<L/*shape*/, AppliedId>,
     term_id_to_enode: HashMap<Id, L/*with identity perm*/>,
 
-    // justification_forest[x][y] returns the justification for unifying x and y.
-    // justification_forest[x][y] is stored redundantly with justification_forest[y][x].
-    justification_forest: HashMap<Id, HashMap<AppliedId, Justification>>,
+    // equations = (lhs, rhs, j). All rules are applied as lhs -> rhs.
+    equations: Vec<(AppliedId, AppliedId, Justification)>,
 
-    // For each permutation, remembers how we computed it.
-    perm_justifications: HashMap<Id, HashMap<Perm, PermJustification>>,
+    incidence_map: HashMap<Id, Vec<EquationId>>,
 }
 
 impl<L: Language> Default for Explain<L> {
@@ -24,8 +24,8 @@ impl<L: Language> Default for Explain<L> {
         Self {
             enode_to_term_id: Default::default(),
             term_id_to_enode: Default::default(),
-            justification_forest: Default::default(),
-            perm_justifications: Default::default(),
+            equations: Default::default(),
+            incidence_map: Default::default(),
         }
     }
 }
@@ -33,28 +33,8 @@ impl<L: Language> Default for Explain<L> {
 #[derive(Debug, Clone)]
 pub enum Justification {
     Congruence,
-    Rule(String, /*forward / backward*/ bool),
-    User,
-}
-
-impl Justification {
-    fn reverse(&self) -> Self {
-        if let Justification::Rule(x, fwd) = self {
-            return Justification::Rule(x.to_string(), !fwd);
-        }
-        self.clone()
-    }
-}
-
-#[derive(Debug)]
-pub enum PermJustification {
-    Rule(String, /*forward / backward*/ bool),
-
-    Composition(Perm, Perm),
-    Inverse(Perm),
-
-    // the perm was generated for another class, which was then unioned with this one.
-    Equality(Id),
+    Rule(String),
+    Explicit, // union called directly.
 }
 
 impl<L: Language> Explain<L> {
@@ -74,6 +54,8 @@ impl<L: Language> Explain<L> {
             // -> l * i.m^-1 == i.id
             self.term_id_to_enode.insert(i.id, l2);
         }
+
+        self.incidence_map.insert(i.id, Vec::new());
     }
 
     pub fn enode_to_term_id(&self, l: &L) -> Option<AppliedId> {
@@ -93,19 +75,15 @@ impl<L: Language> Explain<L> {
         Some(x.apply_slotmap(&a.m))
     }
 
-    pub fn justify_union(&mut self, a: AppliedId, b: AppliedId, j: Justification) {
-        // a == a.id * a.m
-        // a == b
-        // -> a.id == b * a.m^-1
-        // ... and analog, b.id == a * b.m^-1
+    pub fn add_equation(&mut self, a: AppliedId, b: AppliedId, j: Justification) {
+        let a_id = a.id;
+        let b_id = b.id;
 
-        let j_rev = j.reverse();
+        let i = self.equations.len();
+        self.equations.push((a, b, j));
 
-        if !self.justification_forest.contains_key(&a.id) { self.justification_forest.insert(a.id, HashMap::default()); }
-        self.justification_forest.get_mut(&a.id).unwrap().insert(b.apply_slotmap(&a.m.inverse()), j);
-
-        if !self.justification_forest.contains_key(&b.id) { self.justification_forest.insert(b.id, HashMap::default()); }
-        self.justification_forest.get_mut(&b.id).unwrap().insert(a.apply_slotmap(&b.m.inverse()), j_rev);
+        self.incidence_map.get_mut(&a_id).unwrap().push(i);
+        self.incidence_map.get_mut(&b_id).unwrap().push(i);
     }
 
     // get_justification_chain(a, b).last().unwrap().1 == b, whereas a doesn't come up in the list.
