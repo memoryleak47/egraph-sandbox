@@ -11,6 +11,9 @@ type EquationId = usize;
 // - each Id from the egraph (dead or alive) has an associated e-node in term_id_to_enode.
 #[derive(Debug)]
 pub struct Explain<L: Language> {
+    // translates E-Graph Ids into Term Ids.
+    translator: HashMap<Id, AppliedId>,
+
     // These two form a bijection:
     enode_to_term_id: HashMap<L/*shape*/, AppliedId>,
     term_id_to_enode: HashMap<Id, L/*with identity perm*/>,
@@ -24,6 +27,7 @@ pub struct Explain<L: Language> {
 impl<L: Language> Default for Explain<L> {
     fn default() -> Self {
         Self {
+            translator: Default::default(),
             enode_to_term_id: Default::default(),
             term_id_to_enode: Default::default(),
             equations: Default::default(),
@@ -40,6 +44,26 @@ pub enum Justification {
 }
 
 impl<L: Language> Explain<L> {
+    pub fn translate(&self, l: &AppliedId) -> AppliedId {
+        todo!()
+        // l.m :: slots(l.id) -> X
+        // let a = &self.translator[&l.id];
+        // a.apply_slotmap(&l.m)
+        // TODO make rest fresh!
+    }
+
+    pub fn translate_enode(&self, e: &L) -> L {
+        e.map_applied_ids(|x| self.translate(&x))
+    }
+
+    pub fn add(&mut self, l: L) -> AppliedId {
+        todo!()
+    }
+
+    pub fn add_translation(&mut self, l: L, i: AppliedId) -> AppliedId {
+        todo!()
+    }
+
     pub fn add_enode(&mut self, l: L, i: AppliedId) {
         { // enode_to_term_id
             let (sh, bij) = l.shape();
@@ -86,6 +110,10 @@ impl<L: Language> Explain<L> {
 
         self.incidence_map.get_mut(&a_id).unwrap().push(i);
         self.incidence_map.get_mut(&b_id).unwrap().push(i);
+    }
+
+    pub fn pattern_subst(&self, pat: &Pattern<L>, subst: &Subst) -> AppliedId {
+        todo!()
     }
 
     pub fn explain_equivalence(&self, a: AppliedId, b: AppliedId) -> Option<Explanation<L>> {

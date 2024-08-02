@@ -1,39 +1,56 @@
 use crate::*;
 
 impl<L: Language> EGraph<L> {
+    pub fn union_instantiations(&mut self, from_pat: &Pattern<L>, to_pat: &Pattern<L>, subst: &Subst, rule_name: String) -> bool {
+        let a = pattern_subst(self, from_pat, subst);
+        let b = pattern_subst(self, to_pat, subst);
+        if !self.union_internal(&a, &b) { return false; }
+
+        if let Some(explain) = &mut self.explain {
+            let mut termsubst = Subst::default();
+            for (var, app_id) in subst.iter() {
+                let app_id2 = explain.translate(app_id);
+                termsubst.insert(var.to_string(), app_id2);
+            }
+
+            let a = explain.pattern_subst(from_pat, &termsubst);
+            let b = explain.pattern_subst(to_pat, &termsubst);
+            let j = Justification::Rule(rule_name);
+            explain.add_equation(a, b, j);
+        }
+
+        true
+    }
+
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
-        let out = self.union_internal(l, r, Some(Justification::Explicit));
-        out
+        let subst = [(String::from("a"), l.clone()),
+                     (String::from("b"), r.clone())]
+                        .into_iter().collect();
+        let a = Pattern::parse("?a").unwrap();
+        let b = Pattern::parse("?b").unwrap();
+        self.union_instantiations(&a, &b, &subst, String::from("<no rule>")) // TODO
     }
 
-    // if j == None, we don't add anything to the Explain.
-    fn union_internal(&mut self, orig_l: &AppliedId, orig_r: &AppliedId, j: Option<Justification>) -> bool {
-        // normalize inputs
-        let l = self.find_applied_id(&orig_l);
-        let r = self.find_applied_id(&orig_r);
+    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
+        let l = self.find_applied_id(&l);
+        let r = self.find_applied_id(&r);
 
         // early return, if union should not be made.
         if self.eq(&l, &r) { return false; }
-
-        if let Some(j) = j {
-            if let Some(explain) = &mut self.explain {
-                explain.add_equation(orig_l.clone(), orig_r.clone(), j);
-            }
-        }
 
         let cap = &l.slots() & &r.slots();
 
         if l.slots() != cap {
             self.shrink_slots(&l, &cap);
-            self.union_internal(&l, &r, None);
+            self.union_internal(&l, &r);
             return true;
         }
 
         if r.slots() != cap {
             self.shrink_slots(&r, &cap);
-            self.union_internal(&l, &r, None);
+            self.union_internal(&l, &r);
             return true;
         }
 
@@ -220,7 +237,15 @@ impl<L: Language> EGraph<L> {
         let mut i = i.clone();
 
         if let Some(j) = self.lookup_internal(&enode) {
-            self.union_internal(&i, &j, Some(Justification::Congruence));
+            if self.explain.is_some() {
+                let a = &enode;
+                let b = &self.find_enode(&a); // TODO doesn't do anything!
+                let Some(explain) = &mut self.explain else { panic!() };
+                let a = explain.add(explain.translate_enode(a));
+                let b = explain.add(explain.translate_enode(b));
+                explain.add_equation(a, b, Justification::Congruence);
+            }
+            self.union_internal(&i, &j);
         } else {
             if !i.slots().is_subset(&enode.slots()) {
                 let cap = &enode.slots() & &i.slots();
@@ -242,30 +267,4 @@ impl<L: Language> EGraph<L> {
             self.raw_add_to_class(i.id, (sh, bij));
         }
     }
-
-    // union_instantiations and friends:
-    pub fn union_instantiations(&mut self, from_pat: &Pattern<L>, to_pat: &Pattern<L>, subst: &Subst, rule_name: String) {
-        let from = self.add_instantiation(from_pat, subst);
-        let to = self.add_instantiation(to_pat, subst);
-        self.union_internal(&from, &to, Some(Justification::Rule(rule_name)));
-    }
-
-    // adapted from the very similar function pattern_subst.
-    pub fn add_instantiation(&mut self, pattern: &Pattern<L>, subst: &Subst) -> AppliedId {
-        match &pattern.node {
-            ENodeOrPVar::ENode(n) => {
-                let mut n = n.clone();
-                let mut refs: Vec<&mut _> = n.applied_id_occurences_mut();
-                assert_eq!(pattern.children.len(), refs.len());
-                for i in 0..refs.len() {
-                    *(refs[i]) = self.add_instantiation(&pattern.children[i], subst);
-                }
-                self.add_uncanonical(n)
-            },
-            ENodeOrPVar::PVar(v) => {
-                subst[v].clone()
-            },
-        }
-    }
-
 }
