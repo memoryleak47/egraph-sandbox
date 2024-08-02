@@ -210,8 +210,7 @@ impl<L: Language> EGraph<L> {
         } else {
             if !i.slots().is_subset(&enode.slots()) {
                 let cap = &enode.slots() & &i.slots();
-                let c = self.alloc_eclass_fresh(&cap);
-                self.union_internal(&c, &i);
+                self.shrink_slots(&i, &cap);
 
                 enode = self.find_enode(&enode);
                 i = self.find_applied_id(&i);
