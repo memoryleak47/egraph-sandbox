@@ -213,7 +213,7 @@ impl<L: Language> EGraph<L> {
                 let real = sh.apply_slotmap(bij);
                 assert!(real.slots().is_superset(&c.slots));
 
-                assert_eq!((sh.clone(), bij.clone()), real.shape());
+                assert_eq!((sh.clone(), bij.clone()), self.shape(&real));
 
                 for x in real.applied_id_occurences() {
                     check_internal_applied_id::<L>(self, &x);
@@ -286,5 +286,9 @@ impl<L: Language> EGraph<L> {
             out.push(x);
         }
         out
+    }
+
+    pub fn shape(&self, e: &L) -> (L, Bijection) {
+        e.weak_shape()
     }
 }

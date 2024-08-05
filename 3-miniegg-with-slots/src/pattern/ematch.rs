@@ -44,8 +44,8 @@ fn ematch_impl<L: Language>(pattern: &Pattern<L>, st: State, i: AppliedId, eg: &
                 }
 
                 let clear_n2 = nullify_app_ids(&n2);
-                let (n_sh, _) = n.shape();
-                let (clear_n2_sh, _) = clear_n2.shape();
+                let (n_sh, _) = eg.shape(&n);
+                let (clear_n2_sh, _) = eg.shape(&clear_n2);
                 if n_sh != clear_n2_sh { continue 'nodeloop; }
 
                 let mut st = st.clone();

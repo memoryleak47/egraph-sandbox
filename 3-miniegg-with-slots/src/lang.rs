@@ -112,7 +112,7 @@ pub trait Language: Debug + Clone + Hash + Eq {
     // - sh.apply_slotmap(bij) is equivalent to n (excluding lambda variable renames)
     // - bij.slots() == n.slots(). Note that these would also include redundant slots.
     // - sh is the lexicographically lowest equivalent version of n, reachable by bijective renaming of slots (including redundant ones).
-    fn shape(&self) -> (Self, Bijection) {
+    fn weak_shape(&self) -> (Self, Bijection) {
         let mut c = self.clone();
         let mut m = SlotMap::new();
         let mut i = 0;

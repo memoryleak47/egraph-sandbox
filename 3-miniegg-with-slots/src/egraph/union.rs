@@ -216,7 +216,7 @@ impl<L: Language> EGraph<L> {
                 i = self.find_applied_id(&i);
             }
 
-            let (sh, bij) = enode.shape();
+            let (sh, bij) = self.shape(&enode);
             let mut m = i.m.inverse();
 
             for x in bij.values() {

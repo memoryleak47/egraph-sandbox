@@ -48,7 +48,7 @@ impl<L: Language> EGraph<L> {
 
     pub(in crate::egraph) fn lookup_internal(&self, n: &L) -> Option<AppliedId> {
         let n = self.find_enode(n);
-        let (shape, n_bij) = n.shape();
+        let (shape, n_bij) = self.shape(&n);
         let i = self.hashcons.get(&shape)?;
         let c = &self.classes[i];
         let cn_bij = c.nodes.get(&shape).unwrap();
