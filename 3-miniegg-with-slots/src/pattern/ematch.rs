@@ -44,8 +44,10 @@ fn ematch_impl<L: Language>(pattern: &Pattern<L>, st: State, i: AppliedId, eg: &
                 }
 
                 let clear_n2 = nullify_app_ids(&n2);
-                let (n_sh, _) = eg.shape(&n);
-                let (clear_n2_sh, _) = eg.shape(&clear_n2);
+                // We can use weak_shape here, as the inputs are nullified
+                // i.e. they only have id0() without slot args, so there are no permutations possible.
+                let (n_sh, _) = n.weak_shape();
+                let (clear_n2_sh, _) = clear_n2.weak_shape();
                 if n_sh != clear_n2_sh { continue 'nodeloop; }
 
                 let mut st = st.clone();
