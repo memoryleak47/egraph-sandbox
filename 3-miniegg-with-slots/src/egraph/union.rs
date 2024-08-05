@@ -223,23 +223,25 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
-        let enode = self.find_enode(&enode);
+        let orig_enode = enode;
+        let norm_enode = self.find_enode(&orig_enode);
         let i = self.find_applied_id(i);
 
-        for enode2 in self.get_group_compatible_variants(&enode) {
-            self.semantic_add_impl(&enode2, &i);
+        for enode2 in self.get_group_compatible_variants(&norm_enode) {
+            self.semantic_add_impl(&enode2, &i, orig_enode);
         }
     }
 
     // self.check() should hold before and after this.
-    fn semantic_add_impl(&mut self, enode: &L, i: &AppliedId) {
+    // we know that orig_enode is semantically equivalent to enode.
+    fn semantic_add_impl(&mut self, enode: &L, i: &AppliedId, orig_enode: &L) {
         let mut enode = enode.clone();
         let mut i = i.clone();
 
         if let Some(j) = self.lookup_internal(&enode) {
             if self.explain.is_some() {
-                let a = &enode;
-                let b = &self.find_enode(&a); // TODO doesn't do anything!
+                let a = &orig_enode;
+                let b = &self.find_enode(&enode); // should be contained in j.
                 let Some(explain) = &mut self.explain else { panic!() };
                 let a = explain.add(explain.translate_enode(a));
                 let b = explain.add(explain.translate_enode(b));
