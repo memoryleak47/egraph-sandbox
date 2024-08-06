@@ -289,7 +289,8 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn shape(&self, e: &L) -> (L, Bijection) {
-        self.get_group_compatible_variants2(e)
+        let e = self.find_enode(e);
+        self.get_group_compatible_variants2(&e)
             .iter()
             .map(|x| x.weak_shape())
             .min_by_key(|(x, _)| x.all_slot_occurences()).unwrap()
