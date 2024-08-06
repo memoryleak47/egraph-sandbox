@@ -170,53 +170,23 @@ impl<L: Language> EGraph<L> {
         self.classes.get_mut(&to.id).unwrap().group.add_set(set);
     }
 
-    // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
-    fn get_group_compatible_variants(&self, enode: &L) -> HashSet<L> {
-        let mut s = HashSet::default();
-        s.insert(enode.clone());
-
-        for (i, app_id) in enode.applied_id_occurences().iter().enumerate() {
-            let grp_perms = self.classes[&app_id.id].group.all_perms();
-            let mut next = HashSet::default();
-            for x in s {
-                for y in &grp_perms {
-                    let mut x = x.clone();
-                    let rf: &mut SlotMap = &mut x.applied_id_occurences_mut()[i].m;
-                    *rf = y.compose(rf);
-                    next.insert(x);
-                }
-            }
-            s = next;
-        }
-        s
-    }
-
     pub fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
         let enode = self.find_enode(&enode);
-        let i = self.find_applied_id(i);
+        let mut i = self.find_applied_id(i);
+        let mut t = self.shape(&enode);
 
-        for enode2 in self.get_group_compatible_variants(&enode) {
-            self.semantic_add_impl(&enode2, &i);
-        }
-    }
-
-    // self.check() should hold before and after this.
-    fn semantic_add_impl(&mut self, enode: &L, i: &AppliedId) {
-        let mut enode = enode.clone();
-        let mut i = i.clone();
-
-        if let Some(j) = self.lookup_internal(&self.shape(&enode)) {
+        if let Some(j) = self.lookup_internal(&t) {
             self.union_internal(&i, &j);
         } else {
             if !i.slots().is_subset(&enode.slots()) {
                 let cap = &enode.slots() & &i.slots();
                 self.shrink_slots(&i, &cap);
 
-                enode = self.find_enode(&enode);
+                t = self.shape(&enode);
                 i = self.find_applied_id(&i);
             }
 
-            let (sh, bij) = self.shape(&enode);
+            let (sh, bij) = t;
             let mut m = i.m.inverse();
 
             for x in bij.values() {
