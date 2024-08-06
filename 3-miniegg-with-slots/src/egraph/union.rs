@@ -205,7 +205,7 @@ impl<L: Language> EGraph<L> {
         let mut enode = enode.clone();
         let mut i = i.clone();
 
-        if let Some(j) = self.lookup_internal(&enode) {
+        if let Some(j) = self.lookup_internal(&self.shape(&enode)) {
             self.union_internal(&i, &j);
         } else {
             if !i.slots().is_subset(&enode.slots()) {
