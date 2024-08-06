@@ -12,6 +12,8 @@ type EquationId = usize;
 #[derive(Debug)]
 pub struct Explain<L: Language> {
     // translates E-Graph Ids into Term Ids.
+    // This contains slot-name choices for redundant slots (because the term-world doesn't have redundant slots).
+    // These choices are fixed, and are never renamed / refreshed.
     translator: HashMap<Id, AppliedId>,
 
     // These two form a bijection:
@@ -45,11 +47,18 @@ pub enum Justification {
 
 impl<L: Language> Explain<L> {
     pub fn translate(&self, l: &AppliedId) -> AppliedId {
-        todo!()
         // l.m :: slots(l.id) -> X
-        // let a = &self.translator[&l.id];
-        // a.apply_slotmap(&l.m)
-        // TODO make rest fresh!
+        let a = &self.translator[&l.id];
+        // a == l.id
+
+        // a has some redundant slot choices that shouldn't be touched by l.m.
+        let mut m = l.m.clone();
+        for s in a.slots() {
+            if !m.contains_key(s) {
+                m.insert(s, s);
+            }
+        }
+        a.apply_slotmap(&m)
     }
 
     pub fn translate_enode(&self, e: &L) -> L {
