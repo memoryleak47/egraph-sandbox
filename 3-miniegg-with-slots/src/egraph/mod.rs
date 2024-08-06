@@ -300,10 +300,10 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn explain_equivalence(&mut self, l: &RecExpr<L>, r: &RecExpr<L>) -> Option<Explanation<L>> {
-        let l = self.add_expr(l.clone());
-        let r = self.add_expr(r.clone());
+        let l_i = self.add_expr(l.clone());
+        let r_i = self.add_expr(r.clone());
 
-        if !self.eq(&l, &r) { return None; }
+        if !self.eq(&l_i, &r_i) { return None; }
 
         self.explain.as_ref().expect("Explanations are disabled!").explain_equivalence(l, r)
     }

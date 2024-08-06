@@ -243,8 +243,8 @@ impl<L: Language> EGraph<L> {
                 let a = &orig_enode;
                 let b = &self.find_enode(&enode); // should be contained in j.
                 let Some(explain) = &mut self.explain else { panic!() };
-                let a = explain.add(explain.translate_enode(a));
-                let b = explain.add(explain.translate_enode(b));
+                let a = explain.add_egraph_enode((*a).clone());
+                let b = explain.add_egraph_enode((*b).clone());
                 explain.add_equation(a, b, Justification::Congruence);
             }
             self.union_internal(&i, &j);

@@ -46,6 +46,7 @@ pub enum Justification {
 }
 
 impl<L: Language> Explain<L> {
+    // translates an egraph e-class to its corresponding term id.
     pub fn translate(&self, l: &AppliedId) -> AppliedId {
         // l.m :: slots(l.id) -> X
         let a = &self.translator[&l.id];
@@ -61,37 +62,49 @@ impl<L: Language> Explain<L> {
         a.apply_slotmap(&m)
     }
 
+    // translates an egraph e-node to its corresponding explain e-node.
     pub fn translate_enode(&self, e: &L) -> L {
         e.map_applied_ids(|x| self.translate(&x))
     }
 
-    pub fn add(&mut self, l: L) -> AppliedId {
-        todo!()
+    // Both l and i are in egraph world.
+    pub fn add_translation(&mut self, l: L, i: AppliedId) {
+        // l == i holds in the egraph world.
+        let i2 = self.add_egraph_enode(l);
+        // i should now translate to i2.
+        
+        // i == i2
+        // i.id * i.m == i2
+        // i.id == i2 * i.m^-1
+        let i2_id = i2.apply_slotmap(&i.m.inverse());
+        self.translator.insert(i.id, i2_id);
     }
 
-    pub fn add_translation(&mut self, l: L, i: AppliedId) -> AppliedId {
-        todo!()
+    pub fn add_egraph_enode(&mut self, l: L) -> AppliedId {
+        let l = self.translate_enode(&l);
+        self.add_explain_enode(l)
     }
 
-    pub fn add_enode(&mut self, l: L, i: AppliedId) {
-        { // enode_to_term_id
-            let (sh, bij) = l.shape();
-            //    l == i, and given l == sh * bij
-            // -> sh * bij == i
+    // adds an e-node to the term-id <-> e-node bijection.
+    // and returns the corresponding AppliedId.
+    // Both input and output are completely in the explain-world.
+    pub fn add_explain_enode(&mut self, l: L) -> AppliedId {
+        let (sh, bij) = l.shape();
+        if let Some(x) = self.enode_to_term_id.get(&sh) {
+            x.apply_slotmap(&bij)
+        } else {
+            let i = Id(self.enode_to_term_id.len());
+            // i == l
+            // -> i == sh * bij
             // -> sh == i * bij^-1
-            self.enode_to_term_id.insert(sh, i.apply_slotmap(&bij.inverse()));
+            let app_id = AppliedId::new(i, bij.inverse());
+            self.enode_to_term_id.insert(sh, app_id);
+            self.term_id_to_enode.insert(i, l.clone());
+            let identity = bij.compose(&bij.inverse()); // TODO correct identity?
+            AppliedId::new(i, identity)
         }
-
-        { // term_id_to_enode
-            let l2 = l.apply_slotmap(&i.m.inverse());
-            //    l == i, and given i == i.id * i.m
-            // -> l == i.id * i.m
-            // -> l * i.m^-1 == i.id
-            self.term_id_to_enode.insert(i.id, l2);
-        }
-
-        self.incidence_map.insert(i.id, Vec::new());
     }
+
 
     pub fn enode_to_term_id(&self, l: &L) -> Option<AppliedId> {
         let (sh, bij) = l.shape();
@@ -110,6 +123,7 @@ impl<L: Language> Explain<L> {
         Some(x.apply_slotmap(&a.m))
     }
 
+    // Both arguments are Explain AppliedIds.
     pub fn add_equation(&mut self, a: AppliedId, b: AppliedId, j: Justification) {
         let a_id = a.id;
         let b_id = b.id;
@@ -125,7 +139,8 @@ impl<L: Language> Explain<L> {
         todo!()
     }
 
-    pub fn explain_equivalence(&self, a: AppliedId, b: AppliedId) -> Option<Explanation<L>> {
+    // TODO do we know that a and b exist in the explain land?
+    pub fn explain_equivalence(&self, a: &RecExpr<L>, b: &RecExpr<L>) -> Option<Explanation<L>> {
         todo!()
     }
 
