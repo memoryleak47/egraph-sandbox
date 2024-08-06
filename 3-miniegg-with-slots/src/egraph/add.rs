@@ -14,22 +14,26 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn add(&mut self, enode: L) -> AppliedId {
-        self.add_internal(enode)
+        self.add_internal(self.shape(&enode))
     }
 
     // self.add(x) = y implies that x.slots() is a superset of y.slots().
     // x.slots() - y.slots() are redundant slots.
-    pub(in crate::egraph) fn add_internal(&mut self, enode: L) -> AppliedId {
-        let enode = self.find_enode(&enode);
-
-        if let Some(x) = self.lookup(&enode) {
+    pub(in crate::egraph) fn add_internal(&mut self, t: (L, Bijection)) -> AppliedId {
+        if let Some(x) = self.lookup_internal(&t) {
             return x;
         }
+        let (sh, bij) = t;
 
-        let old_slots = enode.slots();
+        let c = self.mk_singleton_class(sh);
+        c.apply_slotmap(&bij)
+    }
+
+    fn mk_singleton_class(&mut self, sh: L) -> AppliedId {
+        let old_slots = sh.slots();
 
         let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
-        let fresh_enode = enode.apply_slotmap(&fresh_to_old.inverse());
+        let fresh_enode = sh.apply_slotmap(&fresh_to_old.inverse());
 
         // allocate new class & slot set.
         let fresh_slots = fresh_enode.slots();
