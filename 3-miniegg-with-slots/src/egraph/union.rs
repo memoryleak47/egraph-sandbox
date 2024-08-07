@@ -136,7 +136,6 @@ impl<L: Language> EGraph<L> {
         }
 
 
-
         // re-add the group equations as well.
 
         // This basically calls self.union(from, from * perm) for each perm generator in the group of from.
@@ -173,23 +172,20 @@ impl<L: Language> EGraph<L> {
     pub fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
         let enode = self.find_enode(&enode);
         let i = self.find_applied_id(i);
+        let t = self.shape(&enode);
 
-        for enode2 in self.get_group_compatible_variants(&enode) {
-            self.semantic_add_impl(&enode2, &i);
-        }
-    }
-
-    fn semantic_add_impl(&mut self, enode: &L, i: &AppliedId) {
-        let mut t = self.shape(&enode);
-        let mut i = i.clone();
         if let Some(j) = self.lookup_internal(&t) {
             self.union_internal(&i, &j);
         } else {
-            if !i.slots().is_subset(&enode.slots()) {
-                let cap = &enode.slots() & &i.slots();
+            let mut i = i.clone();
+            let mut t = t.clone();
+
+            if !i.slots().is_subset(&t.1.values()) {
+                let (sh, bij) = t;
+                let cap = &bij.values() & &i.slots();
                 self.shrink_slots(&i, &cap);
 
-                t = self.shape(&enode);
+                t = self.shape(&sh.apply_slotmap(&bij));
                 i = self.find_applied_id(&i);
             }
 
@@ -202,7 +198,36 @@ impl<L: Language> EGraph<L> {
                 }
             }
             let bij = bij.compose(&m);
-            self.raw_add_to_class(i.id, (sh, bij));
+            let t = (sh, bij);
+            self.raw_add_to_class(i.id, t.clone());
+
+            self.determine_self_symmetries(i.id, t);
         }
     }
+
+    // finds self-symmetries in the e-class i, caused by the e-node t.
+    fn determine_self_symmetries(&mut self, i: Id, t: (L, Bijection)) {
+        let (sh, bij) = t;
+        let enode = sh.apply_slotmap(&bij);
+        for n in self.get_group_compatible_variants(&enode) {
+            let (sh2, bij2) = n.weak_shape();
+            if sh2 == sh {
+                let grp = &mut self.classes.get_mut(&i).unwrap().group;
+
+                // I'm looking for an equation like i == i * BIJ to add BIJ to the group.
+
+                // - i == sh * bij == enode == n
+                // - sh2 * bij2 == n
+                // - sh2 == sh
+
+                // simplify:
+                // - i == sh * bij
+                // - i == sh * bij2
+
+                // -> i == i * bij^-1 * bij2
+                grp.add(bij.inverse().compose(&bij2));
+            }
+        }
+    }
+
 }
