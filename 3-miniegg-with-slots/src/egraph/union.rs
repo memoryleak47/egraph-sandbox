@@ -172,9 +172,16 @@ impl<L: Language> EGraph<L> {
 
     pub fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
         let enode = self.find_enode(&enode);
-        let mut i = self.find_applied_id(i);
-        let mut t = self.shape(&enode);
+        let i = self.find_applied_id(i);
 
+        for enode2 in self.get_group_compatible_variants(&enode) {
+            self.semantic_add_impl(&enode2, &i);
+        }
+    }
+
+    fn semantic_add_impl(&mut self, enode: &L, i: &AppliedId) {
+        let mut t = self.shape(&enode);
+        let mut i = i.clone();
         if let Some(j) = self.lookup_internal(&t) {
             self.union_internal(&i, &j);
         } else {

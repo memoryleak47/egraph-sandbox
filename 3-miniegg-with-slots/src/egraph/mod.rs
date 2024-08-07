@@ -290,14 +290,14 @@ impl<L: Language> EGraph<L> {
 
     pub fn shape(&self, e: &L) -> (L, Bijection) {
         let e = self.find_enode(e);
-        self.get_group_compatible_variants2(&e)
+        self.get_group_compatible_variants(&e)
             .iter()
             .map(|x| x.weak_shape())
             .min_by_key(|(x, _)| x.all_slot_occurences()).unwrap()
     }
 
     // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
-    fn get_group_compatible_variants2(&self, enode: &L) -> HashSet<L> {
+    pub fn get_group_compatible_variants(&self, enode: &L) -> HashSet<L> {
         let mut s = HashSet::default();
         s.insert(enode.clone());
 
