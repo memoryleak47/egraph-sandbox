@@ -3,10 +3,11 @@ use crate::i_arith::build::*;
 
 fn assert_reaches(start: RecExpr<ArithENode>, goal: RecExpr<ArithENode>, steps: usize) {
     let mut eg = EGraph::new();
-    let i1 = eg.add_expr(start);
+    eg.add_expr(start.clone());
     for _ in 0..steps {
         rewrite_arith(&mut eg);
         if let Some(i2) = lookup_rec_expr(&goal, &eg) {
+            let i1 = lookup_rec_expr(&start, &eg).unwrap();
             if eg.eq(&i1, &i2) {
                 return;
             }
@@ -14,9 +15,6 @@ fn assert_reaches(start: RecExpr<ArithENode>, goal: RecExpr<ArithENode>, steps: 
     }
 
     eg.dump();
-
-    dbg!(extract::<_, AstSizeNoLet>(i1, &eg));
-    dbg!(&goal);
     assert!(false);
 }
 
@@ -122,6 +120,22 @@ fn arith_test5() { // x0+...+xN = xN+...+x0
     let a = pattern_to_re(&a);
 
     let b = add_chain((0..=N).rev());
+    let b = pattern_to_re(&b);
+
+    assert_reaches(a, b, 10);
+}
+
+#[test]
+// TODO: this fails fs you restrict the rules to only commutativity of +.
+fn arith_test6() { // z*(x+y) = z*(y+x)
+    let x = 0;
+    let y = 1;
+    let z = 2;
+
+    let a = mul2(var(z), add2(var(x), var(y)));
+    let a = pattern_to_re(&a);
+
+    let b = mul2(var(z), add2(var(y), var(x)));
     let b = pattern_to_re(&b);
 
     assert_reaches(a, b, 10);
