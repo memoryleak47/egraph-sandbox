@@ -297,6 +297,7 @@ impl<L: Language> EGraph<L> {
     }
 
     // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
+    // TODO every usage of this function hurts performance drastically. Which of them can I eliminate?
     pub fn get_group_compatible_variants(&self, enode: &L) -> HashSet<L> {
         let mut s = HashSet::default();
         s.insert(enode.clone());

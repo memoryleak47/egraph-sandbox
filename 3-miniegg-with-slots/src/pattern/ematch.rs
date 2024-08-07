@@ -38,34 +38,36 @@ fn ematch_impl<L: Language>(pattern: &Pattern<L>, st: State, i: AppliedId, eg: &
         },
         ENodeOrPVar::ENode(n) => {
             let mut out = Vec::new();
-            'nodeloop: for n2 in eg.enodes_applied(&i) {
-                if CHECKS {
-                    assert_eq!(&nullify_app_ids(n), n);
-                }
-
-                let clear_n2 = nullify_app_ids(&n2);
-                // We can use weak_shape here, as the inputs are nullified
-                // i.e. they only have id0() without slot args, so there are no permutations possible.
-                let (n_sh, _) = n.weak_shape();
-                let (clear_n2_sh, _) = clear_n2.weak_shape();
-                if n_sh != clear_n2_sh { continue 'nodeloop; }
-
-                let mut st = st.clone();
-
-                for (x, y) in clear_n2.all_slot_occurences().into_iter().zip(n.all_slot_occurences().into_iter()) {
-                    if !try_insert_compatible_slotmap_bij(x, y, &mut st.partial_slotmap) { continue 'nodeloop; }
-                }
-
-                let mut acc = vec![st];
-                for (sub_id, sub_pat) in n2.applied_id_occurences().into_iter().zip(pattern.children.iter()) {
-                    let mut next = Vec::new();
-                    for a in acc {
-                        next.extend(ematch_impl(sub_pat, a, sub_id.clone(), eg));
+            for nn in eg.enodes_applied(&i) {
+                'nodeloop: for n2 in eg.get_group_compatible_variants(&nn) {
+                    if CHECKS {
+                        assert_eq!(&nullify_app_ids(n), n);
                     }
-                    acc = next;
-                }
 
-                out.extend(acc);
+                    let clear_n2 = nullify_app_ids(&n2);
+                    // We can use weak_shape here, as the inputs are nullified
+                    // i.e. they only have id0() without slot args, so there are no permutations possible.
+                    let (n_sh, _) = n.weak_shape();
+                    let (clear_n2_sh, _) = clear_n2.weak_shape();
+                    if n_sh != clear_n2_sh { continue 'nodeloop; }
+
+                    let mut st = st.clone();
+
+                    for (x, y) in clear_n2.all_slot_occurences().into_iter().zip(n.all_slot_occurences().into_iter()) {
+                        if !try_insert_compatible_slotmap_bij(x, y, &mut st.partial_slotmap) { continue 'nodeloop; }
+                    }
+
+                    let mut acc = vec![st];
+                    for (sub_id, sub_pat) in n2.applied_id_occurences().into_iter().zip(pattern.children.iter()) {
+                        let mut next = Vec::new();
+                        for a in acc {
+                            next.extend(ematch_impl(sub_pat, a, sub_id.clone(), eg));
+                        }
+                        acc = next;
+                    }
+
+                    out.extend(acc);
+                }
             }
             out
         },
