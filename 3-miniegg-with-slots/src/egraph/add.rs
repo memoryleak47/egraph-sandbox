@@ -33,17 +33,15 @@ impl<L: Language> EGraph<L> {
         let old_slots = sh.slots();
 
         let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
-        let fresh_enode = sh.apply_slotmap(&fresh_to_old.inverse());
+        let old_to_fresh = fresh_to_old.inverse();
 
         // allocate new class & slot set.
-        let fresh_slots = fresh_enode.slots();
-        let id = self.alloc_eclass(&fresh_slots);
-        let app_id = self.mk_identity_applied_id(id);
+        let fresh_slots = old_to_fresh.values();
+        let i = self.alloc_eclass(&fresh_slots);
 
-        // calling semantic_add is a bit overkill here, we use it for the symmetries though.
-        self.semantic_add(&fresh_enode, &app_id);
+        self.raw_add_to_class(i, (sh, old_to_fresh));
 
-        self.mk_applied_id(id, fresh_to_old)
+        self.mk_applied_id(i, fresh_to_old)
     }
 
     pub fn lookup(&self, n: &L) -> Option<AppliedId> {
