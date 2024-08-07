@@ -318,4 +318,19 @@ impl<L: Language> EGraph<L> {
         s
     }
 
+    pub fn get_group_compatible_weak_variants(&self, enode: &L) -> HashSet<L> {
+        let set = self.get_group_compatible_variants(enode);
+        let mut shapes = HashSet::default();
+        let mut out = HashSet::default();
+
+        for x in set {
+            let (sh, _) = x.weak_shape();
+            if shapes.contains(&sh) { continue; }
+            shapes.insert(sh);
+            out.insert(x);
+        }
+
+        out
+    }
+
 }
