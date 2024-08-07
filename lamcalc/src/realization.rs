@@ -23,14 +23,14 @@ pub fn simplify_to_nf<R: Realization>(s: &str) -> String {
     for _ in 0..NO_ITERS {
         eg.step();
 
-        if eg.enode_count() > NO_ENODES {
-            break;
-        }
-
         ast = eg.extract_ast(i.clone());
         if ast.step().is_none() {
             return ast.to_string();
         };
+
+        if eg.enode_count() > NO_ENODES {
+            break;
+        }
     }
     panic!("failed to reach NF! Or the beta-NF is just AstSize-suboptimal!");
 }
