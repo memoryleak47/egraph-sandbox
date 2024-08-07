@@ -87,7 +87,7 @@ fn let_lam_diff(eg: &mut EGraph<ArithENode>) {
     });
 }
 
-fn add_comm(eg: &mut EGraph<ArithENode>) {
+pub fn add_comm(eg: &mut EGraph<ArithENode>) {
     let pat = add2(pvar("?a"), pvar("?b"));
     let outpat = add2(pvar("?b"), pvar("?a"));
     rewrite(eg, pat, outpat);

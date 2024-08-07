@@ -126,7 +126,6 @@ fn arith_test5() { // x0+...+xN = xN+...+x0
 }
 
 #[test]
-// TODO: this fails fs you restrict the rules to only commutativity of +.
 fn arith_test6() { // z*(x+y) = z*(y+x)
     let x = 0;
     let y = 1;
@@ -138,5 +137,24 @@ fn arith_test6() { // z*(x+y) = z*(y+x)
     let b = mul2(var(z), add2(var(y), var(x)));
     let b = pattern_to_re(&b);
 
-    assert_reaches(a, b, 10);
+    assert_reaches2(a, b, 10);
+
+
+    // assert_reaches, but only using add_comm!
+    fn assert_reaches2(start: RecExpr<ArithENode>, goal: RecExpr<ArithENode>, steps: usize) {
+        let mut eg = EGraph::new();
+        eg.add_expr(start.clone());
+        for _ in 0..steps {
+            add_comm(&mut eg);
+            if let Some(i2) = lookup_rec_expr(&goal, &eg) {
+                let i1 = lookup_rec_expr(&start, &eg).unwrap();
+                if eg.eq(&i1, &i2) {
+                    return;
+                }
+            }
+        }
+
+        eg.dump();
+        assert!(false);
+    }
 }
