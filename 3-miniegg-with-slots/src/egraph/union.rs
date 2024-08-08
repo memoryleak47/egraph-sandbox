@@ -170,39 +170,37 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
-        let enode = self.find_enode(&enode);
-        let i = self.find_applied_id(i);
+        let mut enode = self.find_enode(&enode);
+        let mut i = self.find_applied_id(i);
+        if !i.slots().is_subset(&enode.slots()) {
+            let cap = &enode.slots() & &i.slots();
+            self.shrink_slots(&i, &cap);
+
+            enode = self.find_enode(&enode);
+            i = self.find_applied_id(&i);
+        }
+
         let t = self.shape(&enode);
 
+        // upwards merging found a match!
         if let Some(j) = self.lookup_internal(&t) {
             self.union_internal(&i, &j);
-        } else {
-            let mut i = i.clone();
-            let mut t = t.clone();
-
-            if !i.slots().is_subset(&t.1.values()) {
-                let (sh, bij) = t;
-                let cap = &bij.values() & &i.slots();
-                self.shrink_slots(&i, &cap);
-
-                t = self.shape(&sh.apply_slotmap(&bij));
-                i = self.find_applied_id(&i);
-            }
-
-            let (sh, bij) = t;
-            let mut m = i.m.inverse();
-
-            for x in bij.values() {
-                if !m.contains_key(x) {
-                    m.insert(x, Slot::fresh());
-                }
-            }
-            let bij = bij.compose(&m);
-            let t = (sh, bij);
-            self.raw_add_to_class(i.id, t.clone());
-
-            self.determine_self_symmetries(i.id, t);
+            return;
         }
+
+        let (sh, bij) = t;
+        let mut m = i.m.inverse();
+
+        for x in bij.values() {
+            if !m.contains_key(x) {
+                m.insert(x, Slot::fresh());
+            }
+        }
+        let bij = bij.compose(&m);
+        let t = (sh, bij);
+        self.raw_add_to_class(i.id, t.clone());
+
+        self.determine_self_symmetries(i.id, t);
     }
 
     // finds self-symmetries in the e-class i, caused by the e-node t.
