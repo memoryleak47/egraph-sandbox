@@ -108,7 +108,7 @@ pub trait Language: Debug + Clone + Hash + Eq {
         self.applied_id_occurences().into_iter().map(|x| x.id).collect()
     }
 
-    // let n.shape() = (sh, bij); then
+    // let n.weak_shape() = (sh, bij); then
     // - sh.apply_slotmap(bij) is equivalent to n (excluding lambda variable renames)
     // - bij.slots() == n.slots(). Note that these would also include redundant slots.
     // - sh is the lexicographically lowest equivalent version of n, reachable by bijective renaming of slots (including redundant ones).
