@@ -135,8 +135,23 @@ impl<L: Language> Explain<L> {
         self.incidence_map.get_mut(&b_id).unwrap().push(i);
     }
 
-    pub fn pattern_subst(&self, pat: &Pattern<L>, subst: &Subst) -> AppliedId {
-        todo!()
+    // Subst contains Explain-AppliedIds.
+    // This also returns an Explain-AppliedId.
+    pub fn pattern_subst(&mut self, pat: &Pattern<L>, subst: &Subst) -> AppliedId {
+        match &pat.node {
+            ENodeOrPVar::ENode(n) => {
+                let mut n = n.clone();
+                let mut refs: Vec<&mut _> = n.applied_id_occurences_mut();
+                assert_eq!(pat.children.len(), refs.len());
+                for i in 0..refs.len() {
+                    *(refs[i]) = self.pattern_subst(&pat.children[i], subst);
+                }
+                self.add_explain_enode(n)
+            },
+            ENodeOrPVar::PVar(v) => {
+                subst[v].clone()
+            },
+        }
     }
 
     // TODO do we know that a and b exist in the explain land?
