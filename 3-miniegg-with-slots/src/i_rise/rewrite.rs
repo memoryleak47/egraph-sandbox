@@ -11,7 +11,7 @@ pub fn rise_rules(subst_m: SubstMethod) -> Vec<Rewrite<RiseENode>> {
     let mut rewrites = Vec::new();
 
     rewrites.push(eta());
-    rewrites.push(eta_expansion());
+    // rewrites.push(eta_expansion());
 
     rewrites.push(map_fusion());
     rewrites.push(map_fission());

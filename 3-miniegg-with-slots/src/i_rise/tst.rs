@@ -4,14 +4,15 @@ use crate::i_rise::build::*;
 fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: usize) {
     let rules = rise_rules(SubstMethod::SmallStep);
 
-    let mut eg = EGraph::new();
-    let i1 = eg.add_expr(start);
+    let mut eg = EGraph::new().with_explanations_enabled();
+    let i1 = eg.add_expr(start.clone());
     for _ in 0..steps {
         do_rewrites(&mut eg, &rules);
         dbg!(eg.total_number_of_nodes());
         if let Some(i2) = lookup_rec_expr(&goal, &eg) {
             if eg.eq(&i1, &i2) {
                 dbg!(eg.total_number_of_nodes());
+                dbg!(eg.explain_equivalence(start, goal));
                 return;
             }
         }
@@ -74,8 +75,7 @@ fn reduction_re2() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
-#[test]
-fn test_reduction() {
+pub fn test_reduction() {
     assert_reaches(reduction_re1(), reduction_re2(), 40);
 }
 

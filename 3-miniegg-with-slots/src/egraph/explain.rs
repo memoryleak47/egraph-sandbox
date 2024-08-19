@@ -151,4 +151,5 @@ impl<L: Language> Explain<L> {
     }
 }
 
+#[derive(Debug)]
 pub struct Explanation<L>(std::marker::PhantomData<L>);
