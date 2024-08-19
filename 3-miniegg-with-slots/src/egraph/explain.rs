@@ -131,8 +131,8 @@ impl<L: Language> Explain<L> {
         let i = self.equations.len();
         self.equations.push((a, b, j));
 
-        self.incidence_map.get_mut(&a_id).unwrap().push(i);
-        self.incidence_map.get_mut(&b_id).unwrap().push(i);
+        self.incidence_map.entry(a_id).or_default().push(i);
+        self.incidence_map.entry(b_id).or_default().push(i);
     }
 
     // Subst contains Explain-AppliedIds.
