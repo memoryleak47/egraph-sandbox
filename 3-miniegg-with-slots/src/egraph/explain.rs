@@ -120,7 +120,9 @@ impl<L: Language> Explain<L> {
         // x == a.id by definition of x.
         // a == a.id * a.m by definition of AppliedId.
         // -> a == x * a.m
-        Some(x.apply_slotmap(&a.m))
+        let out = x.apply_slotmap(&a.m);
+        let out = out.refresh_internals(out.slots());
+        Some(out)
     }
 
     pub fn term_id_to_term(&self, a: &AppliedId) -> Option<RecExpr<L>> {
