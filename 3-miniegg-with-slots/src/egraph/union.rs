@@ -125,9 +125,15 @@ impl<L: Language> EGraph<L> {
         self.move_to(&app_id, &to);
 
         if let Some(explain) = &mut self.explain {
-            let app_id = &explain.translator[&from.id];
-            explain.translator.insert(to.id, app_id.clone());
-            todo!(); // TODO This won't be correct as is.
+            // app_id == to
+            // translator[app_id] == translator[to]
+            // translator[app_id.id] * app_id.m == translator[to.id] * to.m
+            // translator[from.id] * from.identity == translator[to.id] * to.m
+            // translator[from.id] == translator[to.id] * to.m
+            // translator[to.id] * to.m == translator[from.id]
+            // translator[to.id] == translator[from.id] * to.m^-1
+            let app_id2 = &explain.translator[&from.id];
+            explain.translator.insert(to.id, app_id2.apply_slotmap(&to.m.inverse()));
         }
     }
 

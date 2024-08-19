@@ -123,6 +123,18 @@ impl<L: Language> Explain<L> {
         Some(x.apply_slotmap(&a.m))
     }
 
+    pub fn term_id_to_term(&self, a: &AppliedId) -> Option<RecExpr<L>> {
+        let enode = self.term_id_to_enode(a)?;
+        let cs = enode.applied_id_occurences()
+                      .iter()
+                      .map(|x| self.term_id_to_term(x).unwrap())
+                      .collect();
+        Some(RecExpr {
+            node: nullify_app_ids(&enode),
+            children: cs,
+        })
+    }
+
     // Both arguments are Explain AppliedIds.
     pub fn add_equation(&mut self, a: AppliedId, b: AppliedId, j: Justification) {
         let a_id = a.id;
@@ -156,6 +168,11 @@ impl<L: Language> Explain<L> {
 
     // TODO do we know that a and b exist in the explain land?
     pub fn explain_equivalence(&self, a: &RecExpr<L>, b: &RecExpr<L>) -> Option<Explanation<L>> {
+        for (x, y, j) in &self.equations {
+            let x = self.term_id_to_term(&x).unwrap();
+            let y = self.term_id_to_term(&y).unwrap();
+            eprintln!("{} == {} by {:?}", x, y, j);
+        }
         todo!()
     }
 
