@@ -100,7 +100,7 @@ impl<L: Language> Explain<L> {
             let app_id = AppliedId::new(i, bij.inverse());
             self.enode_to_term_id.insert(sh, app_id);
             self.term_id_to_enode.insert(i, l.clone());
-            let identity = bij.compose(&bij.inverse()); // TODO correct identity?
+            let identity = bij.inverse().compose(&bij);
             AppliedId::new(i, identity)
         }
     }
