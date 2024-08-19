@@ -4,9 +4,36 @@ impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
-        let out = self.union_internal(l, r);
-        out
+        let subst = [(String::from("a"), l.clone()),
+                     (String::from("b"), r.clone())]
+                        .into_iter().collect();
+        let a = Pattern::parse("?a").unwrap();
+        let b = Pattern::parse("?b").unwrap();
+
+        self.union_instantiations(&a, &b, &subst, Justification::Explicit)
     }
+
+    pub fn union_instantiations(&mut self, from_pat: &Pattern<L>, to_pat: &Pattern<L>, subst: &Subst, j: Justification) -> bool {
+        let a = pattern_subst(self, from_pat, subst);
+        let b = pattern_subst(self, to_pat, subst);
+        if !self.union_internal(&a, &b) { return false; }
+
+        if let Some(explain) = &mut self.explain {
+            let mut termsubst = Subst::default();
+            for (var, app_id) in subst.iter() {
+                let app_id2 = explain.translate(app_id);
+                termsubst.insert(var.to_string(), app_id2);
+            }
+
+            let a = explain.pattern_subst(from_pat, &termsubst);
+            let b = explain.pattern_subst(to_pat, &termsubst);
+            explain.add_equation(a, b, j);
+        }
+
+        true
+    }
+
+
 
     fn union_internal(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
         // normalize inputs
@@ -43,7 +70,7 @@ impl<L: Language> EGraph<L> {
             }
 
             let grp = &mut self.classes.get_mut(&id).unwrap().group;
-            if grp.contains(&perm) { return false; }
+            assert!(!grp.contains(&perm));
 
             grp.add(perm);
 
@@ -96,6 +123,12 @@ impl<L: Language> EGraph<L> {
         let to = self.alloc_eclass_fresh(&final_cap);
         let app_id = self.mk_identity_applied_id(id);
         self.move_to(&app_id, &to);
+
+        if let Some(explain) = &mut self.explain {
+            let app_id = &explain.translator[&from.id];
+            explain.translator.insert(to.id, app_id.clone());
+            todo!(); // TODO This won't be correct as is.
+        }
     }
 
     // moves everything from `from` to `to`.

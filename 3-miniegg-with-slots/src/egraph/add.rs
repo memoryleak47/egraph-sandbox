@@ -39,6 +39,11 @@ impl<L: Language> EGraph<L> {
         let fresh_slots = old_to_fresh.values();
         let i = self.alloc_eclass(&fresh_slots);
 
+        let id = self.mk_identity_applied_id(i);
+        if let Some(explain) = &mut self.explain {
+            explain.add_translation(sh.apply_slotmap(&old_to_fresh), id);
+        }
+
         self.raw_add_to_class(i, (sh, old_to_fresh));
 
         self.mk_applied_id(i, fresh_to_old)

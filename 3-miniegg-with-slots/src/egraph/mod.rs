@@ -9,6 +9,9 @@ pub use add::*;
 mod union;
 pub use union::*;
 
+mod explain;
+pub use explain::*;
+
 #[derive(Clone, Debug)]
 pub struct EClass<L: Language> {
     // The set of equivalent ENodes that make up this eclass.
@@ -47,6 +50,8 @@ pub struct EGraph<L: Language> {
 
     // For each shape contained in the EGraph, maps to the EClass that contains it.
     hashcons: HashMap<L, Id>,
+
+    explain: Option<Explain<L>>,
 }
 
 impl<L: Language> EGraph<L> {
@@ -55,7 +60,22 @@ impl<L: Language> EGraph<L> {
             unionfind: Default::default(),
             classes: Default::default(),
             hashcons: Default::default(),
+            explain: None,
         }
+    }
+
+    pub fn with_explanations_enabled(mut self) -> Self {
+        assert!(self.hashcons.is_empty());
+        self.explain = Some(Explain::default());
+        self
+    }
+
+    pub fn explain_equivalence(&mut self, a: RecExpr<L>, b: RecExpr<L>) -> Explanation<L> {
+        let a_ = self.add_expr(a.clone());
+        let b_ = self.add_expr(b.clone());
+        assert!(self.eq(&a_, &b_));
+        let explain = self.explain.as_mut().unwrap();
+        explain.explain_equivalence(&a, &b).unwrap()
     }
 
     pub fn slots(&self, id: Id) -> HashSet<Slot> {

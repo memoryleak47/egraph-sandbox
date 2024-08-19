@@ -51,7 +51,7 @@ fn beta() -> Rewrite<RiseENode> {
     let pat = Pattern::parse("(app (lam s1 ?body) ?e)").unwrap();
     let outpat = Pattern::parse("(let s1 ?e ?body)").unwrap();
 
-    mk_rewrite(pat, outpat)
+    mk_named_rewrite("beta", pat, outpat)
 }
 
 fn eta() -> Rewrite<RiseENode> {
