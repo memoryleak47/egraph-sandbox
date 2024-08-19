@@ -52,11 +52,11 @@ impl<L: Language> Explain<L> {
         let a = &self.translator[&l.id];
         // a == l.id
 
-        // a has some redundant slot choices that shouldn't be touched by l.m.
+        // a has some redundant slot choices.
         let mut m = l.m.clone();
         for s in a.slots() {
             if !m.contains_key(s) {
-                m.insert(s, s);
+                m.insert(s, Slot::fresh());
             }
         }
         a.apply_slotmap(&m)
