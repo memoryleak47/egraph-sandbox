@@ -270,8 +270,17 @@ impl<L: Language> Explain<L> {
 }
 
 #[derive(Debug)]
-pub struct Explanation<L>(std::marker::PhantomData<L>);
+pub struct Explanation<L: Language> {
+    term: RecExpr<L>,
+    step: Option<Box<ExplanationStep<L>>>,
+}
 
+#[derive(Debug)]
+pub struct ExplanationStep<L: Language> {
+    index_list: Vec<usize>,
+    justification: Justification,
+    exp: Explanation<L>,
+}
 
 fn insert_applied(map: &mut HashMap<Id, AppliedId>, k: AppliedId, v: AppliedId) {
     // map[k] == v
