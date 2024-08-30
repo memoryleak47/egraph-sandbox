@@ -23,9 +23,11 @@ fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: us
 }
 
 fn add_eq(s1: &str, s2: &str, eg: &mut EGraph<RiseENode>) {
-    let l = eg.add_expr(RecExpr::parse(s1).unwrap());
-    let r = eg.add_expr(RecExpr::parse(s2).unwrap());
-    eg.union(&l, &r);
+    let l = Pattern::parse(s1).unwrap();
+    let r = Pattern::parse(s2).unwrap();
+    let j = Justification::Rule(format!("{s1} = {s2}"));
+    let subst = Subst::default();
+    eg.union_instantiations(&l, &r, &subst, j);
 }
 
 fn main() {
@@ -35,9 +37,10 @@ fn main() {
     add_eq("sym_c", "sym_d", &mut eg);
     add_eq("sym_d", "sym_e", &mut eg);
     add_eq("sym_c", "sym_b", &mut eg);
+    add_eq("(app sym_f sym_a)", "sym_e", &mut eg);
 
-    let p = RecExpr::parse("(app sym_foo sym_a)").unwrap();
-    let q = RecExpr::parse("(app sym_foo sym_e)").unwrap();
+    let p = RecExpr::parse("sym_b").unwrap();
+    let q = RecExpr::parse("(app sym_f sym_b)").unwrap();
 
     eg.dump();
     println!("{:?}", eg.explain_equivalence(p, q));
