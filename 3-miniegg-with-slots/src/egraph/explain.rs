@@ -354,23 +354,66 @@ impl<L: Language> Explain<L> {
     }
 
     fn find_congruence_explanation(&self, a: L, b: L, imap: &IMap) -> Explanation<L> {
-        todo!()
-/*
-        let mut child_explanations = Vec::new();
-        for (xc, yc) in x_enode.applied_id_occurences().iter().zip(y_enode.applied_id_occurences().iter()) {
-            let expl = explain.find_explanation(xc, yc, imap);
-            child_explanations.push(expl);
+        let l_a = a.applied_id_occurences();
+        let l_b = b.applied_id_occurences();
+        assert_eq!(l_a.len(), l_b.len());
+        let n = l_a.len();
+
+        let mut explanations = Vec::new();
+        for i in 0..n {
+            let c_a = &l_a[i];
+            let c_b = &l_b[i];
+            let base_expl = self.find_explanation(c_a, c_b, imap);
+            let lifted = lift(base_expl, i, self, &a, &b, &l_a, &l_b);
+
+            explanations.push(lifted);
+
+            fn lift<L: Language>(exp: Explanation<L>, i: usize, explain: &Explain<L>, a: &L, b: &L, l_a: &[AppliedId], l_b: &[AppliedId]) -> Explanation<L> {
+                Explanation {
+                    term: lift_term(exp.term, i, explain, a, b, l_a, l_b),
+                    step: exp.step.map(|step| {
+                        let mut index_list = step.index_list;
+                        index_list.insert(0, i);
+                        Box::new(ExplanationStep {
+                            index_list,
+                            justification: step.justification,
+                            exp: lift(step.exp, i, explain, a, b, l_a, l_b),
+                        })
+                    }),
+                }
+            }
+
+            fn lift_term<L: Language>(t: RecExpr<L>, i: usize, explain: &Explain<L>, a: &L, b: &L, l_a: &[AppliedId], l_b: &[AppliedId]) -> RecExpr<L> {
+                let n = l_a.len();
+                let node = nullify_app_ids(a);
+
+                let mut children = Vec::new();
+                for j in 0..i {
+                    children.push(explain.term_id_to_term(&l_b[j]).unwrap());
+                }
+                children.push(t);
+                for j in (i+1)..n {
+                    children.push(explain.term_id_to_term(&l_a[j]).unwrap());
+                }
+
+                RecExpr {
+                    node,
+                    children,
+                }
+            }
         }
 
-*/
+        compose_explanation_list(explanations)
     }
 }
 
+#[derive(Clone)]
 pub struct Explanation<L: Language> {
     pub term: RecExpr<L>,
     pub step: Option<Box<ExplanationStep<L>>>,
 }
 
+#[derive(Clone)]
 pub struct ExplanationStep<L: Language> {
     pub index_list: Vec<usize>,
     pub justification: Justification, // TODO is_forward is missing!
@@ -396,6 +439,17 @@ fn compose_explanation<L: Language>(a: Explanation<L>, b: Explanation<L>) -> Exp
             return a;
         }
     }
+}
+
+fn compose_explanation_list<L: Language>(l: Vec<Explanation<L>>) -> Explanation<L> {
+    let mut l = l;
+    let mut out = l.pop().unwrap();
+
+    for x in l.into_iter().rev() {
+        out = compose_explanation(x, out);
+    }
+
+    out
 }
 
 fn insert_applied(map: &mut HashMap<Id, AppliedId>, k: AppliedId, v: AppliedId) {
