@@ -276,7 +276,11 @@ impl<L: Language> EGraph<L> {
             if !self.is_alive(*i) { continue; }
 
             let slot_str = c.slots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ");
-            println!("{:?}({}):", i, &slot_str);
+            let explain_arrow = if let Some(explain) = self.explain.as_ref() {
+                    let x = &explain.translator[&i];
+                    format!(" -> explain-{:?}", x)
+                } else { String::new() };
+            println!("{:?}({}){}:", i, &slot_str, explain_arrow);
             for (sh, bij) in &c.nodes {
                 let n = sh.apply_slotmap(bij);
                 println!(" - {:?}", n);
@@ -285,6 +289,20 @@ impl<L: Language> EGraph<L> {
                 println!(" -- {:?}", p);
             }
         }
+
+        if let Some(explain) = self.explain.as_ref() {
+            println!();
+            println!("Explain:");
+            println!();
+
+            let mut v: Vec<(&Id, &L)> = explain.term_id_to_enode.iter().collect();
+            v.sort_by_key(|(x, _)| *x);
+
+            for (i, c) in v {
+                println!("{:?}: {:?}", i, c);
+            }
+        }
+
         println!("");
     }
 
