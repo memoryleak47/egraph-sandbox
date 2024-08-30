@@ -6,6 +6,7 @@ use crate::*;
 // Hence Ids uniquely identify certain concrete terms.
 
 type EquationId = usize;
+type IMap = HashMap<Id, HashSet<EquationId>>;
 
 // Invariants:
 // - each Id from the egraph (dead or alive) has an associated e-node in term_id_to_enode.
@@ -35,7 +36,7 @@ impl<L: Language> Default for Explain<L> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Justification {
     Congruence,
     Rule(String),
@@ -55,8 +56,8 @@ impl<L: Language> EGraph<L> {
         self.add_congruence_equations();
 
         let Some(explain) = self.explain.as_ref() else { panic!() };
-        let out = explain.find_explanation(&a_expl, &b_expl);
-
+        let imap = explain.incidence_map();
+        let out = explain.find_explanation(&a_expl, &b_expl, &imap);
         self.remove_congruence_equations();
 
         out
@@ -272,9 +273,7 @@ impl<L: Language> Explain<L> {
         out
     }
 
-    fn find_explanation(&self, a: &AppliedId, b: &AppliedId) -> Explanation<L> {
-        let imap = self.incidence_map();
-
+    fn find_explanation(&self, a: &AppliedId, b: &AppliedId, imap: &IMap) -> Explanation<L> {
         // maps each Id to the Id that's one step closer to a.
         let mut pred: HashMap<Id, (Id, EquationId)> = HashMap::default();
         pred.insert(a.id, (a.id, usize::MAX));
@@ -310,9 +309,9 @@ impl<L: Language> Explain<L> {
         // path a -> b
         path.reverse();
 
-        return rec(self, &path[..], &pred);
+        return rec(self, &path[..], &pred, imap);
 
-        fn rec<L: Language>(explain: &Explain<L>, path: &[Id], pred: &HashMap<Id, (Id, EquationId)>) -> Explanation<L> {
+        fn rec<L: Language>(explain: &Explain<L>, path: &[Id], pred: &HashMap<Id, (Id, EquationId)>, imap: &IMap) -> Explanation<L> {
             let x = path[0];
 
             let app_id_x = explain.mk_identity_app_id(x);
@@ -323,21 +322,48 @@ impl<L: Language> Explain<L> {
             }
 
             let y = path[1];
+            let app_id_y = explain.mk_identity_app_id(y);
+            let term_y = explain.term_id_to_term(&app_id_y).unwrap();
 
             let i = pred[&y].1;
             let j = explain.equations[i].2.clone();
-            let step = ExplanationStep {
-                index_list: Vec::new(),
-                justification: j,
-                exp: rec(explain, &path[1..], pred),
+
+            let explanation_step = if Justification::Congruence == j {
+                let x_enode = explain.term_id_to_enode(&app_id_x).unwrap();
+                let y_enode = explain.term_id_to_enode(&app_id_y).unwrap();
+                explain.find_congruence_explanation(x_enode, y_enode, imap)
+            } else {
+                Explanation {
+                    term: term_x,
+                    step: Some(Box::new(
+                        ExplanationStep {
+                            index_list: Vec::new(),
+                            justification: j,
+                            exp: Explanation {
+                                term: term_y,
+                                step: None,
+                            },
+                        },
+                    )),
+                }
             };
-            Explanation {
-                term: term_x,
-                step: Some(Box::new(step)),
-            }
+
+            let tail = rec(explain, &path[1..], pred, imap);
+            compose_explanation(explanation_step, tail)
         }
     }
 
+    fn find_congruence_explanation(&self, a: L, b: L, imap: &IMap) -> Explanation<L> {
+        todo!()
+/*
+        let mut child_explanations = Vec::new();
+        for (xc, yc) in x_enode.applied_id_occurences().iter().zip(y_enode.applied_id_occurences().iter()) {
+            let expl = explain.find_explanation(xc, yc, imap);
+            child_explanations.push(expl);
+        }
+
+*/
+    }
 }
 
 pub struct Explanation<L: Language> {
@@ -349,6 +375,27 @@ pub struct ExplanationStep<L: Language> {
     pub index_list: Vec<usize>,
     pub justification: Justification,
     pub exp: Explanation<L>,
+}
+
+// panics if a.last_term != b.first_term
+fn compose_explanation<L: Language>(a: Explanation<L>, b: Explanation<L>) -> Explanation<L> {
+    if a.step.is_none() {
+        assert_eq!(a.term, b.term);
+        return b;
+    }
+
+    let mut a = a;
+    let mut r: &mut ExplanationStep<L> = a.step.as_mut().unwrap();
+    loop {
+        if r.exp.step.is_some() {
+            let Some(step) = r.exp.step.as_mut() else { panic!() };
+            r = step;
+        } else {
+            assert_eq!(r.exp.term, b.term);
+            r.exp = b;
+            return a;
+        }
+    }
 }
 
 fn insert_applied(map: &mut HashMap<Id, AppliedId>, k: AppliedId, v: AppliedId) {
