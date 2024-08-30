@@ -373,7 +373,7 @@ pub struct Explanation<L: Language> {
 
 pub struct ExplanationStep<L: Language> {
     pub index_list: Vec<usize>,
-    pub justification: Justification,
+    pub justification: Justification, // TODO is_forward is missing!
     pub exp: Explanation<L>,
 }
 
