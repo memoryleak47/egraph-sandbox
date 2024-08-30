@@ -58,6 +58,7 @@ impl<L: Language> EGraph<L> {
         let Some(explain) = self.explain.as_ref() else { panic!() };
         let imap = explain.incidence_map();
         let out = explain.find_explanation(&a_expl, &b_expl, &imap);
+
         self.remove_congruence_equations();
 
         out
@@ -292,11 +293,14 @@ impl<L: Language> Explain<L> {
                     for z in [l.id, r.id] {
                         if !pred.contains_key(&z) {
                             pred.insert(z, (x, i));
+                            open.insert(z);
                         }
                     }
                 }
             }
         }
+
+        assert!(pred.contains_key(&b.id));
 
         // path b -> a
         let mut path = vec![b.id];
