@@ -56,16 +56,13 @@ impl<L: Language> EGraph<L> {
         let _ = explain;
 
         self.add_congruence_equations();
-
-        let Some(explain) = self.explain.as_mut() else { panic!() };
-        for (x, y, j) in &explain.equations {
-            let x = explain.term_id_to_term(&x).unwrap();
-            let y = explain.term_id_to_term(&y).unwrap();
-            eprintln!("{} == {} by {:?}", x, y, j);
-        }
-
+        let out = self.find_explanation(&a_, &b_);
         self.remove_congruence_equations();
 
+        out
+    }
+
+    fn find_explanation(&self, a: &AppliedId, b: &AppliedId) -> Explanation<L> {
         todo!()
     }
 

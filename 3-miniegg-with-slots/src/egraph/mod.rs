@@ -301,6 +301,12 @@ impl<L: Language> EGraph<L> {
             for (i, c) in v {
                 println!("{:?}: {:?}", i, c);
             }
+
+            println!();
+            println!("Explain-Equations:");
+            for (x, y, j) in &explain.equations {
+                eprintln!("{:?} == {:?} by {:?}", x, y, j);
+            }
         }
 
         println!("");
