@@ -50,7 +50,10 @@ impl<L: Language> EGraph<L> {
         let a_ = self.add_expr(a.clone());
         let b_ = self.add_expr(b.clone());
         assert!(self.eq(&a_, &b_));
-        assert!(self.explain.is_some());
+        let Some(explain) = self.explain.as_mut() else { panic!() };
+        explain.add_term(&a);
+        explain.add_term(&b);
+        let _ = explain;
 
         self.add_congruence_equations();
 
@@ -91,7 +94,6 @@ impl<L: Language> EGraph<L> {
 
         let Some(explain) = self.explain.as_mut() else { panic!() };
         for (a, b, j) in eqs {
-            println!("add equation!");
             explain.add_equation(a, b, j);
         }
     }
@@ -185,6 +187,14 @@ impl<L: Language> Explain<L> {
         }
     }
 
+    pub fn add_term(&mut self, t: &RecExpr<L>) -> AppliedId {
+        let mut n = t.node.clone();
+        let mut refs: Vec<&mut _> = n.applied_id_occurences_mut();
+        for i in 0..refs.len() {
+            *(refs[i]) = self.add_term(&t.children[i]);
+        }
+        self.add_explain_enode(n)
+    }
 
     pub fn enode_to_term_id(&self, l: &L) -> Option<AppliedId> {
         let (sh, bij) = l.weak_shape();
