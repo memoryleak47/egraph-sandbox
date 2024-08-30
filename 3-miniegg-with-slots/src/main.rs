@@ -22,19 +22,22 @@ fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: us
     assert!(false);
 }
 
+fn add_eq(s1: &str, s2: &str, eg: &mut EGraph<RiseENode>) {
+    let l = eg.add_expr(RecExpr::parse(s1).unwrap());
+    let r = eg.add_expr(RecExpr::parse(s2).unwrap());
+    eg.union(&l, &r);
+}
+
 fn main() {
     let mut eg: EGraph<RiseENode> = EGraph::new().with_explanations_enabled();
 
-    let a = eg.add_expr(RecExpr::parse("sym_a").unwrap());
-    let b = eg.add_expr(RecExpr::parse("sym_b").unwrap());
-
-    eg.union(&a, &b);
-
-    eg.add_expr(RecExpr::parse("(app sym_foo sym_a)").unwrap());
-    eg.add_expr(RecExpr::parse("(app sym_foo sym_b)").unwrap());
+    add_eq("sym_a", "sym_b", &mut eg);
+    add_eq("sym_c", "sym_d", &mut eg);
+    add_eq("sym_d", "sym_e", &mut eg);
+    add_eq("sym_c", "sym_b", &mut eg);
 
     let p = RecExpr::parse("(app sym_foo sym_a)").unwrap();
-    let q = RecExpr::parse("(app sym_foo sym_b)").unwrap();
+    let q = RecExpr::parse("(app sym_foo sym_e)").unwrap();
 
     eg.dump();
     println!("{:?}", eg.explain_equivalence(p, q));
