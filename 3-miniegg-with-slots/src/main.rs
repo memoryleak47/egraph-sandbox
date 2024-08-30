@@ -37,7 +37,7 @@ fn main() {
     let q = RecExpr::parse("(app sym_foo sym_b)").unwrap();
 
     eg.dump();
-    eg.explain_equivalence(p, q);
+    println!("{:?}", eg.explain_equivalence(p, q));
 }
 
 fn main2() {

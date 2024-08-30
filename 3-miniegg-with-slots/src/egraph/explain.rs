@@ -22,8 +22,6 @@ pub struct Explain<L: Language> {
 
     // equations = (lhs, rhs, j). All rules are applied as lhs -> rhs.
     pub equations: Vec<(AppliedId, AppliedId, Justification)>,
-
-    pub incidence_map: HashMap<Id, Vec<EquationId>>,
 }
 
 impl<L: Language> Default for Explain<L> {
@@ -33,7 +31,6 @@ impl<L: Language> Default for Explain<L> {
             enode_to_term_id: Default::default(),
             term_id_to_enode: Default::default(),
             equations: Default::default(),
-            incidence_map: Default::default(),
         }
     }
 }
@@ -51,19 +48,18 @@ impl<L: Language> EGraph<L> {
         let b_ = self.add_expr(b.clone());
         assert!(self.eq(&a_, &b_));
         let Some(explain) = self.explain.as_mut() else { panic!() };
-        explain.add_term(&a);
-        explain.add_term(&b);
+        let a_expl = explain.add_term(&a);
+        let b_expl = explain.add_term(&b);
         let _ = explain;
 
         self.add_congruence_equations();
-        let out = self.find_explanation(&a_, &b_);
+
+        let Some(explain) = self.explain.as_ref() else { panic!() };
+        let out = explain.find_explanation(&a_expl, &b_expl);
+
         self.remove_congruence_equations();
 
         out
-    }
-
-    fn find_explanation(&self, a: &AppliedId, b: &AppliedId) -> Explanation<L> {
-        todo!()
     }
 
     fn add_congruence_equations(&mut self) {
@@ -230,9 +226,6 @@ impl<L: Language> Explain<L> {
 
         let i = self.equations.len();
         self.equations.push((a, b, j));
-
-        self.incidence_map.entry(a_id).or_default().push(i);
-        self.incidence_map.entry(b_id).or_default().push(i);
     }
 
     // Subst contains Explain-AppliedIds.
@@ -264,19 +257,98 @@ impl<L: Language> Explain<L> {
         self.term_id_to_enode[&i].slots()
     }
 
+    fn incidence_map(&self) -> HashMap<Id, HashSet<EquationId>> {
+        let mut out: HashMap<Id, HashSet<EquationId>> = HashMap::default();
+
+        for (&i, _) in &self.term_id_to_enode {
+            out.insert(i, HashSet::default());
+        }
+
+        for (i, (l, r, _)) in self.equations.iter().enumerate() {
+            out.get_mut(&l.id).unwrap().insert(i);
+            out.get_mut(&r.id).unwrap().insert(i);
+        }
+
+        out
+    }
+
+    fn find_explanation(&self, a: &AppliedId, b: &AppliedId) -> Explanation<L> {
+        let imap = self.incidence_map();
+
+        // maps each Id to the Id that's one step closer to a.
+        let mut pred: HashMap<Id, (Id, EquationId)> = HashMap::default();
+        pred.insert(a.id, (a.id, usize::MAX));
+
+        // all elements in open have `pred` of it defined, but we still need to look for what they can reach.
+        let mut open = HashSet::default();
+        open.insert(a.id);
+
+        while open.len() > 0 {
+            let last_open = open;
+            open = HashSet::default();
+
+            for x in last_open {
+                for &i in &imap[&x] {
+                    let (l, r, _) = &self.equations[i];
+                    for z in [l.id, r.id] {
+                        if !pred.contains_key(&z) {
+                            pred.insert(z, (x, i));
+                        }
+                    }
+                }
+            }
+        }
+
+        // path b -> a
+        let mut path = vec![b.id];
+        let mut i = b.id;
+        while i != a.id {
+            i = pred[&i].0;
+            path.push(i);
+        }
+
+        // path a -> b
+        path.reverse();
+
+        return rec(self, &path[..], &pred);
+
+        fn rec<L: Language>(explain: &Explain<L>, path: &[Id], pred: &HashMap<Id, (Id, EquationId)>) -> Explanation<L> {
+            let x = path[0];
+
+            let app_id_x = explain.mk_identity_app_id(x);
+            let term_x = explain.term_id_to_term(&app_id_x).unwrap();
+
+            if path.len() == 1 {
+                return Explanation { term: term_x, step: None };
+            }
+
+            let y = path[1];
+
+            let i = pred[&y].1;
+            let j = explain.equations[i].2.clone();
+            let step = ExplanationStep {
+                index_list: Vec::new(),
+                justification: j,
+                exp: rec(explain, &path[1..], pred),
+            };
+            Explanation {
+                term: term_x,
+                step: Some(Box::new(step)),
+            }
+        }
+    }
+
 }
 
-#[derive(Debug)]
 pub struct Explanation<L: Language> {
-    term: RecExpr<L>,
-    step: Option<Box<ExplanationStep<L>>>,
+    pub term: RecExpr<L>,
+    pub step: Option<Box<ExplanationStep<L>>>,
 }
 
-#[derive(Debug)]
 pub struct ExplanationStep<L: Language> {
-    index_list: Vec<usize>,
-    justification: Justification,
-    exp: Explanation<L>,
+    pub index_list: Vec<usize>,
+    pub justification: Justification,
+    pub exp: Explanation<L>,
 }
 
 fn insert_applied(map: &mut HashMap<Id, AppliedId>, k: AppliedId, v: AppliedId) {
@@ -293,4 +365,3 @@ fn get_applied(map: &HashMap<Id, AppliedId>, k: &AppliedId) -> Option<AppliedId>
     // map[k.id] * k.m == v
     map.get(&k.id).map(|x| x.apply_slotmap(&k.m.inverse()))
 }
-
