@@ -110,7 +110,6 @@ impl<L: Language> EGraph<L> {
             let orig = lookup_rec_expr(&term, self).unwrap();
             insert_applied(&mut bt, i, orig);
         }
-        dbg!(&bt);
 
         bt
     }
