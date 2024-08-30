@@ -70,14 +70,6 @@ impl<L: Language> EGraph<L> {
         self
     }
 
-    pub fn explain_equivalence(&mut self, a: RecExpr<L>, b: RecExpr<L>) -> Explanation<L> {
-        let a_ = self.add_expr(a.clone());
-        let b_ = self.add_expr(b.clone());
-        assert!(self.eq(&a_, &b_));
-        let explain = self.explain.as_mut().unwrap();
-        explain.explain_equivalence(&a, &b).unwrap()
-    }
-
     pub fn slots(&self, id: Id) -> HashSet<Slot> {
         self.classes[&id].slots.clone()
     }

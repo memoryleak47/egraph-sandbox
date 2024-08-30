@@ -23,8 +23,29 @@ fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: us
 }
 
 fn main() {
-    let p = "(app (lam s0 (app (var s0) (var s0))) (lam s1 (var s1)))";
-    let q = "(lam s0 (var s0))";
+    let mut eg: EGraph<RiseENode> = EGraph::new().with_explanations_enabled();
+
+    let a = eg.add_expr(RecExpr::parse("sym_a").unwrap());
+    let b = eg.add_expr(RecExpr::parse("sym_b").unwrap());
+
+    eg.union(&a, &b);
+
+    eg.add_expr(RecExpr::parse("(app sym_foo sym_a)").unwrap());
+    eg.add_expr(RecExpr::parse("(app sym_foo sym_b)").unwrap());
+
+    let p = RecExpr::parse("(app sym_foo sym_a)").unwrap();
+    let q = RecExpr::parse("(app sym_foo sym_b)").unwrap();
+
+    eg.dump();
+    eg.explain_equivalence(p, q);
+}
+
+fn main2() {
+    // let p = "(app (lam s0 (app (var s0) (var s0))) (lam s1 (var s1)))";
+    // let q = "(lam s0 (var s0))";
+
+    let p = "(app sym_foo (app (lam s0 (var s0)) (lam s1 (var s1))))";
+    let q = "(app sym_foo (lam s2 (var s2)))";
 
     let p = RecExpr::parse(p).unwrap();
     let q = RecExpr::parse(q).unwrap();

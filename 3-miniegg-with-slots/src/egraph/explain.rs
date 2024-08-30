@@ -45,6 +45,86 @@ pub enum Justification {
     Explicit, // union called without a rule.
 }
 
+impl<L: Language> EGraph<L> {
+    pub fn explain_equivalence(&mut self, a: RecExpr<L>, b: RecExpr<L>) -> Explanation<L> {
+        let a_ = self.add_expr(a.clone());
+        let b_ = self.add_expr(b.clone());
+        assert!(self.eq(&a_, &b_));
+        assert!(self.explain.is_some());
+
+        self.add_congruence_equations();
+
+        let Some(explain) = self.explain.as_mut() else { panic!() };
+        for (x, y, j) in &explain.equations {
+            let x = explain.term_id_to_term(&x).unwrap();
+            let y = explain.term_id_to_term(&y).unwrap();
+            eprintln!("{} == {} by {:?}", x, y, j);
+        }
+
+        self.remove_congruence_equations();
+
+        todo!()
+    }
+
+    fn add_congruence_equations(&mut self) {
+        let back_translator = self.generate_back_translator();
+        let back_translate = |n: &L| n.map_applied_ids(|child| get_applied(&back_translator, &child).unwrap());
+
+        let Some(explain) = self.explain.as_ref() else { panic!() };
+        let mut eqs = Vec::new();
+
+        // maps a strong-shape of a child-wise normalized egraph e-node to a explain applied id corresponding to it.
+        let mut shapes_map: HashMap<L, AppliedId> = HashMap::default();
+
+        for (i, n) in &explain.term_id_to_enode {
+            let i = explain.mk_identity_app_id(*i);
+
+            let n2 = back_translate(n);
+            let (sh, bij) = self.shape(&n2);
+            if let Some(orig) = shapes_map.get(&sh) {
+                let orig = orig.apply_slotmap(&bij);
+                eqs.push((orig, i, Justification::Congruence));
+            } else {
+                shapes_map.insert(sh, i.apply_slotmap(&bij.inverse()));
+            }
+        }
+
+        let Some(explain) = self.explain.as_mut() else { panic!() };
+        for (a, b, j) in eqs {
+            println!("add equation!");
+            explain.add_equation(a, b, j);
+        }
+    }
+
+    // for each Explain Id, it finds the normal form e-graph AppliedId.
+    fn generate_back_translator(&self) -> HashMap<Id, AppliedId> {
+        let Some(explain) = self.explain.as_ref() else { panic!() };
+
+        let mut bt = HashMap::default();
+
+        for (i, _) in &explain.term_id_to_enode {
+            let i = explain.mk_identity_app_id(*i);
+            let term = explain.term_id_to_term(&i).unwrap();
+            let orig = lookup_rec_expr(&term, self).unwrap();
+            insert_applied(&mut bt, i, orig);
+        }
+        dbg!(&bt);
+
+        bt
+    }
+
+    fn remove_congruence_equations(&mut self) {
+        let Some(explain) = self.explain.as_mut() else { panic!() };
+        explain.equations.retain(|(_, _, j)| !matches!(j, Justification::Congruence));
+    }
+
+    // get_justification_chain(a, b).last().unwrap().1 == b, whereas a doesn't come up in the list.
+    // panics, if a and b are not equal.
+    fn get_justification_chain(&self, a: AppliedId, b: AppliedId) -> Vec<(Justification, AppliedId)> {
+        todo!()
+    }
+}
+
 impl<L: Language> Explain<L> {
     // translates an egraph e-class to its corresponding term id.
     pub fn translate(&self, l: &AppliedId) -> AppliedId {
@@ -79,7 +159,7 @@ impl<L: Language> Explain<L> {
         let i2_id = i2.apply_slotmap(&i.m.inverse());
         self.translator.insert(i.id, i2_id);
     }
-
+ 
     pub fn add_egraph_enode(&mut self, l: L) -> AppliedId {
         let l = self.translate_enode(&l);
         self.add_explain_enode(l)
@@ -168,22 +248,34 @@ impl<L: Language> Explain<L> {
         }
     }
 
-    // TODO do we know that a and b exist in the explain land?
-    pub fn explain_equivalence(&self, a: &RecExpr<L>, b: &RecExpr<L>) -> Option<Explanation<L>> {
-        for (x, y, j) in &self.equations {
-            let x = self.term_id_to_term(&x).unwrap();
-            let y = self.term_id_to_term(&y).unwrap();
-            eprintln!("{} == {} by {:?}", x, y, j);
-        }
-        todo!()
+    fn mk_identity_app_id(&self, i: Id) -> AppliedId {
+        let slots = self.slots_of(i);
+        let identity = SlotMap::identity(&slots);
+        AppliedId::new(i, identity)
     }
 
-    // get_justification_chain(a, b).last().unwrap().1 == b, whereas a doesn't come up in the list.
-    // panics, if a and b are not equal.
-    fn get_justification_chain(&self, a: AppliedId, b: AppliedId) -> Vec<(Justification, AppliedId)> {
-        todo!()
+    fn slots_of(&self, i: Id) -> HashSet<Slot> {
+        self.term_id_to_enode[&i].slots()
     }
+
 }
 
 #[derive(Debug)]
 pub struct Explanation<L>(std::marker::PhantomData<L>);
+
+
+fn insert_applied(map: &mut HashMap<Id, AppliedId>, k: AppliedId, v: AppliedId) {
+    // map[k] == v
+    // map[k.id * k.m] == v
+    // map[k.id] == v * k.m^-1
+    map.insert(k.id, v.apply_slotmap(&k.m.inverse()));
+}
+
+fn get_applied(map: &HashMap<Id, AppliedId>, k: &AppliedId) -> Option<AppliedId> {
+    // map[k] == v
+    // map[k.id * k.m] == v
+    // map[k.id] == v * k.m^-1
+    // map[k.id] * k.m == v
+    map.get(&k.id).map(|x| x.apply_slotmap(&k.m.inverse()))
+}
+
