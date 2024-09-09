@@ -15,6 +15,16 @@ pub struct Equation {
     pub j: Justification,
 }
 
+impl Equation {
+    fn flip(&self) -> Self {
+        Equation {
+            l: self.r.clone(),
+            r: self.l.clone(),
+            j: self.j.clone(),
+        }
+    }
+}
+
 // Invariants:
 // - each Id from the egraph (dead or alive) has an associated e-node in term_id_to_enode.
 #[derive(Debug)]
@@ -280,11 +290,19 @@ impl<L: Language> Explain<L> {
     }
 
     fn find_explanation(&self, a: &AppliedId, b: &AppliedId, imap: &IMap) -> Explanation<L> {
-        // maps each Id to the Id that's one step closer to a.
-        let mut pred: HashMap<Id, (Id, EquationId)> = HashMap::default();
-        pred.insert(a.id, (a.id, usize::MAX));
+        if a.id == b.id {
+            let t = self.term_id_to_term(a).unwrap();
+            return Explanation {
+                term: t,
+                step: None
+            };
+        }
 
-        // all elements in open have `pred` of it defined, but we still need to look for what they can reach.
+        // maps each Id `r_id` to an `Equation(l, r, j)`,
+        // where r_id = r.id and
+        // l.id is a step closer to a.id.
+        let mut pred: HashMap<Id, Equation> = HashMap::default();
+
         let mut open = HashSet::default();
         open.insert(a.id);
 
@@ -294,12 +312,19 @@ impl<L: Language> Explain<L> {
 
             for x in last_open {
                 for &i in &imap[&x] {
-                    let Equation { l, r, .. } = &self.equations[i];
-                    for z in [l.id, r.id] {
-                        if !pred.contains_key(&z) {
-                            pred.insert(z, (x, i));
-                            open.insert(z);
-                        }
+                    let mut eq = self.equations[i].clone();
+
+                    // flip x to be on the left-side of the equation.
+                    if x != eq.l.id {
+                        eq = eq.flip();
+                    }
+                    let l = eq.l.id;
+                    let r = eq.r.id;
+                    assert_eq!(x, l);
+
+                    if !pred.contains_key(&r) && r != a.id {
+                        pred.insert(r, eq);
+                        open.insert(r);
                     }
                 }
             }
@@ -311,7 +336,7 @@ impl<L: Language> Explain<L> {
         let mut path = vec![b.id];
         let mut i = b.id;
         while i != a.id {
-            i = pred[&i].0;
+            i = pred[&i].l.id;
             path.push(i);
         }
 
@@ -320,7 +345,7 @@ impl<L: Language> Explain<L> {
 
         return rec(self, &path[..], &pred, imap);
 
-        fn rec<L: Language>(explain: &Explain<L>, path: &[Id], pred: &HashMap<Id, (Id, EquationId)>, imap: &IMap) -> Explanation<L> {
+        fn rec<L: Language>(explain: &Explain<L>, path: &[Id], pred: &HashMap<Id, Equation>, imap: &IMap) -> Explanation<L> {
             let x = path[0];
 
             let app_id_x = explain.mk_identity_app_id(x);
@@ -334,8 +359,7 @@ impl<L: Language> Explain<L> {
             let app_id_y = explain.mk_identity_app_id(y);
             let term_y = explain.term_id_to_term(&app_id_y).unwrap();
 
-            let i = pred[&y].1;
-            let j = explain.equations[i].j.clone();
+            let j = pred[&y].j.clone();
 
             let explanation_step = if Justification::Congruence == j {
                 let x_enode = explain.term_id_to_enode(&app_id_x).unwrap();
