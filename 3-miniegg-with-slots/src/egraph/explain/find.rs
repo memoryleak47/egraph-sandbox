@@ -25,13 +25,18 @@ impl<L: Language> Explain<L> {
             };
         }
 
+        let (path, pred) = self.find_path_modulo_slots(a.id, b_id, imap);
+        self.explain_path_modulo_slots(&path, &pred, imap)
+    }
+
+    fn find_path_modulo_slots(&self, a: Id, b: Id, imap: &IMap) -> (Vec<Id>, HashMap<Id, Equation>) {
         // maps each Id `r_id` to an `Equation(l, r, j)`,
         // where r_id = r.id and
         // l.id is a step closer to a.id.
         let mut pred: HashMap<Id, Equation> = HashMap::default();
 
         let mut open = HashSet::default();
-        open.insert(a.id);
+        open.insert(a);
 
         while open.len() > 0 {
             let last_open = open;
@@ -49,7 +54,7 @@ impl<L: Language> Explain<L> {
                     let r = eq.r.id;
                     assert_eq!(x, l);
 
-                    if !pred.contains_key(&r) && r != a.id {
+                    if !pred.contains_key(&r) && r != a {
                         pred.insert(r, eq);
                         open.insert(r);
                     }
@@ -57,12 +62,12 @@ impl<L: Language> Explain<L> {
             }
         }
 
-        assert!(pred.contains_key(&b_id));
+        assert!(pred.contains_key(&b));
 
         // path b -> a
-        let mut path = vec![b_id];
-        let mut i = b_id;
-        while i != a.id {
+        let mut path = vec![b];
+        let mut i = b;
+        while i != a {
             i = pred[&i].l.id;
             path.push(i);
         }
@@ -70,47 +75,47 @@ impl<L: Language> Explain<L> {
         // path a -> b
         path.reverse();
 
-        return rec(self, &path[..], &pred, imap);
+        (path, pred)
+    }
 
-        fn rec<L: Language>(explain: &Explain<L>, path: &[Id], pred: &HashMap<Id, Equation>, imap: &IMap) -> Explanation<L> {
-            let x = path[0];
+    fn explain_path_modulo_slots(&self, path: &[Id], pred: &HashMap<Id, Equation>, imap: &IMap) -> Explanation<L> {
+        let x = path[0];
 
-            let app_id_x = explain.mk_identity_app_id(x);
-            let term_x = explain.term_id_to_term(&app_id_x).unwrap();
+        let app_id_x = self.mk_identity_app_id(x);
+        let term_x = self.term_id_to_term(&app_id_x).unwrap();
 
-            if path.len() == 1 {
-                return Explanation { term: term_x, step: None };
-            }
-
-            let y = path[1];
-            let app_id_y = explain.mk_identity_app_id(y);
-            let term_y = explain.term_id_to_term(&app_id_y).unwrap();
-
-            let j = pred[&y].j.clone();
-
-            let explanation_step = if Justification::Congruence == j {
-                let x_enode = explain.term_id_to_enode(&app_id_x).unwrap();
-                let y_enode = explain.term_id_to_enode(&app_id_y).unwrap();
-                explain.find_congruence_explanation(x_enode, y_enode, imap)
-            } else {
-                Explanation {
-                    term: term_x,
-                    step: Some(Box::new(
-                        ExplanationStep {
-                            index_list: Vec::new(),
-                            justification: j,
-                            exp: Explanation {
-                                term: term_y,
-                                step: None,
-                            },
-                        },
-                    )),
-                }
-            };
-
-            let tail = rec(explain, &path[1..], pred, imap);
-            compose_explanation(explanation_step, tail)
+        if path.len() == 1 {
+            return Explanation { term: term_x, step: None };
         }
+
+        let y = path[1];
+        let app_id_y = self.mk_identity_app_id(y);
+        let term_y = self.term_id_to_term(&app_id_y).unwrap();
+
+        let j = pred[&y].j.clone();
+
+        let explanation_step = if Justification::Congruence == j {
+            let x_enode = self.term_id_to_enode(&app_id_x).unwrap();
+            let y_enode = self.term_id_to_enode(&app_id_y).unwrap();
+            self.find_congruence_explanation(x_enode, y_enode, imap)
+        } else {
+            Explanation {
+                term: term_x,
+                step: Some(Box::new(
+                    ExplanationStep {
+                        index_list: Vec::new(),
+                        justification: j,
+                        exp: Explanation {
+                            term: term_y,
+                            step: None,
+                        },
+                    },
+                )),
+            }
+        };
+
+        let tail = self.explain_path_modulo_slots(&path[1..], pred, imap);
+        compose_explanation(explanation_step, tail)
     }
 
     fn find_congruence_explanation(&self, a: L, b: L, imap: &IMap) -> Explanation<L> {
