@@ -421,7 +421,7 @@ pub struct ExplanationStep<L: Language> {
 // panics if a.last_term != b.first_term
 fn compose_explanation<L: Language>(a: Explanation<L>, b: Explanation<L>) -> Explanation<L> {
     if a.step.is_none() {
-        assert_eq!(a.term, b.term);
+        assert!(alpha_eq(&a.term, &b.term));
         return b;
     }
 
@@ -432,7 +432,7 @@ fn compose_explanation<L: Language>(a: Explanation<L>, b: Explanation<L>) -> Exp
             let Some(step) = r.exp.step.as_mut() else { panic!() };
             r = step;
         } else {
-            assert_eq!(r.exp.term, b.term);
+            assert!(alpha_eq(&r.exp.term, &b.term));
             r.exp = b;
             return a;
         }
@@ -463,4 +463,38 @@ fn get_applied(map: &HashMap<Id, AppliedId>, k: &AppliedId) -> Option<AppliedId>
     // map[k.id] == v * k.m^-1
     // map[k.id] * k.m == v
     map.get(&k.id).map(|x| x.apply_slotmap(&k.m.inverse()))
+}
+
+
+fn alpha_eq<L: Language>(a: &RecExpr<L>, b: &RecExpr<L>) -> bool {
+    alpha_eq_impl(a, b, &mut Default::default())
+}
+
+// we assume that all slots come up either free, or bound but not both inside of a single term.
+// `map` maps the slotnames from a to b.
+fn alpha_eq_impl<L: Language>(a: &RecExpr<L>, b: &RecExpr<L>, map: &mut SlotMap) -> bool {
+    if a.node.weak_shape().0 != b.node.weak_shape().0 {
+        return false;
+    }
+
+    let sa = a.node.all_slot_occurences().into_iter();
+    let sb = b.node.all_slot_occurences().into_iter();
+
+    for (x, y) in sa.zip(sb) {
+        if !safe_insert(x, y, map) { return false; }
+    }
+
+    for (l, r) in a.children.iter().zip(b.children.iter()) {
+        if !alpha_eq_impl(l, r, map) { return false; }
+    }
+
+    true
+}
+
+fn safe_insert(x: Slot, y: Slot, map: &mut SlotMap) -> bool {
+    if map.get(x) == Some(y) { return true; }
+    if map.keys().contains(&x) { return false; }
+    if map.values().contains(&y) { return false; }
+    map.insert(x, y);
+    true
 }

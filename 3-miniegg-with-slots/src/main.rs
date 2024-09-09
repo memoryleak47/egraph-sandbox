@@ -30,7 +30,7 @@ fn add_eq(s1: &str, s2: &str, eg: &mut EGraph<RiseENode>) {
     eg.union_instantiations(&l, &r, &subst, j);
 }
 
-fn main() {
+fn main2() {
     let mut eg: EGraph<RiseENode> = EGraph::new().with_explanations_enabled();
 
     add_eq("sym_a", "sym_b", &mut eg);
@@ -46,7 +46,7 @@ fn main() {
     println!("{:?}", eg.explain_equivalence(p, q));
 }
 
-fn main2() {
+fn main() {
     // let p = "(app (lam s0 (app (var s0) (var s0))) (lam s1 (var s1)))";
     // let q = "(lam s0 (var s0))";
 
