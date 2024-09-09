@@ -14,8 +14,11 @@ pub use alpha::*;
 mod record;
 pub use record::*;
 
-mod find;
-pub use find::*;
+mod find_path;
+pub use find_path::*;
+
+mod interpret_path;
+pub use interpret_path::*;
 
 // In the context of explanations, there is a bijection between Ids and Terms.
 // Hence Ids uniquely identify certain concrete terms.
@@ -67,6 +70,13 @@ impl<L: Language> Default for Explain<L> {
             equations: Default::default(),
             imap: Default::default(),
         }
+    }
+}
+
+impl<L: Language> Explain<L> {
+    pub fn find_explanation(&self, a: &AppliedId, b: &AppliedId) -> Explanation<L> {
+        let p = self.find_path(a, b);
+        self.interpret_path(p)
     }
 }
 
