@@ -8,6 +8,13 @@ use crate::*;
 type EquationId = usize;
 type IMap = HashMap<Id, HashSet<EquationId>>;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Equation {
+    pub l: AppliedId,
+    pub r: AppliedId,
+    pub j: Justification,
+}
+
 // Invariants:
 // - each Id from the egraph (dead or alive) has an associated e-node in term_id_to_enode.
 #[derive(Debug)]
@@ -21,8 +28,7 @@ pub struct Explain<L: Language> {
     pub enode_to_term_id: HashMap<L/*shape*/, AppliedId>,
     pub term_id_to_enode: HashMap<Id, L/*with identity perm*/>,
 
-    // equations = (lhs, rhs, j). All rules are applied as lhs -> rhs.
-    pub equations: Vec<(AppliedId, AppliedId, Justification)>,
+    pub equations: Vec<Equation>,
 }
 
 impl<L: Language> Default for Explain<L> {
@@ -111,7 +117,7 @@ impl<L: Language> EGraph<L> {
 
     fn remove_congruence_equations(&mut self) {
         let Some(explain) = self.explain.as_mut() else { panic!() };
-        explain.equations.retain(|(_, _, j)| !matches!(j, Justification::Congruence));
+        explain.equations.retain(|eq| !matches!(eq.j, Justification::Congruence));
     }
 }
 
@@ -221,7 +227,12 @@ impl<L: Language> Explain<L> {
         let b_id = b.id;
 
         let i = self.equations.len();
-        self.equations.push((a, b, j));
+        let eq = Equation {
+            l: a,
+            r: b,
+            j,
+        };
+        self.equations.push(eq);
     }
 
     // Subst contains Explain-AppliedIds.
@@ -260,7 +271,7 @@ impl<L: Language> Explain<L> {
             out.insert(i, HashSet::default());
         }
 
-        for (i, (l, r, _)) in self.equations.iter().enumerate() {
+        for (i, Equation { l, r, .. }) in self.equations.iter().enumerate() {
             out.get_mut(&l.id).unwrap().insert(i);
             out.get_mut(&r.id).unwrap().insert(i);
         }
@@ -283,7 +294,7 @@ impl<L: Language> Explain<L> {
 
             for x in last_open {
                 for &i in &imap[&x] {
-                    let (l, r, _) = &self.equations[i];
+                    let Equation { l, r, .. } = &self.equations[i];
                     for z in [l.id, r.id] {
                         if !pred.contains_key(&z) {
                             pred.insert(z, (x, i));
@@ -324,7 +335,7 @@ impl<L: Language> Explain<L> {
             let term_y = explain.term_id_to_term(&app_id_y).unwrap();
 
             let i = pred[&y].1;
-            let j = explain.equations[i].2.clone();
+            let j = explain.equations[i].j.clone();
 
             let explanation_step = if Justification::Congruence == j {
                 let x_enode = explain.term_id_to_enode(&app_id_x).unwrap();
