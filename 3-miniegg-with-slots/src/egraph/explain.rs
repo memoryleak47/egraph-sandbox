@@ -290,7 +290,19 @@ impl<L: Language> Explain<L> {
     }
 
     fn find_explanation(&self, a: &AppliedId, b: &AppliedId, imap: &IMap) -> Explanation<L> {
-        if a.id == b.id {
+        let expl = self.find_explanation_modulo_slots(a, b.id, imap);
+
+        let final_term = self.term_id_to_term(b).unwrap();
+
+        if !alpha_eq(expl.last(), &final_term) {
+            panic!("Slot mismatch! Explanations don't yet work for redundant slots & symmetries");
+        }
+
+        expl
+    }
+
+    fn find_explanation_modulo_slots(&self, a: &AppliedId, b_id: Id, imap: &IMap) -> Explanation<L> {
+        if a.id == b_id {
             let t = self.term_id_to_term(a).unwrap();
             return Explanation {
                 term: t,
@@ -330,11 +342,11 @@ impl<L: Language> Explain<L> {
             }
         }
 
-        assert!(pred.contains_key(&b.id));
+        assert!(pred.contains_key(&b_id));
 
         // path b -> a
-        let mut path = vec![b.id];
-        let mut i = b.id;
+        let mut path = vec![b_id];
+        let mut i = b_id;
         while i != a.id {
             i = pred[&i].l.id;
             path.push(i);
@@ -444,6 +456,16 @@ impl<L: Language> Explain<L> {
 pub struct Explanation<L: Language> {
     pub term: RecExpr<L>,
     pub step: Option<Box<ExplanationStep<L>>>,
+}
+
+impl<L: Language> Explanation<L> {
+    fn last(&self) -> &RecExpr<L> {
+        if let Some(step) = &self.step {
+            step.exp.last()
+        } else {
+            &self.term
+        }
+    }
 }
 
 #[derive(Clone)]
