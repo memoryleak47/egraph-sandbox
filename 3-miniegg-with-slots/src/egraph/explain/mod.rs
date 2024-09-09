@@ -2,6 +2,15 @@
 
 use crate::*;
 
+mod pre;
+pub use pre::*;
+
+mod explanation;
+pub use explanation::*;
+
+mod alpha;
+pub use alpha::*;
+
 // In the context of explanations, there is a bijection between Ids and Terms.
 // Hence Ids uniquely identify certain concrete terms.
 
@@ -57,78 +66,6 @@ pub enum Justification {
     Congruence,
     Rule(String),
     Explicit, // union called without a rule.
-}
-
-impl<L: Language> EGraph<L> {
-    pub fn explain_equivalence(&mut self, a: RecExpr<L>, b: RecExpr<L>) -> Explanation<L> {
-        let a_ = self.add_expr(a.clone());
-        let b_ = self.add_expr(b.clone());
-        assert!(self.eq(&a_, &b_));
-        let Some(explain) = self.explain.as_mut() else { panic!() };
-        let a_expl = explain.add_term(&a);
-        let b_expl = explain.add_term(&b);
-        let _ = explain;
-
-        self.add_congruence_equations();
-
-        let Some(explain) = self.explain.as_ref() else { panic!() };
-        let imap = explain.incidence_map();
-        let out = explain.find_explanation(&a_expl, &b_expl, &imap);
-
-        self.remove_congruence_equations();
-
-        out
-    }
-
-    fn add_congruence_equations(&mut self) {
-        let back_translator = self.generate_back_translator();
-        let back_translate = |n: &L| n.map_applied_ids(|child| get_applied(&back_translator, &child).unwrap());
-
-        let Some(explain) = self.explain.as_ref() else { panic!() };
-        let mut eqs = Vec::new();
-
-        // maps a strong-shape of a child-wise normalized egraph e-node to a explain applied id corresponding to it.
-        let mut shapes_map: HashMap<L, AppliedId> = HashMap::default();
-
-        for (i, n) in &explain.term_id_to_enode {
-            let i = explain.mk_identity_app_id(*i);
-
-            let n2 = back_translate(n);
-            let (sh, bij) = self.shape(&n2);
-            if let Some(orig) = shapes_map.get(&sh) {
-                let orig = orig.apply_slotmap(&bij);
-                eqs.push((orig, i, Justification::Congruence));
-            } else {
-                shapes_map.insert(sh, i.apply_slotmap(&bij.inverse()));
-            }
-        }
-
-        let Some(explain) = self.explain.as_mut() else { panic!() };
-        for (a, b, j) in eqs {
-            explain.add_equation(a, b, j);
-        }
-    }
-
-    // for each Explain Id, it finds the normal form e-graph AppliedId.
-    fn generate_back_translator(&self) -> HashMap<Id, AppliedId> {
-        let Some(explain) = self.explain.as_ref() else { panic!() };
-
-        let mut bt = HashMap::default();
-
-        for (i, _) in &explain.term_id_to_enode {
-            let i = explain.mk_identity_app_id(*i);
-            let term = explain.term_id_to_term(&i).unwrap();
-            let orig = lookup_rec_expr(&term, self).unwrap();
-            insert_applied(&mut bt, i, orig);
-        }
-
-        bt
-    }
-
-    fn remove_congruence_equations(&mut self) {
-        let Some(explain) = self.explain.as_mut() else { panic!() };
-        explain.equations.retain(|eq| !matches!(eq.j, Justification::Congruence));
-    }
 }
 
 impl<L: Language> Explain<L> {
@@ -450,121 +387,4 @@ impl<L: Language> Explain<L> {
 
         compose_explanation_list(explanations)
     }
-}
-
-#[derive(Clone)]
-pub struct Explanation<L: Language> {
-    pub term: RecExpr<L>,
-    pub step: Option<Box<ExplanationStep<L>>>,
-}
-
-impl<L: Language> Explanation<L> {
-    fn last(&self) -> &RecExpr<L> {
-        if let Some(step) = &self.step {
-            step.exp.last()
-        } else {
-            &self.term
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct ExplanationStep<L: Language> {
-    pub index_list: Vec<usize>,
-    pub justification: Justification, // TODO is_forward is missing!
-    pub exp: Explanation<L>,
-}
-
-// panics if a.last_term != b.first_term
-fn compose_explanation<L: Language>(a: Explanation<L>, b: Explanation<L>) -> Explanation<L> {
-    if a.step.is_none() {
-        assert!(alpha_eq(&a.term, &b.term));
-        return b;
-    }
-
-    let mut a = a;
-    let mut r: &mut ExplanationStep<L> = a.step.as_mut().unwrap();
-    loop {
-        if r.exp.step.is_some() {
-            let Some(step) = r.exp.step.as_mut() else { panic!() };
-            r = step;
-        } else {
-            assert!(alpha_eq(&r.exp.term, &b.term));
-            r.exp = b;
-            return a;
-        }
-    }
-}
-
-fn compose_explanation_list<L: Language>(l: Vec<Explanation<L>>) -> Explanation<L> {
-    let mut l = l;
-    let mut out = l.pop().unwrap();
-
-    for x in l.into_iter().rev() {
-        out = compose_explanation(x, out);
-    }
-
-    out
-}
-
-fn insert_applied(map: &mut HashMap<Id, AppliedId>, k: AppliedId, v: AppliedId) {
-    // map[k] == v
-    // map[k.id * k.m] == v
-    // map[k.id] == v * k.m^-1
-    map.insert(k.id, v.apply_slotmap(&k.m.inverse()));
-}
-
-fn get_applied(map: &HashMap<Id, AppliedId>, k: &AppliedId) -> Option<AppliedId> {
-    // map[k] == v
-    // map[k.id * k.m] == v
-    // map[k.id] == v * k.m^-1
-    // map[k.id] * k.m == v
-    map.get(&k.id).map(|x| x.apply_slotmap(&k.m.inverse()))
-}
-
-
-fn alpha_eq<L: Language>(a: &RecExpr<L>, b: &RecExpr<L>) -> bool {
-    alpha_eq_impl(a, b, Default::default())
-}
-
-// we assume that all slots come up either free, or bound but not both inside of a single term.
-// `map` maps the *bound* slot names from a to b.
-fn alpha_eq_impl<L: Language>(a: &RecExpr<L>, b: &RecExpr<L>, map: SlotMap) -> bool {
-    let mut map = map;
-
-    // weak shape check.
-    if a.node.weak_shape().0 != b.node.weak_shape().0 {
-        return false;
-    }
-
-    // private slot introduction.
-    let sa = a.node.private_slot_occurences().into_iter();
-    let sb = b.node.private_slot_occurences().into_iter();
-
-    for (x, y) in sa.zip(sb) {
-        if map.keys().contains(&x) { return false; }
-        if map.values().contains(&y) { return false; }
-        map.insert(x, y);
-    }
-
-    // general slot check.
-    let sa = a.node.all_slot_occurences().into_iter();
-    let sb = b.node.all_slot_occurences().into_iter();
-
-    for (x, y) in sa.zip(sb) {
-        if map.keys().contains(&x) || map.values().contains(&y) {
-            // check bound slot equality.
-            if map.get(x) != Some(y) { return false; }
-        } else {
-            // check unbound slot equality.
-            if x != y { return false; }
-        }
-    }
-
-    // recursion check.
-    for (l, r) in a.children.iter().zip(b.children.iter()) {
-        if !alpha_eq_impl(l, r, map.clone()) { return false; }
-    }
-
-    true
 }
