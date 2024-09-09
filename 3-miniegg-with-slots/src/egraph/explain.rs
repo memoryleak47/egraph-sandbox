@@ -113,12 +113,6 @@ impl<L: Language> EGraph<L> {
         let Some(explain) = self.explain.as_mut() else { panic!() };
         explain.equations.retain(|(_, _, j)| !matches!(j, Justification::Congruence));
     }
-
-    // get_justification_chain(a, b).last().unwrap().1 == b, whereas a doesn't come up in the list.
-    // panics, if a and b are not equal.
-    fn get_justification_chain(&self, a: AppliedId, b: AppliedId) -> Vec<(Justification, AppliedId)> {
-        todo!()
-    }
 }
 
 impl<L: Language> Explain<L> {
