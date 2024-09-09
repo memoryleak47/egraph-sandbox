@@ -2,6 +2,7 @@
 
 use crate::*;
 
+// proof draft without congruence details.
 pub struct EqPath {
     pub start: AppliedId,
     pub end: AppliedId,

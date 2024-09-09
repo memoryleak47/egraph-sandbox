@@ -2,7 +2,7 @@
 
 use crate::*;
 
-// Finding explanations.
+// convert an EqPath (i.e. a proof-draft without congruence) to an explanation.
 impl<L: Language> Explain<L> {
     pub fn interpret_path(&self, path: EqPath) -> Explanation<L> {
         let t = self.term_id_to_term(&path.start).unwrap();
