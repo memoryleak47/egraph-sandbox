@@ -16,10 +16,12 @@ impl<L: Language> EGraph<L> {
 
         self.add_congruence_equations();
 
-        let Some(explain) = self.explain.as_ref() else { panic!() };
-        let imap = explain.incidence_map();
-        let out = explain.find_explanation(&a_expl, &b_expl, &imap);
+        let Some(explain) = self.explain.as_mut() else { panic!() };
+        explain.compute_incidence_map();
 
+        let out = explain.find_explanation(&a_expl, &b_expl);
+        
+        explain.imap.clear();
         self.remove_congruence_equations();
 
         out
@@ -73,6 +75,21 @@ impl<L: Language> EGraph<L> {
     fn remove_congruence_equations(&mut self) {
         let Some(explain) = self.explain.as_mut() else { panic!() };
         explain.equations.retain(|eq| !matches!(eq.j, Justification::Congruence));
+    }
+}
+
+impl<L: Language> Explain<L> {
+    fn compute_incidence_map(&mut self) {
+        self.imap.clear();
+
+        for (&i, _) in &self.term_id_to_enode {
+            self.imap.insert(i, HashSet::default());
+        }
+
+        for (i, Equation { l, r, .. }) in self.equations.iter().enumerate() {
+            self.imap.get_mut(&l.id).unwrap().insert(i);
+            self.imap.get_mut(&r.id).unwrap().insert(i);
+        }
     }
 }
 

@@ -145,19 +145,4 @@ impl<L: Language> Explain<L> {
     fn slots_of(&self, i: Id) -> HashSet<Slot> {
         self.term_id_to_enode[&i].slots()
     }
-
-    pub fn incidence_map(&self) -> HashMap<Id, HashSet<EquationId>> {
-        let mut out: HashMap<Id, HashSet<EquationId>> = HashMap::default();
-
-        for (&i, _) in &self.term_id_to_enode {
-            out.insert(i, HashSet::default());
-        }
-
-        for (i, Equation { l, r, .. }) in self.equations.iter().enumerate() {
-            out.get_mut(&l.id).unwrap().insert(i);
-            out.get_mut(&r.id).unwrap().insert(i);
-        }
-
-        out
-    }
 }

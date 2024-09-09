@@ -21,7 +21,6 @@ pub use find::*;
 // Hence Ids uniquely identify certain concrete terms.
 
 pub type EquationId = usize;
-pub type IMap = HashMap<Id, HashSet<EquationId>>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Equation {
@@ -54,6 +53,9 @@ pub struct Explain<L: Language> {
     pub term_id_to_enode: HashMap<Id, L/*with identity perm*/>,
 
     pub equations: Vec<Equation>,
+
+    // incidence map. Is often empty.
+    pub imap: HashMap<Id, HashSet<EquationId>>,
 }
 
 impl<L: Language> Default for Explain<L> {
@@ -63,6 +65,7 @@ impl<L: Language> Default for Explain<L> {
             enode_to_term_id: Default::default(),
             term_id_to_enode: Default::default(),
             equations: Default::default(),
+            imap: Default::default(),
         }
     }
 }

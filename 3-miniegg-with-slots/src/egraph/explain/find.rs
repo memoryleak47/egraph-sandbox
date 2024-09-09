@@ -4,8 +4,8 @@ use crate::*;
 
 // Finding explanations.
 impl<L: Language> Explain<L> {
-    pub fn find_explanation(&self, a: &AppliedId, b: &AppliedId, imap: &IMap) -> Explanation<L> {
-        let expl = self.find_explanation_modulo_slots(a, b.id, imap);
+    pub fn find_explanation(&self, a: &AppliedId, b: &AppliedId) -> Explanation<L> {
+        let expl = self.find_explanation_modulo_slots(a, b.id);
 
         let final_term = self.term_id_to_term(b).unwrap();
 
@@ -16,7 +16,7 @@ impl<L: Language> Explain<L> {
         expl
     }
 
-    fn find_explanation_modulo_slots(&self, a: &AppliedId, b_id: Id, imap: &IMap) -> Explanation<L> {
+    fn find_explanation_modulo_slots(&self, a: &AppliedId, b_id: Id) -> Explanation<L> {
         if a.id == b_id {
             let t = self.term_id_to_term(a).unwrap();
             return Explanation {
@@ -25,11 +25,11 @@ impl<L: Language> Explain<L> {
             };
         }
 
-        let (path, pred) = self.find_path_modulo_slots(a.id, b_id, imap);
-        self.explain_path_modulo_slots(&path, &pred, imap)
+        let (path, pred) = self.find_path_modulo_slots(a.id, b_id);
+        self.explain_path_modulo_slots(&path, &pred)
     }
 
-    fn find_path_modulo_slots(&self, a: Id, b: Id, imap: &IMap) -> (Vec<Id>, HashMap<Id, Equation>) {
+    fn find_path_modulo_slots(&self, a: Id, b: Id) -> (Vec<Id>, HashMap<Id, Equation>) {
         // maps each Id `r_id` to an `Equation(l, r, j)`,
         // where r_id = r.id and
         // l.id is a step closer to a.id.
@@ -43,7 +43,7 @@ impl<L: Language> Explain<L> {
             open = HashSet::default();
 
             for x in last_open {
-                for &i in &imap[&x] {
+                for &i in &self.imap[&x] {
                     let mut eq = self.equations[i].clone();
 
                     // flip x to be on the left-side of the equation.
@@ -78,7 +78,7 @@ impl<L: Language> Explain<L> {
         (path, pred)
     }
 
-    fn explain_path_modulo_slots(&self, path: &[Id], pred: &HashMap<Id, Equation>, imap: &IMap) -> Explanation<L> {
+    fn explain_path_modulo_slots(&self, path: &[Id], pred: &HashMap<Id, Equation>) -> Explanation<L> {
         let x = path[0];
 
         let app_id_x = self.mk_identity_app_id(x);
@@ -97,7 +97,7 @@ impl<L: Language> Explain<L> {
         let explanation_step = if Justification::Congruence == j {
             let x_enode = self.term_id_to_enode(&app_id_x).unwrap();
             let y_enode = self.term_id_to_enode(&app_id_y).unwrap();
-            self.find_congruence_explanation(x_enode, y_enode, imap)
+            self.find_congruence_explanation(x_enode, y_enode)
         } else {
             Explanation {
                 term: term_x,
@@ -114,11 +114,11 @@ impl<L: Language> Explain<L> {
             }
         };
 
-        let tail = self.explain_path_modulo_slots(&path[1..], pred, imap);
+        let tail = self.explain_path_modulo_slots(&path[1..], pred);
         compose_explanation(explanation_step, tail)
     }
 
-    fn find_congruence_explanation(&self, a: L, b: L, imap: &IMap) -> Explanation<L> {
+    fn find_congruence_explanation(&self, a: L, b: L) -> Explanation<L> {
         let l_a = a.applied_id_occurences();
         let l_b = b.applied_id_occurences();
         assert_eq!(l_a.len(), l_b.len());
@@ -128,7 +128,7 @@ impl<L: Language> Explain<L> {
         for i in 0..n {
             let c_a = &l_a[i];
             let c_b = &l_b[i];
-            let base_expl = self.find_explanation(c_a, c_b, imap);
+            let base_expl = self.find_explanation(c_a, c_b);
             let lifted = lift(base_expl, i, self, &a, &b, &l_a, &l_b);
 
             explanations.push(lifted);
