@@ -24,6 +24,14 @@ impl<L: Language> Explain<L> {
     }
 
     fn find_path_modulo_slots(&self, a: &AppliedId, b_id: Id) -> EqPath {
+        if a.id == b_id {
+            return EqPath {
+                start: a.clone(),
+                end: a.clone(),
+                elems: Vec::new(),
+            };
+        }
+
         // maps each Id `r_id` to an `Equation(l, r, j)`,
         // where r_id = r.id and
         // l.id is a step closer to a.id.
@@ -108,12 +116,12 @@ impl EqPath {
         if self.elems.len() > 0 {
             assert_eq!(self.start, self.elems.first().unwrap().l);
             assert_eq!(self.end, self.elems.last().unwrap().r);
+
+            for i in 0..(self.elems.len()-1) {
+                assert_eq!(self.elems[i].r, self.elems[i+1].l);
+            }
         } else {
             assert_eq!(self.start, self.end);
-        }
-
-        for i in 0..(self.elems.len()-1) {
-            assert_eq!(self.elems[i].r, self.elems[i+1].l);
         }
     }
 }
