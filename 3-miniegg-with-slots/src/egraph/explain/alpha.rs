@@ -1,5 +1,6 @@
 use crate::*;
 
+// Check alpha-equivalence of terms.
 pub fn alpha_eq<L: Language>(a: &RecExpr<L>, b: &RecExpr<L>) -> bool {
     alpha_eq_impl(a, b, Default::default())
 }

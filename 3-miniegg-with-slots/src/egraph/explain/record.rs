@@ -1,5 +1,8 @@
 use crate::*;
 
+// This module is recording all equations that happen during the usage of an e-graph.
+// Everything relevant for this, is defined here.
+
 impl<L: Language> Explain<L> {
     // translates an egraph e-class to its corresponding term id.
     pub fn translate(&self, l: &AppliedId) -> AppliedId {

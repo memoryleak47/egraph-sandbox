@@ -1,5 +1,7 @@
 use crate::*;
 
+// The Explanation data type.
+
 #[derive(Clone)]
 pub struct Explanation<L: Language> {
     pub term: RecExpr<L>,

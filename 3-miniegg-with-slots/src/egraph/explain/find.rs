@@ -2,6 +2,7 @@
 
 use crate::*;
 
+// Finding explanations.
 impl<L: Language> Explain<L> {
     pub fn find_explanation(&self, a: &AppliedId, b: &AppliedId, imap: &IMap) -> Explanation<L> {
         let expl = self.find_explanation_modulo_slots(a, b.id, imap);

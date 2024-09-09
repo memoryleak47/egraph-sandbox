@@ -2,6 +2,8 @@
 
 use crate::*;
 
+// The pre-processing step in the E-Graph that is ran before asking the Explain-module for the explanations.
+
 impl<L: Language> EGraph<L> {
     pub fn explain_equivalence(&mut self, a: RecExpr<L>, b: RecExpr<L>) -> Explanation<L> {
         let a_ = self.add_expr(a.clone());
