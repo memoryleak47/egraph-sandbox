@@ -3,6 +3,7 @@
 use crate::*;
 
 // proof draft without congruence details.
+#[derive(Debug)]
 pub struct EqPath {
     pub start: AppliedId,
     pub end: AppliedId,

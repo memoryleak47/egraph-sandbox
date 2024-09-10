@@ -20,8 +20,16 @@ impl<L: Language> Explain<L> {
         let Equation { l, r, j } = eq;
 
         if Justification::Congruence == j {
-            let x_enode = self.term_id_to_enode(&l).unwrap();
-            let y_enode = self.term_id_to_enode(&r).unwrap();
+            let mut x_enode = self.term_id_to_enode(&l).unwrap();
+            let mut y_enode = self.term_id_to_enode(&r).unwrap();
+
+            // make their inner private variables named the same:
+            let xpriv = x_enode.private_slot_occurences_mut().into_iter();
+            let ypriv = y_enode.private_slot_occurences_mut().into_iter();
+            for (xp, yp) in xpriv.zip(ypriv) {
+                *yp = *xp;
+            }
+
             self.find_congruence_explanation(x_enode, y_enode)
         } else {
             let term_l = self.term_id_to_term(&l).unwrap();
