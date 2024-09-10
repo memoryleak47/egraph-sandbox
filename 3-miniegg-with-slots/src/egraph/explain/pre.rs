@@ -101,9 +101,9 @@ fn insert_applied(map: &mut HashMap<Id, AppliedId>, k: AppliedId, v: AppliedId) 
 }
 
 fn get_applied(map: &HashMap<Id, AppliedId>, k: &AppliedId) -> Option<AppliedId> {
-    // map[k] == v
-    // map[k.id * k.m] == v
-    // map[k.id] == v * k.m^-1
-    // map[k.id] * k.m == v
-    map.get(&k.id).map(|x| x.apply_slotmap(&k.m.inverse()))
+    // o := map[k.id];
+    // k.m :: slots(k.id) -> X
+    // o.m :: slots(o.id) -> slots(k.id)
+    // out.m :: slots(o.id) -> X
+    map.get(&k.id).map(|x| x.apply_slotmap(&k.m))
 }
