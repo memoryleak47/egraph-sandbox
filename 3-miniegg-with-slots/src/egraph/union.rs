@@ -133,7 +133,8 @@ impl<L: Language> EGraph<L> {
             // translator[to.id] * to.m == translator[from.id]
             // translator[to.id] == translator[from.id] * to.m^-1
             let app_id2 = &explain.translator[&from.id];
-            explain.translator.insert(to.id, app_id2.apply_slotmap(&to.m.inverse()));
+            let val = app_id2.apply_slotmap_fresh(&to.m.inverse());
+            explain.translator.insert(to.id, val);
         }
     }
 
