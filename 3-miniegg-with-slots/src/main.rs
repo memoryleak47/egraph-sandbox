@@ -46,12 +46,25 @@ fn main2() {
     println!("{:?}", eg.explain_equivalence(p, q));
 }
 
-fn main() {
+fn main3() {
     // let p = "(app (lam s0 (app (var s0) (var s0))) (lam s1 (var s1)))";
     // let q = "(lam s0 (var s0))";
 
     let p = "(app sym_foo (app (lam s0 (var s0)) (lam s1 (var s1))))";
     let q = "(app sym_foo (lam s2 (var s2)))";
+
+    let p = RecExpr::parse(p).unwrap();
+    let q = RecExpr::parse(q).unwrap();
+    assert_reaches(p, q, 40);
+}
+
+fn main() {
+    let p = "(lam s0 (lam s1
+        (app
+            (lam s2 (app (var s0) (var s2)))
+        (var s1))
+    ))";
+    let q = "(lam s0 (lam s1 (app (var s0) (var s1))))";
 
     let p = RecExpr::parse(p).unwrap();
     let q = RecExpr::parse(q).unwrap();
