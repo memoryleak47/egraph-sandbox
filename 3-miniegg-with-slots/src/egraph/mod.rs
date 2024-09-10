@@ -61,7 +61,7 @@ impl<L: Language> EGraph<L> {
             classes: Default::default(),
             hashcons: Default::default(),
             explain: None,
-        }
+        }.with_explanations_enabled() // TODO remove this later on.
     }
 
     pub fn with_explanations_enabled(mut self) -> Self {
