@@ -121,7 +121,7 @@ impl<L: Language> EGraph<L> {
 
         if CHECKS {
             for x in &out {
-                assert_eq!(self.lookup(x).unwrap(), i);
+                assert!(self.eq(&self.lookup(x).unwrap(), &i));
             }
         }
 

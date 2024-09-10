@@ -11,7 +11,7 @@ pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;
 
 // Whether to enable invariant-checks.
-const CHECKS: bool = false;
+const CHECKS: bool = true;
 
 mod types;
 pub use types::*;
