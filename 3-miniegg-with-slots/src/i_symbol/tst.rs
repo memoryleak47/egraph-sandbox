@@ -75,7 +75,7 @@ fn sym_tile_2d() {
 }
 
 #[test]
-#[ignore]
+#[ignore] // explanations for this are too big apparently.
 fn sym_tile_3d() {
     let start = "(m (* n1 32) (m (* n2 32) (m (* n3 32) f)))";
     let mid = "(o (m (* n1 32) (o (m (* n2 32) j) j)) (o (o j (o (m n1 (m 32 (m n2 (m 32 (m n3 (m 32 f)))))) (s 32))) (m (* n1 32) (o (m n2 (m 32 (s 32))) (s 32)))))";
