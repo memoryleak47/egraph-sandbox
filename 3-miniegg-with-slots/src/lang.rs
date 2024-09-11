@@ -190,26 +190,45 @@ pub fn as_set(v: Vec<Slot>) -> HashSet<Slot> {
 
 
 // make their inner private variables named the same.
+// assumes that a and b have the same e-node operator, but they might potentially reference different applied ids.
 pub fn unify_private_slots<L: Language>(a: &L, b: &L) -> (L, L) {
     let mut a = a.clone();
     let mut b = b.clone();
-    assert_eq!(a.weak_shape().0, b.weak_shape().0);
 
-    let mut map = HashMap::default();
+    let null_a = nullify_app_ids(&a);
+    let null_b = nullify_app_ids(&b);
 
-    let apriv = a.private_slot_occurences_mut().into_iter();
-    let bpriv = b.private_slot_occurences_mut().into_iter();
+    // check that a and b have the same operator.
+    if SMALL_CHECKS {
+        assert_eq!(null_a.weak_shape().0, null_b.weak_shape().0);
+    }
+
+    // construct amap & bmap, mapping their private slots to a common fresh slot name.
+    let mut amap = HashMap::default();
+    let mut bmap = HashMap::default();
+
+    let apriv = null_a.private_slot_occurences().into_iter();
+    let bpriv = null_b.private_slot_occurences().into_iter();
 
     for (ap, bp) in apriv.zip(bpriv) {
-        let o = if let Some(o) = map.get(ap) {
-            *o
-        } else {
-            let o = Slot::fresh();
-            map.insert(*ap, o);
-            o
-        };
-        *ap = o;
-        *bp = o;
+        match (amap.get(&ap), bmap.get(&bp)) {
+            (Some(xa), Some(xb)) => assert_eq!(xa, xb),
+            (None, None) => {
+                let s = Slot::fresh();
+                amap.insert(ap, s);
+                bmap.insert(bp, s);
+            },
+            _ => panic!("amap and bmap should match the same things all the time!"),
+        }
+    }
+
+    // Note that a and b might have different amounts of private slot occurences, because they might reference different applied ids.
+    for ap in a.private_slot_occurences_mut() {
+        *ap = amap[ap];
+    }
+
+    for bp in b.private_slot_occurences_mut() {
+        *bp = bmap[bp];
     }
 
     (a, b)
