@@ -43,10 +43,16 @@ impl<L: Language> EGraph<L> {
             let n2 = back_translate(n);
             let (sh, bij) = self.shape(&n2);
             if let Some(orig) = shapes_map.get(&sh) {
-                let orig = orig.apply_slotmap(&bij);
+                // orig is in the explain world, and bij is in the e-graph world.
+                // hence orig might have more slots, which are redundant in the e-graph.
+                // Thus we need apply_slotmap_fresh here.
+                let orig = orig.apply_slotmap_fresh(&bij);
                 eqs.push((orig, i, Justification::Congruence));
             } else {
-                shapes_map.insert(sh, i.apply_slotmap(&bij.inverse()));
+                // apply_slotmap_fresh reason: see above.
+                // TODO but it doesn't feel right to make these fresh all the time.
+                // Wouldn't this introduce redundancies that aren't even witnessed by this equation, but by another one?
+                shapes_map.insert(sh, i.apply_slotmap_fresh(&bij.inverse()));
             }
         }
 
