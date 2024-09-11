@@ -34,7 +34,8 @@ impl<L: Language> Explain<L> {
         // i == i2
         // i.id * i.m == i2
         // i.id == i2 * i.m^-1
-        let i2_id = i2.apply_slotmap(&i.m.inverse());
+        // We need apply_slotmap_fresh, as i2 is in the explain world, and thus might have many more (redundant in the e-graph) slots than i.m
+        let i2_id = i2.apply_slotmap_fresh(&i.m.inverse());
         self.translator.insert(i.id, i2_id);
     }
  
