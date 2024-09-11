@@ -63,7 +63,7 @@ impl Realization for LambdaRealSmall {
     type Id = AppliedId;
 
     fn new() -> Self {
-        LambdaRealSmall(EGraph::new())
+        LambdaRealSmall(EGraph::new().with_explanations_enabled())
     }
 
     fn add_ast(&mut self, ast: &Ast) -> Self::Id {

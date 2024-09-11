@@ -38,7 +38,7 @@ fn assert_reaches(start: &str, goal: &str, steps: usize, extra_rules: &[&'static
 
     let rules = symbol_rules(extra_rules);
 
-    let mut eg = EGraph::new();
+    let mut eg = EGraph::new().with_explanations_enabled();
     let i1 = eg.add_expr(start);
     for _ in 0..steps {
         do_rewrites(&mut eg, &rules);

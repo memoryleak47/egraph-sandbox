@@ -3,7 +3,7 @@ use crate::*;
 fn normalize(re: RecExpr<ArrayENode>) -> RecExpr<ArrayENode> {
     let rules = array_rules(&["beta", "eta"]);
 
-    let mut eg = EGraph::new();
+    let mut eg = EGraph::new().with_explanations_enabled();
     let i = eg.add_expr(re);
     for _ in 0..40 {
         do_rewrites(&mut eg, &rules);
@@ -17,7 +17,7 @@ fn assert_reaches(start: &str, goal: &str, steps: usize, rules: &[&'static str])
 
     let rules = array_rules(rules);
 
-    let mut eg = EGraph::new();
+    let mut eg = EGraph::new().with_explanations_enabled();
     let i1 = eg.add_expr(start);
     for _ in 0..steps {
         do_rewrites(&mut eg, &rules);

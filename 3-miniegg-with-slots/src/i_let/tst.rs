@@ -6,7 +6,7 @@ impl Realization for LetReal {
     type Id = AppliedId;
 
     fn new() -> Self {
-        LetReal(EGraph::new())
+        LetReal(EGraph::new().with_explanations_enabled())
     }
 
     fn add_ast(&mut self, ast: &Ast) -> Self::Id {

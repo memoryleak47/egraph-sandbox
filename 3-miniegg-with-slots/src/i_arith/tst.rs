@@ -2,7 +2,7 @@ use crate::*;
 use crate::i_arith::build::*;
 
 fn assert_reaches(start: RecExpr<ArithENode>, goal: RecExpr<ArithENode>, steps: usize) {
-    let mut eg = EGraph::new();
+    let mut eg = EGraph::new().with_explanations_enabled();
     eg.add_expr(start.clone());
     for _ in 0..steps {
         rewrite_arith(&mut eg);
@@ -142,7 +142,7 @@ fn arith_test6() { // z*(x+y) = z*(y+x)
 
     // assert_reaches, but only using add_comm!
     fn assert_reaches2(start: RecExpr<ArithENode>, goal: RecExpr<ArithENode>, steps: usize) {
-        let mut eg = EGraph::new();
+        let mut eg = EGraph::new().with_explanations_enabled();
         eg.add_expr(start.clone());
         for _ in 0..steps {
             add_comm(&mut eg);
