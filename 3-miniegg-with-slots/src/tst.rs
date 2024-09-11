@@ -50,4 +50,8 @@ fn test_var() {
     assert_eq!(ids.len(), 1);
     let id = ids[0];
     assert!(eg.slots(id).is_empty());
+
+    let l = RecExpr::parse("(f s0 s1)").unwrap();
+    let r = RecExpr::parse("(f s1 s0)").unwrap();
+    dbg!(eg.explain_equivalence(l, r));
 }
