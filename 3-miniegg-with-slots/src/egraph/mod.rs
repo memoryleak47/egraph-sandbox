@@ -241,6 +241,26 @@ impl<L: Language> EGraph<L> {
             // 2. It needs to have exactly the same slots as the underlying EClass.
             assert_eq!(&app_id.m.keys(), &eg.classes[&app_id.id].slots);
         }
+
+        if let Some(explain) = &self.explain {
+            // check that term_id_to_enode & enode_to_term_id are actually bijections.
+            for (x, _) in &explain.enode_to_term_id {
+                let x = x.refresh_internals(Default::default());
+                let o = explain.enode_to_term_id(&x).unwrap();
+                let o = explain.term_id_to_enode(&o).unwrap();
+                let (x, o) = unify_private_slots(&x, &o);
+                assert_eq!(x, o);
+            }
+
+            for (x, _) in &explain.term_id_to_enode {
+                let slots = explain.slots_of(*x);
+                let m = SlotMap::bijection_from_fresh_to(&slots).inverse();
+                let x = AppliedId::new(*x, m);
+                let o = explain.term_id_to_enode(&x).unwrap();
+                let o = explain.enode_to_term_id(&o).unwrap();
+                assert_eq!(x, o);
+            }
+        }
     }
 
     fn is_alive(&self, i: Id) -> bool {

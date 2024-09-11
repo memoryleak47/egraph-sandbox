@@ -142,7 +142,7 @@ impl<L: Language> Explain<L> {
         AppliedId::new(i, identity)
     }
 
-    fn slots_of(&self, i: Id) -> HashSet<Slot> {
+    pub fn slots_of(&self, i: Id) -> HashSet<Slot> {
         self.term_id_to_enode[&i].slots()
     }
 }

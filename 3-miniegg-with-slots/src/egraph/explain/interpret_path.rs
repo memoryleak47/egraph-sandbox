@@ -22,13 +22,7 @@ impl<L: Language> Explain<L> {
         if Justification::Congruence == j {
             let mut x_enode = self.term_id_to_enode(&l).unwrap();
             let mut y_enode = self.term_id_to_enode(&r).unwrap();
-
-            // make their inner private variables named the same:
-            let xpriv = x_enode.private_slot_occurences_mut().into_iter();
-            let ypriv = y_enode.private_slot_occurences_mut().into_iter();
-            for (xp, yp) in xpriv.zip(ypriv) {
-                *yp = *xp;
-            }
+            let (x_enode, y_enode) = unify_private_slots(&x_enode, &y_enode);
 
             self.find_congruence_explanation(x_enode, y_enode)
         } else {

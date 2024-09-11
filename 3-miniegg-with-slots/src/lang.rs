@@ -187,3 +187,30 @@ pub fn firsts(v: Vec<Slot>) -> Vec<Slot> {
 pub fn as_set(v: Vec<Slot>) -> HashSet<Slot> {
     v.into_iter().collect()
 }
+
+
+// make their inner private variables named the same.
+pub fn unify_private_slots<L: Language>(a: &L, b: &L) -> (L, L) {
+    let mut a = a.clone();
+    let mut b = b.clone();
+    assert_eq!(a.weak_shape().0, b.weak_shape().0);
+
+    let mut map = HashMap::default();
+
+    let apriv = a.private_slot_occurences_mut().into_iter();
+    let bpriv = b.private_slot_occurences_mut().into_iter();
+
+    for (ap, bp) in apriv.zip(bpriv) {
+        let o = if let Some(o) = map.get(ap) {
+            *o
+        } else {
+            let o = Slot::fresh();
+            map.insert(*ap, o);
+            o
+        };
+        *ap = o;
+        *bp = o;
+    }
+
+    (a, b)
+}
