@@ -168,7 +168,7 @@ fn map_lookup(b: &AppliedId, x: Slot, t: &AppliedId, eg: &mut EGraph<ENode>, map
         let fresh = SlotMap::bijection_from_fresh_to(&max_slots);
         let slots = fresh.keys();
 
-        let new_b = eg.alloc_eclass(&slots);
+        let new_b = eg.alloc_empty_eclass(&slots);
 
         // fresh :: slots(new_b) -> X
         // fresh_inv :: X -> slots(new_b)

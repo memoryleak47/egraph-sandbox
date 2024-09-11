@@ -83,7 +83,7 @@ impl<L: Language> EGraph<L> {
     }
 
     // TODO make this private in favor of alloc_eclass_fresh.
-    pub fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
+    pub(in crate::egraph) fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
         let c_id = Id(self.unionfind.len()); // Pick the next unused Id.
         let c = EClass {
             nodes: HashMap::default(),
@@ -97,11 +97,18 @@ impl<L: Language> EGraph<L> {
         c_id
     }
 
-    pub fn alloc_eclass_fresh(&mut self, slots: &HashSet<Slot>) -> AppliedId {
+    pub(in crate::egraph) fn alloc_eclass_fresh(&mut self, slots: &HashSet<Slot>) -> AppliedId {
         let bij = SlotMap::bijection_from_fresh_to(slots);
         let id = self.alloc_eclass(&bij.keys());
 
         self.mk_applied_id(id, bij)
+    }
+
+    // this is the public version of alloc_eclass, which checks that explanations are disabled.
+    pub fn alloc_empty_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
+        assert!(self.explain.is_none(), "can't alloc empty e-classes with explanations enabled!");
+
+        self.alloc_eclass(slots)
     }
 
     // adds (sh, bij) to the eclass `id`.
