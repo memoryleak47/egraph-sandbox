@@ -246,8 +246,8 @@ impl<L: Language> EGraph<L> {
             // check that term_id_to_enode & enode_to_term_id are actually bijections.
             for (x, _) in &explain.enode_to_term_id {
                 let x = x.refresh_internals(Default::default());
-                let o = explain.enode_to_term_id(&x).unwrap();
-                let o = explain.term_id_to_enode(&o).unwrap();
+                let o = explain.enode_to_term_id(&x);
+                let o = explain.term_id_to_enode(&o);
                 let (x, o) = unify_private_slots(&x, &o);
                 assert_eq!(x, o);
             }
@@ -255,8 +255,8 @@ impl<L: Language> EGraph<L> {
             for (x, _) in &explain.term_id_to_enode {
                 let slots = explain.slots_of(*x);
                 let x = any_applied(*x, &slots);
-                let o = explain.term_id_to_enode(&x).unwrap();
-                let o = explain.enode_to_term_id(&o).unwrap();
+                let o = explain.term_id_to_enode(&x);
+                let o = explain.enode_to_term_id(&o);
                 assert_eq!(x, o);
             }
 
@@ -265,7 +265,7 @@ impl<L: Language> EGraph<L> {
             for (i, cl) in &self.classes {
                 let x = any_applied(*i, &cl.slots);
                 let tid = explain.translate(&x);
-                let term = explain.term_id_to_term(&tid).unwrap();
+                let term = explain.term_id_to_term(&tid);
                 let o = lookup_rec_expr(&term, self).unwrap();
                 assert!(self.eq(&x, &o));
             }

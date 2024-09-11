@@ -64,7 +64,7 @@ impl<L: Language> EGraph<L> {
 
         for (i, _) in &explain.term_id_to_enode {
             let i = explain.mk_identity_app_id(*i);
-            let term = explain.term_id_to_term(&i).unwrap();
+            let term = explain.term_id_to_term(&i);
             let orig = lookup_rec_expr(&term, self).unwrap();
             insert_applied(&mut bt, i, orig);
         }

@@ -72,35 +72,35 @@ impl<L: Language> Explain<L> {
         self.add_explain_enode(n)
     }
 
-    pub fn enode_to_term_id(&self, l: &L) -> Option<AppliedId> {
+    pub fn enode_to_term_id(&self, l: &L) -> AppliedId {
         let (sh, bij) = l.weak_shape();
-        let a = self.enode_to_term_id.get(&sh)?;
+        let a = self.enode_to_term_id.get(&sh).unwrap();
         // a == sh by definition of a.
         // sh * bij == l by definition of (sh, bij).
         // -> a * bij == l
-        Some(a.apply_slotmap(&bij))
+        a.apply_slotmap(&bij)
     }
 
-    pub fn term_id_to_enode(&self, a: &AppliedId) -> Option<L> {
-        let x = self.term_id_to_enode.get(&a.id)?;
+    pub fn term_id_to_enode(&self, a: &AppliedId) -> L {
+        let x = self.term_id_to_enode.get(&a.id).unwrap();
         // x == a.id by definition of x.
         // a == a.id * a.m by definition of AppliedId.
         // -> a == x * a.m
         let out = x.apply_slotmap(&a.m);
         let out = out.refresh_internals(out.slots());
-        Some(out)
+        out
     }
 
-    pub fn term_id_to_term(&self, a: &AppliedId) -> Option<RecExpr<L>> {
-        let enode = self.term_id_to_enode(a)?;
+    pub fn term_id_to_term(&self, a: &AppliedId) -> RecExpr<L> {
+        let enode = self.term_id_to_enode(a);
         let cs = enode.applied_id_occurences()
                       .iter()
-                      .map(|x| self.term_id_to_term(x).unwrap())
+                      .map(|x| self.term_id_to_term(x))
                       .collect();
-        Some(RecExpr {
+        RecExpr {
             node: nullify_app_ids(&enode),
             children: cs,
-        })
+        }
     }
 
     // Both arguments are Explain AppliedIds.

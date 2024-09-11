@@ -5,7 +5,7 @@ use crate::*;
 // convert an EqPath (i.e. a proof-draft without congruence) to an explanation.
 impl<L: Language> Explain<L> {
     pub fn interpret_path(&self, path: EqPath) -> Explanation<L> {
-        let t = self.term_id_to_term(&path.start).unwrap();
+        let t = self.term_id_to_term(&path.start);
         let init = Explanation { term: t, step: None };
         let mut out = vec![init];
 
@@ -20,14 +20,14 @@ impl<L: Language> Explain<L> {
         let Equation { l, r, j } = eq;
 
         if Justification::Congruence == j {
-            let mut x_enode = self.term_id_to_enode(&l).unwrap();
-            let mut y_enode = self.term_id_to_enode(&r).unwrap();
+            let mut x_enode = self.term_id_to_enode(&l);
+            let mut y_enode = self.term_id_to_enode(&r);
             let (x_enode, y_enode) = unify_private_slots(&x_enode, &y_enode);
 
             self.find_congruence_explanation(x_enode, y_enode)
         } else {
-            let term_l = self.term_id_to_term(&l).unwrap();
-            let term_r = self.term_id_to_term(&r).unwrap();
+            let term_l = self.term_id_to_term(&l);
+            let term_r = self.term_id_to_term(&r);
             Explanation {
                 term: term_l,
                 step: Some(Box::new(
@@ -80,11 +80,11 @@ impl<L: Language> Explain<L> {
 
                 let mut children = Vec::new();
                 for j in 0..i {
-                    children.push(explain.term_id_to_term(&l_b[j]).unwrap());
+                    children.push(explain.term_id_to_term(&l_b[j]));
                 }
                 children.push(t);
                 for j in (i+1)..n {
-                    children.push(explain.term_id_to_term(&l_a[j]).unwrap());
+                    children.push(explain.term_id_to_term(&l_a[j]));
                 }
 
                 RecExpr {
