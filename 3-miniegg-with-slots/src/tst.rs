@@ -41,7 +41,7 @@ impl Language for VarENode {
 
 #[test]
 fn test_var() {
-    let mut eg = EGraph::<VarENode>::new();
+    let mut eg = EGraph::<VarENode>::new().with_explanations_enabled();
     let a = eg.add_expr(RecExpr::parse("(f s0 s1)").unwrap());
     let b = eg.add_expr(RecExpr::parse("(f s1 s2)").unwrap());
     eg.union(&a, &b);
