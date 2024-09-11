@@ -85,6 +85,7 @@ impl Realization for LambdaRealBig {
     }
 
     fn step(&mut self) {
+        if BIG_CHECKS { self.0.check(); }
         rewrite_big_step(&mut self.0);
     }
 

@@ -24,6 +24,7 @@ impl Realization for LetReal {
     }
 
     fn step(&mut self) {
+        if BIG_CHECKS { self.0.check(); }
         rewrite_let(&mut self.0);
     }
 
