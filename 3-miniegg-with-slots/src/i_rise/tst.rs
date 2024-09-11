@@ -75,6 +75,7 @@ fn reduction_re2() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
+#[test]
 pub fn test_reduction() {
     assert_reaches(reduction_re1(), reduction_re2(), 40);
 }
@@ -145,6 +146,8 @@ fn binomial_re2() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
+#[ignore] // takes too long
+#[test]
 pub fn test_binomial() {
     assert_reaches(binomial_re1(), binomial_re2(), 40);
 }
