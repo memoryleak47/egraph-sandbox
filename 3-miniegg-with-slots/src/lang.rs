@@ -80,7 +80,7 @@ pub trait Language: Debug + Clone + Hash + Eq {
             let y = m[*x];
 
             // If y collides with a private slot, we have a problem.
-            if CHECKS {
+            if SMALL_CHECKS {
                 assert!(!prv.contains(&y));
             }
 
@@ -91,7 +91,7 @@ pub trait Language: Debug + Clone + Hash + Eq {
 
     #[track_caller]
     fn apply_slotmap(&self, m: &SlotMap) -> Self {
-        if CHECKS {
+        if SMALL_CHECKS {
             assert!(m.keys().is_superset(&self.slots()), "Language::apply_slotmap: The SlotMap doesn't map all free slots!");
         }
         self.apply_slotmap_partial(m)

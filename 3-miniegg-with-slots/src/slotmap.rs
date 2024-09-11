@@ -64,7 +64,7 @@ impl SlotMap {
     pub fn values_vec(&self) -> Vec<Slot> { self.iter().map(|(_, y)| y).collect() }
 
     pub fn inverse(&self) -> SlotMap {
-        if CHECKS {
+        if SMALL_CHECKS {
             assert!(self.is_bijection());
         }
 
@@ -95,7 +95,7 @@ impl SlotMap {
     }
 
     pub fn compose(&self, other: &SlotMap) -> SlotMap {
-        if CHECKS {
+        if SMALL_CHECKS {
             assert_eq!(self.values(), other.keys(), "SlotMap::compose() failed!");
         }
 
@@ -163,7 +163,7 @@ impl SlotMap {
         let mut out = self.clone();
 
         for (x, y) in other.iter() {
-            if CHECKS {
+            if SMALL_CHECKS {
                 if let Some(z) = out.get(x) {
                     assert_eq!(y, z, "SlotMap::union: The SlotMaps disagree! {:?} -> {:?} / {:?}", x, z, y);
                 }
@@ -209,7 +209,7 @@ impl FromIterator<(Slot, Slot)> for SlotMap {
     fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (Slot, Slot)> {
         let mut m = SlotMap::new();
         for (x, y) in iter.into_iter() {
-            if CHECKS {
+            if SMALL_CHECKS {
                 assert!(!m.contains_key(x));
             }
             m.insert(x, y);
@@ -222,7 +222,7 @@ impl<const N: usize> From<[(Slot, Slot); N]> for SlotMap {
     fn from(pairs: [(Slot, Slot); N]) -> Self {
         let mut m = SlotMap::new();
         for (x, y) in pairs {
-            if CHECKS {
+            if SMALL_CHECKS {
                 assert!(!m.contains_key(x));
             }
 

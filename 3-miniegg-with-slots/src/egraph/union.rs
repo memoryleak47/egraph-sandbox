@@ -64,7 +64,7 @@ impl<L: Language> EGraph<L> {
             // r.m :: slots(id) -> X
             // perm :: slots(id) -> slots(id)
             let perm = l.m.compose(&r.m.inverse());
-            if CHECKS {
+            if SMALL_CHECKS {
                 assert!(perm.is_perm());
                 assert_eq!(&perm.keys(), &self.classes[&id].slots);
             }
@@ -194,7 +194,7 @@ impl<L: Language> EGraph<L> {
                 } else { None }
             }).collect();
 
-            if CHECKS {
+            if SMALL_CHECKS {
                 assert!(perm.is_perm());
                 assert_eq!(perm.keys(), self.classes[&to.id].slots);
             }

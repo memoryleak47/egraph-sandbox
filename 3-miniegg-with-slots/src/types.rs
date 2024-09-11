@@ -45,7 +45,7 @@ impl AppliedId {
 
     #[track_caller]
     pub fn apply_slotmap(&self, m: &SlotMap) -> AppliedId {
-        if CHECKS {
+        if SMALL_CHECKS {
             assert!(m.keys().is_superset(&self.slots()), "AppliedId::apply_slotmap: The SlotMap doesn't map all free slots!");
         }
         self.apply_slotmap_partial(m)

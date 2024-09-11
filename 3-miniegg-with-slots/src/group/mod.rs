@@ -75,7 +75,7 @@ impl Group {
                     }
                 }
 
-                if CHECKS {
+                if SMALL_CHECKS {
                     assert_eq!(out.len(), self.count());
                 }
 

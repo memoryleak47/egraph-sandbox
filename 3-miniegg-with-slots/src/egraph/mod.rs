@@ -78,7 +78,7 @@ impl<L: Language> EGraph<L> {
     pub fn mk_applied_id(&self, i: Id, m: SlotMap) -> AppliedId {
         let app_id = AppliedId::new(i, m);
 
-        if CHECKS {
+        if SMALL_CHECKS {
             self.check_applied_id(&app_id);
         }
 
@@ -131,7 +131,7 @@ impl<L: Language> EGraph<L> {
             out.insert(x.apply_slotmap(&m));
         }
 
-        if CHECKS {
+        if SMALL_CHECKS {
             for x in &out {
                 assert!(self.eq(&self.lookup(x).unwrap(), &i));
             }
@@ -149,7 +149,7 @@ impl<L: Language> EGraph<L> {
         let a = self.find_applied_id(a);
         let b = self.find_applied_id(b);
 
-        if CHECKS {
+        if SMALL_CHECKS {
             self.check_applied_id(&a);
             self.check_applied_id(&b);
         }
@@ -159,7 +159,7 @@ impl<L: Language> EGraph<L> {
         let id = a.id;
 
         let perm = a.m.compose(&b.m.inverse());
-        if CHECKS {
+        if SMALL_CHECKS {
             assert!(perm.is_perm());
             assert_eq!(&perm.values(), &self.classes[&id].slots);
         }
@@ -254,12 +254,26 @@ impl<L: Language> EGraph<L> {
 
             for (x, _) in &explain.term_id_to_enode {
                 let slots = explain.slots_of(*x);
-                let m = SlotMap::bijection_from_fresh_to(&slots).inverse();
-                let x = AppliedId::new(*x, m);
+                let x = any_applied(*x, &slots);
                 let o = explain.term_id_to_enode(&x).unwrap();
                 let o = explain.enode_to_term_id(&o).unwrap();
                 assert_eq!(x, o);
             }
+
+            // checks that the translation of each e-class, is actual in that e-class.
+            // does also check translations of dead classes.
+            for (i, cl) in &self.classes {
+                let x = any_applied(*i, &cl.slots);
+                let tid = explain.translate(&x);
+                let term = explain.term_id_to_term(&tid).unwrap();
+                let o = lookup_rec_expr(&term, self).unwrap();
+                assert!(self.eq(&x, &o));
+            }
+        }
+
+        fn any_applied(x: Id, slots: &HashSet<Slot>) -> AppliedId {
+            let m = SlotMap::bijection_from_fresh_to(slots).inverse();
+            AppliedId::new(x, m)
         }
     }
 
@@ -279,7 +293,7 @@ impl<L: Language> EGraph<L> {
         let i = self.lookup(&l).unwrap();
         let l = l.apply_slotmap(&i.m);
 
-        if CHECKS {
+        if SMALL_CHECKS {
             assert!(self.lookup(&l).unwrap().m.iter().all(|(x, y)| x == y));
         }
 

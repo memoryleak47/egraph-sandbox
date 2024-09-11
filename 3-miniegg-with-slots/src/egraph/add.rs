@@ -4,7 +4,7 @@ impl<L: Language> EGraph<L> {
     pub fn add_expr(&mut self, re: RecExpr<L>) -> AppliedId {
         let mut n = re.node;
         let mut refs: Vec<&mut AppliedId> = n.applied_id_occurences_mut();
-        if CHECKS {
+        if SMALL_CHECKS {
             assert_eq!(re.children.len(), refs.len());
         }
         for (i, child) in re.children.into_iter().enumerate() {
@@ -75,7 +75,7 @@ impl<L: Language> EGraph<L> {
             out,
         );
 
-        if CHECKS {
+        if SMALL_CHECKS {
             assert_eq!(&c.slots, &app_id.m.keys());
         }
 
@@ -108,7 +108,7 @@ impl<L: Language> EGraph<L> {
     pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (L, Bijection)) {
         let tmp1 = self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij);
         let tmp2 = self.hashcons.insert(sh.clone(), id);
-        if CHECKS {
+        if SMALL_CHECKS {
             assert!(tmp1.is_none());
             assert!(tmp2.is_none());
         }
@@ -122,7 +122,7 @@ impl<L: Language> EGraph<L> {
     pub(in crate::egraph) fn raw_remove_from_class(&mut self, id: Id, (sh, _bij): (L, Bijection)) {
         let tmp1 = self.classes.get_mut(&id).unwrap().nodes.remove(&sh);
         let tmp2 = self.hashcons.remove(&sh);
-        if CHECKS {
+        if SMALL_CHECKS {
             assert!(tmp1.is_some());
             assert!(tmp2.is_some());
         }

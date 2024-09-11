@@ -10,8 +10,13 @@ use std::error::Error;
 pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;
 
-// Whether to enable invariant-checks.
-const CHECKS: bool = true;
+// tiny, relativiely fast checks:
+// should be always on, except for benchmarking.
+const SMALL_CHECKS: bool = true;
+
+// big, slow checks.
+// Used to track down bugs, but that might notably slow down the algorithms.
+const BIG_CHECKS: bool = true;
 
 mod types;
 pub use types::*;

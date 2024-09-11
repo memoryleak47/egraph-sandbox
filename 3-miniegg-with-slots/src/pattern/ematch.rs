@@ -40,7 +40,7 @@ fn ematch_impl<L: Language>(pattern: &Pattern<L>, st: State, i: AppliedId, eg: &
             let mut out = Vec::new();
             for nn in eg.enodes_applied(&i) {
                 'nodeloop: for n2 in eg.get_group_compatible_weak_variants(&nn) {
-                    if CHECKS {
+                    if SMALL_CHECKS {
                         assert_eq!(&nullify_app_ids(n), n);
                     }
 
