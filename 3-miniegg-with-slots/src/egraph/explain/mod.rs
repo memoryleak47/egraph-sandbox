@@ -78,6 +78,21 @@ impl<L: Language> Explain<L> {
         let p = self.find_path(a, b);
         self.interpret_path(p)
     }
+
+    pub fn check_explain_app_id(&self, x: &AppliedId) {
+        assert_eq!(self.slots_of(x.id), x.m.keys());
+    }
+
+    pub fn check_explain_enode(&self, x: &L) {
+        for y in x.applied_id_occurences() {
+            self.check_explain_app_id(&y);
+        }
+    }
+
+    pub fn check_equation(&self, eq: &Equation) {
+        self.check_explain_app_id(&eq.l);
+        self.check_explain_app_id(&eq.r);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -269,6 +269,23 @@ impl<L: Language> EGraph<L> {
                 let o = lookup_rec_expr(&term, self).unwrap();
                 assert!(self.eq(&x, &o));
             }
+
+            for (_, y) in &explain.term_id_to_enode {
+                explain.check_explain_enode(y);
+            }
+
+            for (y, x) in &explain.enode_to_term_id {
+                explain.check_explain_app_id(x);
+                explain.check_explain_enode(y);
+            }
+
+            for eq in &explain.equations {
+                explain.check_equation(eq);
+            }
+
+            for (_, o) in &explain.translator {
+                explain.check_explain_app_id(o);
+            }
         }
 
         fn any_applied(x: Id, slots: &HashSet<Slot>) -> AppliedId {
