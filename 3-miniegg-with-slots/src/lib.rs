@@ -6,6 +6,7 @@ use lamcalc::*;
 use std::hash::Hash;
 use std::fmt::Debug;
 use std::error::Error;
+use std::sync::Arc;
 
 pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;
@@ -53,6 +54,9 @@ mod debug;
 
 mod egraph;
 pub use egraph::*;
+
+mod expl;
+pub use expl::*;
 
 mod extract;
 pub use extract::*;

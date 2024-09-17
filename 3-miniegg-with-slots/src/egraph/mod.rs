@@ -19,11 +19,16 @@ pub struct EClass<L: Language> {
     // Should not contain Slot(0).
     slots: HashSet<Slot>,
 
+    term_slots: HashSet<Slot>,
+
     // Shows which Shapes refer to this EClass.
     usages: HashSet<L>,
 
     // Expresses the self-symmetries of this e-class.
     group: Group,
+
+    canonical_enode: Option<L>,
+    redundancy_proof: Option<ProvenEq>,
 }
 
 // invariants:

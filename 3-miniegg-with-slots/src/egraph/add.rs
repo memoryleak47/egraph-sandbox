@@ -85,6 +85,9 @@ impl<L: Language> EGraph<L> {
             group: Group::identity(&slots),
             slots: slots.clone(),
             usages: HashSet::default(),
+            term_slots: Default::default(),
+            redundancy_proof: None,
+            canonical_enode: None,
         };
         self.classes.insert(c_id, c);
         self.unionfind.set(c_id, &self.mk_identity_applied_id(c_id));
