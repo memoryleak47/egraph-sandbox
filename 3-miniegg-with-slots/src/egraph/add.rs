@@ -65,7 +65,7 @@ impl<L: Language> EGraph<L> {
             return x;
         }
 
-        let enode = t.0.apply_slotmap(&t.1);
+        let enode = t.0.refresh_private().apply_slotmap(&t.1);
         let enode = self.syntify_enode(enode);
 
         self.mk_singleton_class(t, enode)
