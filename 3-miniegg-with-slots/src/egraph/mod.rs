@@ -12,6 +12,8 @@ pub use union::*;
 mod expl;
 pub use expl::*;
 
+use std::sync::Mutex;
+
 /// Each E-Class can be understood "semantically" or "syntactically":
 /// - semantically means that it respects the equations already in the e-graph, and hence doesn't differentiate between equal things.
 /// - syntactically means that it only talks about the single representative term associated to each E-Class, recursively obtainable using syn_enode.
@@ -48,7 +50,9 @@ pub struct EGraph<L: Language> {
     // an entry (l, r(sa, sb)) in unionfind corresponds to the equality l(s0, s1, s2) = r(sa, sb), where sa, sb in {s0, s1, s2}.
     // normalizes the eclass.
     // Each Id i that is an output of the unionfind itself has unionfind[i] = (i, identity()).
-    unionfind: Unionfind,
+
+    // We use mutex to allow for inter mutability, so that find(&self) can do path compression.
+    unionfind: Mutex<Vec<Entry>>,
 
     // if a class does't have unionfind[x].id = x, then it doesn't contain nodes / usages.
     // It's "shallow" if you will.
@@ -102,7 +106,7 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn ids(&self) -> Vec<Id> {
-        self.unionfind.iter(self)
+        self.unionfind_iter()
                        .filter(|(x, y)| x == &y.id)
                        .map(|(x, _)| x)
                        .collect()
@@ -200,14 +204,14 @@ impl<L: Language> EGraph<L> {
         }
 
         // check that self.classes contains exactly these classes which point to themselves in the unionfind.
-        let all_keys = self.unionfind.iter(self).map(|(x, _)| x).collect::<HashSet<_>>();
-        let all_values = self.unionfind.iter(self).map(|(_, x)| x.id).collect::<HashSet<_>>();
+        let all_keys = self.unionfind_iter().map(|(x, _)| x).collect::<HashSet<_>>();
+        let all_values = self.unionfind_iter().map(|(_, x)| x.id).collect::<HashSet<_>>();
         let all_classes = self.classes.keys().copied().collect::<HashSet<_>>();
         let all: HashSet<Id> = &(&all_keys | &all_values) | &all_classes;
         for i in all {
             // if they point to themselves, they should do it using the identity.
             if self.is_alive(i) {
-                assert_eq!(self.semify_app_id(self.unionfind.get(i, self)), self.mk_identity_applied_id(i));
+                assert_eq!(self.unionfind_get(i), self.mk_identity_applied_id(i));
             } else {
                 assert!(self.classes[&i].nodes.is_empty());
                 assert!(self.classes[&i].usages.is_empty());
@@ -220,7 +224,7 @@ impl<L: Language> EGraph<L> {
         }
 
         // Check that the Unionfind has valid AppliedIds.
-        for (_, app_id) in self.unionfind.iter(self) {
+        for (_, app_id) in self.unionfind_iter() {
             check_internal_applied_id::<L>(self, &self.semify_app_id(app_id));
         }
 

@@ -173,7 +173,7 @@ impl<L: Language> EGraph<L> {
     }
 
     pub(in crate::egraph) fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
-        let c_id = Id(self.unionfind.len()); // Pick the next unused Id.
+        let c_id = Id(self.unionfind_len()); // Pick the next unused Id.
         let c = EClass {
             nodes: HashMap::default(),
             group: Group::identity(&slots),
@@ -185,7 +185,7 @@ impl<L: Language> EGraph<L> {
         self.classes.insert(c_id, c);
         let app_id = self.mk_identity_applied_id(c_id);
         let prf = self.prove_reflexivity(&app_id);
-        self.unionfind.set(c_id, app_id, prf);
+        self.unionfind_set(c_id, app_id, prf);
 
         c_id
     }
