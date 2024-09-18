@@ -22,10 +22,10 @@ pub enum Proof {
 }
 
 impl<L: Language> EGraph<L> {
-    pub fn prove(&self, eq: Equation, proof: Proof) -> Option<ProvenEq> {
+    pub fn prove(&self, eq: Equation, proof: Proof) -> Option<Arc<ProvenEq>> {
         self.check_proof(&eq, &proof)?;
 
-        Some(ProvenEq { eq, proof })
+        Some(Arc::new(ProvenEq { eq, proof }))
     }
 
     pub fn check_proof(&self, eq: &Equation, proof: &Proof) -> Option<()> {
