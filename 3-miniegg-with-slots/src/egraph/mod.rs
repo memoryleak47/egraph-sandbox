@@ -14,7 +14,7 @@ pub use expl::*;
 
 /// Each E-Class can be understood "semantically" or "syntactically":
 /// - semantically means that it respects the equations already in the e-graph, and hence doesn't differentiate between equal things.
-/// - syntactically means that it only talks about the single representative term associated to each E-Class, recursively obtainable using synt_enode.
+/// - syntactically means that it only talks about the single representative term associated to each E-Class, recursively obtainable using syn_enode.
 #[derive(Clone, Debug)]
 pub struct EClass<L: Language> {
     // The set of equivalent ENodes that make up this eclass.
@@ -31,7 +31,7 @@ pub struct EClass<L: Language> {
     // Expresses the self-symmetries of this e-class.
     group: Group,
 
-    synt_enode: Option<L>,
+    syn_enode: Option<L>,
     redundancy_proof: Option<ProvenEq>,
 }
 
@@ -57,8 +57,8 @@ pub struct EGraph<L: Language> {
     // For each shape contained in the EGraph, maps to the EClass that contains it.
     hashcons: HashMap<L, Id>,
 
-    // For each (synt_slotset applied) non-normalized (i.e. "syntactic") weak shape, find the e-class who has this as synt_enode.
-    synt_hashcons: HashMap<L, AppliedId>,
+    // For each (syn_slotset applied) non-normalized (i.e. "syntactic") weak shape, find the e-class who has this as syn_enode.
+    syn_hashcons: HashMap<L, AppliedId>,
 }
 
 impl<L: Language> EGraph<L> {
@@ -67,7 +67,7 @@ impl<L: Language> EGraph<L> {
             unionfind: Default::default(),
             classes: Default::default(),
             hashcons: Default::default(),
-            synt_hashcons: Default::default(),
+            syn_hashcons: Default::default(),
         }
     }
 
@@ -75,8 +75,8 @@ impl<L: Language> EGraph<L> {
         self.classes[&id].slots.clone()
     }
 
-    pub fn synt_slots(&self, id: Id) -> HashSet<Slot> {
-        self.classes[&id].synt_enode.as_ref().unwrap().slots()
+    pub fn syn_slots(&self, id: Id) -> HashSet<Slot> {
+        self.classes[&id].syn_enode.as_ref().unwrap().slots()
     }
 
     #[track_caller]
@@ -350,9 +350,9 @@ impl<L: Language> EGraph<L> {
         out
     }
 
-    pub fn syntify_app_id(&self, app: AppliedId) -> AppliedId {
+    pub fn synify_app_id(&self, app: AppliedId) -> AppliedId {
         let mut app = app;
-        for s in self.synt_slots(app.id) {
+        for s in self.syn_slots(app.id) {
             if !app.m.contains_key(s) {
                 app.m.insert(s, Slot::fresh());
             }
@@ -360,8 +360,8 @@ impl<L: Language> EGraph<L> {
         app
     }
 
-    pub fn syntify_enode(&self, enode: L) -> L {
-        enode.map_applied_ids(|app| self.syntify_app_id(app))
+    pub fn synify_enode(&self, enode: L) -> L {
+        enode.map_applied_ids(|app| self.synify_app_id(app))
     }
 
     pub fn semify_app_id(&self, app: AppliedId) -> AppliedId {

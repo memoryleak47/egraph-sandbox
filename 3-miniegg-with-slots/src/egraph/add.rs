@@ -1,21 +1,21 @@
 use crate::*;
 
-// synt add:
+// syntactic add:
 impl<L: Language> EGraph<L> {
-    pub fn add_synt_expr(&mut self, re: RecExpr<L>) -> AppliedId {
+    pub fn add_syn_expr(&mut self, re: RecExpr<L>) -> AppliedId {
         let mut n = re.node;
         let mut refs: Vec<&mut AppliedId> = n.applied_id_occurences_mut();
         if CHECKS {
             assert_eq!(re.children.len(), refs.len());
         }
         for (i, child) in re.children.into_iter().enumerate() {
-            *(refs[i]) = self.add_synt_expr(child);
+            *(refs[i]) = self.add_syn_expr(child);
         }
-        self.add_synt(n)
+        self.add_syn(n)
     }
 
-    pub fn add_synt(&mut self, enode: L) -> AppliedId {
-        if let Some(x) = self.lookup_synt(&enode) {
+    pub fn add_syn(&mut self, enode: L) -> AppliedId {
+        if let Some(x) = self.lookup_syn(&enode) {
             return x;
         }
 
@@ -31,15 +31,15 @@ impl<L: Language> EGraph<L> {
         i
     }
 
-    fn lookup_synt(&self, enode: &L) -> Option<AppliedId> {
+    fn lookup_syn(&self, enode: &L) -> Option<AppliedId> {
         let (sh, bij) = enode.weak_shape();
-        let i = self.synt_hashcons.get(&sh)?;
+        let i = self.syn_hashcons.get(&sh)?;
         let i = i.apply_slotmap(&bij);
         Some(i)
     }
 }
 
-// normal add:
+// semantic add:
 impl<L: Language> EGraph<L> {
     pub fn add_expr(&mut self, re: RecExpr<L>) -> AppliedId {
         let mut n = re.node;
@@ -66,7 +66,7 @@ impl<L: Language> EGraph<L> {
         }
 
         let enode = t.0.refresh_private().apply_slotmap(&t.1);
-        let enode = self.syntify_enode(enode);
+        let enode = self.synify_enode(enode);
 
         self.mk_singleton_class(t, enode)
     }
@@ -106,7 +106,7 @@ impl<L: Language> EGraph<L> {
 }
 
 impl<L: Language> EGraph<L> {
-    fn mk_singleton_class(&mut self, (sh, bij): (L, SlotMap), synt_enode: L) -> AppliedId {
+    fn mk_singleton_class(&mut self, (sh, bij): (L, SlotMap), syn_enode: L) -> AppliedId {
         let old_slots = bij.values();
 
         let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
@@ -118,21 +118,21 @@ impl<L: Language> EGraph<L> {
 
         let m = bij.compose(&old_to_fresh);
         self.raw_add_to_class(i, (sh, m));
-        self.add_synt_enode(i, synt_enode);
+        self.add_syn_enode(i, syn_enode);
         self.mk_applied_id(i, fresh_to_old)
     }
 
-    fn add_synt_enode(&mut self, i: Id, synt_enode: L) {
-        let (sh, bij) = synt_enode.weak_shape();
+    fn add_syn_enode(&mut self, i: Id, syn_enode: L) {
+        let (sh, bij) = syn_enode.weak_shape();
 
         if CHECKS {
-            assert!(!self.synt_hashcons.contains_key(&sh));
+            assert!(!self.syn_hashcons.contains_key(&sh));
         }
 
-        self.classes.get_mut(&i).unwrap().synt_enode = Some(synt_enode);
+        self.classes.get_mut(&i).unwrap().syn_enode = Some(syn_enode);
 
         let app_id = AppliedId::new(i, bij);
-        self.synt_hashcons.insert(sh, app_id);
+        self.syn_hashcons.insert(sh, app_id);
     }
 
     // adds (sh, bij) to the eclass `id`.
@@ -180,7 +180,7 @@ impl<L: Language> EGraph<L> {
             slots: slots.clone(),
             usages: HashSet::default(),
             redundancy_proof: None,
-            synt_enode: None,
+            syn_enode: None,
         };
         self.classes.insert(c_id, c);
         self.unionfind.set(c_id, &self.mk_identity_applied_id(c_id));
