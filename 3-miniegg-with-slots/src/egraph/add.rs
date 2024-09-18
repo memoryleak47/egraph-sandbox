@@ -18,11 +18,17 @@ impl<L: Language> EGraph<L> {
         if let Some(x) = self.lookup_synt(&enode) {
             return x;
         }
-        let (sh, bij) = enode.weak_shape();
 
-        let c = self.mk_singleton_class(sh);
-        c.apply_slotmap(&bij)
-        // TODO equate this with the normalized version.
+        let t = self.shape(&enode);
+        let sem_lookup = self.lookup_internal(&t);
+        let i = self.mk_singleton_class(t, enode);
+
+        if let Some(sem) = sem_lookup {
+            // TODO: This shouldn't be an explicit union, but a congruence proof!
+            self.union(&sem, &i);
+        }
+
+        i
     }
 
     fn lookup_synt(&self, enode: &L) -> Option<AppliedId> {
@@ -58,10 +64,25 @@ impl<L: Language> EGraph<L> {
         if let Some(x) = self.lookup_internal(&t) {
             return x;
         }
-        let (sh, bij) = t;
 
-        let c = self.mk_singleton_class(sh);
-        c.apply_slotmap(&bij)
+        let enode = t.0.apply_slotmap(&t.1);
+        let enode = self.syntify_enode(enode);
+
+        self.mk_singleton_class(t, enode)
+    }
+
+    fn syntify_app_id(&self, app: AppliedId) -> AppliedId {
+        let mut app = app;
+        for s in self.synt_slots(app.id) {
+            if !app.m.contains_key(s) {
+                app.m.insert(s, Slot::fresh());
+            }
+        }
+        app
+    }
+
+    fn syntify_enode(&self, enode: L) -> L {
+        enode.map_applied_ids(|app| self.syntify_app_id(app))
     }
 
     pub fn lookup(&self, n: &L) -> Option<AppliedId> {
@@ -99,9 +120,8 @@ impl<L: Language> EGraph<L> {
 }
 
 impl<L: Language> EGraph<L> {
-    // TODO add the synt_enode.
-    fn mk_singleton_class(&mut self, sh: L) -> AppliedId {
-        let old_slots = sh.slots();
+    fn mk_singleton_class(&mut self, (sh, bij): (L, SlotMap), synt_enode: L) -> AppliedId {
+        let old_slots = bij.values();
 
         let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
         let old_to_fresh = fresh_to_old.inverse();
@@ -111,8 +131,21 @@ impl<L: Language> EGraph<L> {
         let i = self.alloc_eclass(&fresh_slots);
 
         self.raw_add_to_class(i, (sh, old_to_fresh));
-
+        self.add_synt_enode(i, synt_enode);
         self.mk_applied_id(i, fresh_to_old)
+    }
+
+    fn add_synt_enode(&mut self, i: Id, synt_enode: L) {
+        let (sh, bij) = synt_enode.weak_shape();
+
+        if CHECKS {
+            assert!(!self.synt_hashcons.contains_key(&sh));
+        }
+
+        self.classes.get_mut(&i).unwrap().synt_enode = Some(synt_enode);
+
+        let app_id = AppliedId::new(i, bij);
+        self.synt_hashcons.insert(sh, app_id);
     }
 
     // adds (sh, bij) to the eclass `id`.
@@ -159,7 +192,6 @@ impl<L: Language> EGraph<L> {
             group: Group::identity(&slots),
             slots: slots.clone(),
             usages: HashSet::default(),
-            synt_slots: Default::default(),
             redundancy_proof: None,
             synt_enode: None,
         };

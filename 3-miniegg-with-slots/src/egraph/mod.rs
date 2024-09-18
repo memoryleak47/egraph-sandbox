@@ -25,8 +25,6 @@ pub struct EClass<L: Language> {
     // Should not contain Slot(0).
     slots: HashSet<Slot>,
 
-    synt_slots: HashSet<Slot>,
-
     // Shows which Shapes refer to this EClass.
     usages: HashSet<L>,
 
@@ -75,6 +73,10 @@ impl<L: Language> EGraph<L> {
 
     pub fn slots(&self, id: Id) -> HashSet<Slot> {
         self.classes[&id].slots.clone()
+    }
+
+    pub fn synt_slots(&self, id: Id) -> HashSet<Slot> {
+        self.classes[&id].synt_enode.as_ref().unwrap().slots()
     }
 
     #[track_caller]
