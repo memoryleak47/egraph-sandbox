@@ -2,10 +2,19 @@ use crate::*;
 
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Equation {
     pub lhs: AppliedId,
     pub rhs: AppliedId,
+}
+
+impl Equation {
+    pub fn apply_slotmap(&self, m: &SlotMap) -> Self {
+        Equation {
+            lhs: self.lhs.apply_slotmap(&m),
+            rhs: self.rhs.apply_slotmap(&m),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -15,10 +24,31 @@ pub struct ProvenEq {
     proof: Proof,
 }
 
+impl ProvenEq {
+    pub fn eq(&self) -> &Equation {
+        &self.eq
+    }
+
+    pub fn proof(&self) -> &Proof {
+        &self.proof
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Proof {
     Explicit(/*justification: */ Option<String>),
-    Rename(Arc<ProvenEq>, SlotMap),
+
+    Reflexivity,
+    Symmetry(Arc<ProvenEq>),
+    Transitivity(Arc<ProvenEq>, Arc<ProvenEq>),
+    Congruence(Vec<Arc<ProvenEq>>),
+
+    Shrink(/*an equation witnessing redundant slots*/ Arc<ProvenEq>),
+
+    // Both global renaming within equations and alpha-equivalence will be handled in the other rules too.
+    // All equations will be understood as an arbitrary representative from its global renaming equivalence class.
+    // So f(x, y) = g(x, y) is conceptually the same equation as f(a, b) = g(a, b).
+    // In other words, whenever you use an equation, you always do it using "match_app_id".
 }
 
 impl<L: Language> EGraph<L> {
@@ -29,6 +59,68 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn check_proof(&self, eq: &Equation, proof: &Proof) -> Option<()> {
-        todo!()
+        match proof {
+            Proof::Explicit(_) => assert(true),
+
+            Proof::Reflexivity => assert(eq.lhs == eq.rhs),
+            Proof::Symmetry(x) => {
+                let x = x.eq().clone();
+                let flipped = Equation { lhs: x.rhs, rhs: x.lhs };
+                match_equation(eq, &flipped).map(|_|())
+            }
+            Proof::Transitivity(eq1, eq2) => {
+                assert(eq.lhs == eq1.eq().lhs)?;
+                assert(eq.rhs == eq2.eq().rhs)?;
+
+                assert(eq1.eq().rhs == eq2.eq().lhs)
+                // TODO respect renaming.
+            },
+            Proof::Congruence(_child_proofs) => {
+                todo!()
+            },
+
+            Proof::Shrink(witness) => {
+                todo!()
+            },
+        }
     }
+}
+
+// returns the global renaming theta, s.t. a.apply_slotmap(theta) = b, if it exists.
+fn match_app_id(a: &AppliedId, b: &AppliedId) -> Option<SlotMap> {
+    assert(a.id == b.id)?;
+    assert(a.m.keys() == b.m.keys())?;
+
+    let theta = b.m.compose(&a.m.inverse());
+
+    if CHECKS {
+        assert_eq!(&a.apply_slotmap(&theta), b);
+    }
+
+    Some(theta)
+}
+
+// returns the global renaming theta, s.t. a.apply_slotmap(theta) = b, if it exists.
+fn match_equation(a: &Equation, b: &Equation) -> Option<SlotMap> {
+    let theta_l = match_app_id(&a.lhs, &b.lhs)?;
+    let theta_r = match_app_id(&a.rhs, &b.rhs)?;
+
+    let theta = theta_l.try_union(&theta_r)?;
+
+    if CHECKS {
+        assert_eq!(&a.apply_slotmap(&theta), b);
+    }
+
+    Some(theta)
+}
+
+fn apply_equation(x: &AppliedId, eq: &Equation) -> Option<AppliedId> {
+    let theta = match_app_id(&eq.lhs, x)?;
+    Some(eq.rhs.apply_slotmap_fresh(&theta))
+}
+
+
+fn assert(b: bool) -> Option<()> {
+    if b { Some(()) }
+    else { None }
 }

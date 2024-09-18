@@ -122,6 +122,20 @@ impl SlotMap {
         out
     }
 
+    // if some slot is missing in `other`, we just choose a fresh slot as output.
+    // self.keys() == self.compose_fresh(other).keys() is guaranteed.
+    pub fn compose_fresh(&self, other: &SlotMap) -> SlotMap {
+        let mut out = SlotMap::new();
+        for (x, y) in self.iter() {
+            if let Some(z) = other.get(y) {
+                out.insert(x, z);
+            } else {
+                out.insert(x, Slot::fresh());
+            }
+        }
+        out
+    }
+
     pub fn identity(set: &HashSet<Slot>) -> SlotMap {
         let mut out = SlotMap::new();
         for &x in set {
@@ -163,6 +177,19 @@ impl SlotMap {
         }
 
         out
+    }
+
+    pub fn try_union(&self, other: &SlotMap) -> Option<Self> {
+        let mut out = self.clone();
+
+        for (x, y) in other.iter() {
+            if let Some(z) = out.get(x) {
+                if y != z { return None; }
+            }
+            out.insert(x, y);
+        }
+
+        Some(out)
     }
 
     // checks invariants.

@@ -58,6 +58,13 @@ impl AppliedId {
         )
     }
 
+    pub fn apply_slotmap_fresh(&self, m: &SlotMap) -> AppliedId {
+        AppliedId::new(
+            self.id,
+            self.m.compose_fresh(m),
+        )
+    }
+
     pub fn slots(&self) -> HashSet<Slot> {
         self.m.values()
     }
