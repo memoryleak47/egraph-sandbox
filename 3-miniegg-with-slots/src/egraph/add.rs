@@ -185,7 +185,7 @@ impl<L: Language> EGraph<L> {
         self.classes.insert(c_id, c);
         let app_id = self.mk_identity_applied_id(c_id);
         let prf = self.prove_reflexivity(&app_id);
-        self.unionfind_set(c_id, app_id, prf);
+        self.unionfind_set(c_id, prf);
 
         c_id
     }

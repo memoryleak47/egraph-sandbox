@@ -9,7 +9,7 @@ impl<L: Language> EGraph<L> {
         out
     }
 
-    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId, proof: Arc<ProvenEq>) -> bool {
+    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId, proof: ProvenEq) -> bool {
         // normalize inputs
         let l = self.find_applied_id(&l);
         let r = self.find_applied_id(&r);
@@ -109,9 +109,9 @@ impl<L: Language> EGraph<L> {
     }
 
     // moves everything from `from` to `to`.
-    fn move_to(&mut self, from: &AppliedId, to: &AppliedId, proof: Arc<ProvenEq>) {
+    fn move_to(&mut self, from: &AppliedId, to: &AppliedId, proof: ProvenEq) {
         let map = to.m.compose_partial(&from.m.inverse());
-        self.unionfind_set(from.id, self.mk_applied_id(to.id, map), proof);
+        self.unionfind_set(from.id, proof);
         self.convert_eclass(from.id);
     }
 
@@ -194,7 +194,7 @@ impl<L: Language> EGraph<L> {
 
         // upwards merging found a match!
         if let Some(j) = self.lookup_internal(&t) {
-            self.union_internal(&i, &j, ProvenEq::null()); // TODO this ProvenEq should be congruence!
+            self.union_internal(&i, &j, ProvenEqRaw::null()); // TODO this ProvenEq should be congruence!
             return;
         }
 

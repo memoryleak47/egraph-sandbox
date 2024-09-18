@@ -7,6 +7,7 @@ use std::hash::Hash;
 use std::fmt::Debug;
 use std::error::Error;
 use std::sync::Arc;
+use std::ops::Deref;
 
 pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;

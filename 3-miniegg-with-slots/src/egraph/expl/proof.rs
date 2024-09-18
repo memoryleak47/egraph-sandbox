@@ -1,7 +1,5 @@
 use crate::*;
 
-use std::sync::Arc;
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Equation {
     pub l: AppliedId,
@@ -24,18 +22,24 @@ impl Equation {
     }
 }
 
+pub type ProvenEq = Arc<ProvenEqRaw>;
+
 #[derive(Debug, Clone)]
-pub struct ProvenEq {
+pub struct ProvenEqRaw {
     // fields are intentionally private so that only "add_proof" can construct instances for it.
     eq: Equation,
     proof: Proof,
 }
 
-impl ProvenEq {
-    pub fn eq(&self) -> &Equation {
+impl Deref for ProvenEqRaw {
+    type Target = Equation;
+
+    fn deref(&self) -> &Equation {
         &self.eq
     }
+}
 
+impl ProvenEqRaw {
     pub fn proof(&self) -> &Proof {
         &self.proof
     }
@@ -45,7 +49,7 @@ impl ProvenEq {
         let eq = Equation { l: app_id.clone(), r: app_id.clone() };
         let proof = Proof::Reflexivity;
 
-        Arc::new(ProvenEq {
+        Arc::new(ProvenEqRaw {
             eq,
             proof,
         })
@@ -57,11 +61,11 @@ pub enum Proof {
     Explicit(/*justification: */ Option<String>),
 
     Reflexivity,
-    Symmetry(Arc<ProvenEq>),
-    Transitivity(Arc<ProvenEq>, Arc<ProvenEq>),
-    Congruence(Vec<Arc<ProvenEq>>),
+    Symmetry(ProvenEq),
+    Transitivity(ProvenEq, ProvenEq),
+    Congruence(Vec<ProvenEq>),
 
-    Shrink(/*an equation witnessing redundant slots*/ Arc<ProvenEq>),
+    Shrink(/*an equation witnessing redundant slots*/ ProvenEq),
 
     // Both global renaming within equations and alpha-equivalence will be handled in the other rules too.
     // All equations will be understood as an arbitrary representative from its global renaming equivalence class.
@@ -70,10 +74,10 @@ pub enum Proof {
 }
 
 impl<L: Language> EGraph<L> {
-    pub fn prove(&self, eq: Equation, proof: Proof) -> Option<Arc<ProvenEq>> {
+    pub fn prove(&self, eq: Equation, proof: Proof) -> Option<ProvenEq> {
         self.check_proof(&eq, &proof)?;
 
-        Some(Arc::new(ProvenEq { eq, proof }))
+        Some(Arc::new(ProvenEqRaw { eq, proof }))
     }
 
     pub fn check_proof(&self, eq: &Equation, proof: &Proof) -> Option<()> {
@@ -82,13 +86,10 @@ impl<L: Language> EGraph<L> {
 
             Proof::Reflexivity => assert(eq.l == eq.r),
             Proof::Symmetry(x) => {
-                let x = x.eq().clone();
-                let flipped = Equation { l: x.r, r: x.l };
+                let flipped = Equation { l: x.r.clone(), r: x.l.clone() };
                 match_equation(eq, &flipped).map(|_|())
             }
             Proof::Transitivity(eq1, eq2) => {
-                let eq1 = eq1.eq().clone();
-                let eq2 = eq2.eq().clone();
                 let theta = match_app_id(&eq2.l, &eq1.r)?;
                 let a = eq1.l.clone();
                 let c = eq2.r.apply_slotmap_fresh(&theta);
@@ -114,7 +115,6 @@ impl<L: Language> EGraph<L> {
                 // Thus these aren't public slots of the e-class "eq.l.id".
                 let new_redundants = &eq.l.slots() - &eq.r.slots();
 
-                let witness = witness.eq();
                 let theta = match_app_id(&witness.l, &eq.l)?;
                 let witness_r = witness.r.apply_slotmap_fresh(&theta);
 
