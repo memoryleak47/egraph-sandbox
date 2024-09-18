@@ -130,7 +130,8 @@ impl<L: Language> EGraph<L> {
         let fresh_slots = old_to_fresh.values();
         let i = self.alloc_eclass(&fresh_slots);
 
-        self.raw_add_to_class(i, (sh, old_to_fresh));
+        let m = bij.compose(&old_to_fresh);
+        self.raw_add_to_class(i, (sh, m));
         self.add_synt_enode(i, synt_enode);
         self.mk_applied_id(i, fresh_to_old)
     }
