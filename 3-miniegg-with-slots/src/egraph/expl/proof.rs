@@ -4,22 +4,22 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Equation {
-    pub lhs: AppliedId,
-    pub rhs: AppliedId,
+    pub l: AppliedId,
+    pub r: AppliedId,
 }
 
 impl Equation {
     pub fn apply_slotmap(&self, m: &SlotMap) -> Self {
         Equation {
-            lhs: self.lhs.apply_slotmap(&m),
-            rhs: self.rhs.apply_slotmap(&m),
+            l: self.l.apply_slotmap(&m),
+            r: self.r.apply_slotmap(&m),
         }
     }
 
     pub fn apply_slotmap_fresh(&self, m: &SlotMap) -> Self {
         Equation {
-            lhs: self.lhs.apply_slotmap_fresh(&m),
-            rhs: self.rhs.apply_slotmap_fresh(&m),
+            l: self.l.apply_slotmap_fresh(&m),
+            r: self.r.apply_slotmap_fresh(&m),
         }
     }
 }
@@ -69,46 +69,46 @@ impl<L: Language> EGraph<L> {
         match proof {
             Proof::Explicit(_) => assert(true),
 
-            Proof::Reflexivity => assert(eq.lhs == eq.rhs),
+            Proof::Reflexivity => assert(eq.l == eq.r),
             Proof::Symmetry(x) => {
                 let x = x.eq().clone();
-                let flipped = Equation { lhs: x.rhs, rhs: x.lhs };
+                let flipped = Equation { l: x.r, r: x.l };
                 match_equation(eq, &flipped).map(|_|())
             }
             Proof::Transitivity(eq1, eq2) => {
                 let eq1 = eq1.eq().clone();
                 let eq2 = eq2.eq().clone();
-                let theta = match_app_id(&eq2.lhs, &eq1.rhs)?;
-                let a = eq1.lhs.clone();
-                let c = eq2.rhs.apply_slotmap_fresh(&theta);
-                let out = Equation { lhs: a, rhs: c };
+                let theta = match_app_id(&eq2.l, &eq1.r)?;
+                let a = eq1.l.clone();
+                let c = eq2.r.apply_slotmap_fresh(&theta);
+                let out = Equation { l: a, r: c };
                 match_equation(eq, &out).map(|_|())
             },
-            Proof::Congruence(_child_proofs) => {
+            Proof::Congruence(child_proofs) => {
                 todo!()
-            },
+            }
 
             Proof::Shrink(witness) => {
                 // witness: f(x, y) = c(x)
                 // -> eq:   f(x, y) = f(x)
-                assert(eq.lhs.id == eq.rhs.id)?;
-                for (x, y) in eq.rhs.m.iter() {
-                    assert(eq.lhs.m.get(x)? == y)?;
+                assert(eq.l.id == eq.r.id)?;
+                for (x, y) in eq.r.m.iter() {
+                    assert(eq.l.m.get(x)? == y)?;
                 }
 
                 // The slots that are declared redundant by the "eq".
                 // Note that we talk about the "values", not the "keys" here.
-                // Thus these aren't public slots of the e-class "eq.lhs.id".
-                let new_redundants = &eq.lhs.slots() - &eq.rhs.slots();
+                // Thus these aren't public slots of the e-class "eq.l.id".
+                let new_redundants = &eq.l.slots() - &eq.r.slots();
 
                 let witness = witness.eq();
-                let theta = match_app_id(&witness.lhs, &eq.lhs)?;
-                let witness_rhs = witness.rhs.apply_slotmap_fresh(&theta);
+                let theta = match_app_id(&witness.l, &eq.l)?;
+                let witness_r = witness.r.apply_slotmap_fresh(&theta);
 
-                // Every slot that is named as redundant by the "eq", has to be missing in the rhs of the witness.
-                let rhs_witness_slots = witness_rhs.slots();
+                // Every slot that is named as redundant by the "eq", has to be missing in the r of the witness.
+                let r_witness_slots = witness_r.slots();
                 for x in new_redundants {
-                    assert(!rhs_witness_slots.contains(&x))?;
+                    assert(!r_witness_slots.contains(&x))?;
                 }
                 assert(true)
             },
@@ -132,8 +132,8 @@ fn match_app_id(a: &AppliedId, b: &AppliedId) -> Option<SlotMap> {
 
 // returns the global renaming theta, s.t. a.apply_slotmap(theta) = b, if it exists.
 fn match_equation(a: &Equation, b: &Equation) -> Option<SlotMap> {
-    let theta_l = match_app_id(&a.lhs, &b.lhs)?;
-    let theta_r = match_app_id(&a.rhs, &b.rhs)?;
+    let theta_l = match_app_id(&a.l, &b.l)?;
+    let theta_r = match_app_id(&a.r, &b.r)?;
 
     let theta = theta_l.try_union(&theta_r)?;
 
@@ -145,8 +145,8 @@ fn match_equation(a: &Equation, b: &Equation) -> Option<SlotMap> {
 }
 
 fn apply_equation(x: &AppliedId, eq: &Equation) -> Option<AppliedId> {
-    let theta = match_app_id(&eq.lhs, x)?;
-    Some(eq.rhs.apply_slotmap_fresh(&theta))
+    let theta = match_app_id(&eq.l, x)?;
+    Some(eq.r.apply_slotmap_fresh(&theta))
 }
 
 
