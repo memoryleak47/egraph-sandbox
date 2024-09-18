@@ -58,7 +58,6 @@ impl<L: Language> EGraph<L> {
                 c.nodes.len() + c.usages.len()
             };
 
-            let proof = ProvenEq::null();
             if size(l.id) < size(r.id) {
                 self.move_to(&l, &r, proof)
             } else {
@@ -195,7 +194,7 @@ impl<L: Language> EGraph<L> {
 
         // upwards merging found a match!
         if let Some(j) = self.lookup_internal(&t) {
-            self.union_internal(&i, &j, ProvenEq::null());
+            self.union_internal(&i, &j, ProvenEq::null()); // TODO this ProvenEq should be congruence!
             return;
         }
 
