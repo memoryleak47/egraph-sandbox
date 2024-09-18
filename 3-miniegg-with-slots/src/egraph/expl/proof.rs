@@ -89,7 +89,28 @@ impl<L: Language> EGraph<L> {
             },
 
             Proof::Shrink(witness) => {
-                todo!()
+                // witness: f(x, y) = c(x)
+                // -> eq:   f(x, y) = f(x)
+                assert(eq.lhs.id == eq.rhs.id)?;
+                for (x, y) in eq.rhs.m.iter() {
+                    assert(eq.lhs.m.get(x)? == y)?;
+                }
+
+                // The slots that are declared redundant by the "eq".
+                // Note that we talk about the "values", not the "keys" here.
+                // Thus these aren't public slots of the e-class "eq.lhs.id".
+                let new_redundants = &eq.lhs.slots() - &eq.rhs.slots();
+
+                let witness = witness.eq();
+                let theta = match_app_id(&witness.lhs, &eq.lhs)?;
+                let witness_rhs = witness.rhs.apply_slotmap_fresh(&theta);
+
+                // Every slot that is named as redundant by the "eq", has to be missing in the rhs of the witness.
+                let rhs_witness_slots = witness_rhs.slots();
+                for x in new_redundants {
+                    assert(!rhs_witness_slots.contains(&x))?;
+                }
+                assert(true)
             },
         }
     }
