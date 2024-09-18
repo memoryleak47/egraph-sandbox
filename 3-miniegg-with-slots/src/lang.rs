@@ -89,6 +89,7 @@ pub trait Language: Debug + Clone + Hash + Eq {
         c
     }
 
+
     #[track_caller]
     fn apply_slotmap(&self, m: &SlotMap) -> Self {
         if CHECKS {
@@ -96,6 +97,24 @@ pub trait Language: Debug + Clone + Hash + Eq {
         }
         self.apply_slotmap_partial(m)
     }
+
+    fn apply_slotmap_fresh(&self, m: &SlotMap) -> Self {
+        let prv = self.private_slots();
+
+        let mut c = self.clone();
+        for x in c.public_slot_occurences_mut() {
+            let y = m.get(*x).unwrap_or_else(Slot::fresh);
+
+            // If y collides with a private slot, we have a problem.
+            if CHECKS {
+                assert!(!prv.contains(&y));
+            }
+
+            *x = y;
+        }
+        c
+    }
+
 
     fn slot_occurences(&self) -> Vec<Slot> {
         self.public_slot_occurences()

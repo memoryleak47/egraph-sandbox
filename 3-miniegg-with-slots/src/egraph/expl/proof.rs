@@ -85,6 +85,8 @@ impl<L: Language> EGraph<L> {
                 match_equation(eq, &out).map(|_|())
             },
             Proof::Congruence(child_proofs) => {
+                let l = self.get_syn_node(&eq.l);
+                let r = self.get_syn_node(&eq.r);
                 todo!()
             }
 
@@ -113,6 +115,15 @@ impl<L: Language> EGraph<L> {
                 assert(true)
             },
         }
+    }
+
+    fn get_syn_node(&self, i: &AppliedId) -> L {
+        let syn = self.classes[&i.id].syn_enode.as_ref().unwrap();
+        syn.apply_slotmap_fresh(&i.m)
+    }
+
+    fn get_sem_node(&self, i: &AppliedId) -> L {
+        self.semify_enode(self.get_syn_node(i))
     }
 }
 
