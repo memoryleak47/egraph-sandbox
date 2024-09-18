@@ -139,7 +139,7 @@ impl<L: Language> EGraph<L> {
 }
 
 // returns the global renaming theta, s.t. a.apply_slotmap(theta) = b, if it exists.
-fn match_app_id(a: &AppliedId, b: &AppliedId) -> Option<SlotMap> {
+pub fn match_app_id(a: &AppliedId, b: &AppliedId) -> Option<SlotMap> {
     assert(a.id == b.id)?;
     assert(a.m.keys() == b.m.keys())?;
 
@@ -153,7 +153,7 @@ fn match_app_id(a: &AppliedId, b: &AppliedId) -> Option<SlotMap> {
 }
 
 // returns the global renaming theta, s.t. a.apply_slotmap(theta) = b, if it exists.
-fn match_equation(a: &Equation, b: &Equation) -> Option<SlotMap> {
+pub fn match_equation(a: &Equation, b: &Equation) -> Option<SlotMap> {
     let theta_l = match_app_id(&a.l, &b.l)?;
     let theta_r = match_app_id(&a.r, &b.r)?;
 
@@ -166,13 +166,13 @@ fn match_equation(a: &Equation, b: &Equation) -> Option<SlotMap> {
     Some(theta)
 }
 
-fn apply_equation(x: &AppliedId, eq: &Equation) -> Option<AppliedId> {
+pub fn apply_equation(x: &AppliedId, eq: &Equation) -> Option<AppliedId> {
     let theta = match_app_id(&eq.l, x)?;
     Some(eq.r.apply_slotmap_fresh(&theta))
 }
 
 
-fn assert(b: bool) -> Option<()> {
+pub fn assert(b: bool) -> Option<()> {
     if b { Some(()) }
     else { None }
 }
