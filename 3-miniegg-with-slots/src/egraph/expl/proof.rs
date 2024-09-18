@@ -15,6 +15,13 @@ impl Equation {
             rhs: self.rhs.apply_slotmap(&m),
         }
     }
+
+    pub fn apply_slotmap_fresh(&self, m: &SlotMap) -> Self {
+        Equation {
+            lhs: self.lhs.apply_slotmap_fresh(&m),
+            rhs: self.rhs.apply_slotmap_fresh(&m),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -69,11 +76,13 @@ impl<L: Language> EGraph<L> {
                 match_equation(eq, &flipped).map(|_|())
             }
             Proof::Transitivity(eq1, eq2) => {
-                assert(eq.lhs == eq1.eq().lhs)?;
-                assert(eq.rhs == eq2.eq().rhs)?;
-
-                assert(eq1.eq().rhs == eq2.eq().lhs)
-                // TODO respect renaming.
+                let eq1 = eq1.eq().clone();
+                let eq2 = eq2.eq().clone();
+                let theta = match_app_id(&eq2.lhs, &eq1.rhs)?;
+                let a = eq1.lhs.clone();
+                let c = eq2.rhs.apply_slotmap_fresh(&theta);
+                let out = Equation { lhs: a, rhs: c };
+                match_equation(eq, &out).map(|_|())
             },
             Proof::Congruence(_child_proofs) => {
                 todo!()
