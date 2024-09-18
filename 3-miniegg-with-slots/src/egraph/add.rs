@@ -22,6 +22,7 @@ impl<L: Language> EGraph<L> {
 
         let c = self.mk_singleton_class(sh);
         c.apply_slotmap(&bij)
+        // TODO equate this with the normalized version.
     }
 
     fn lookup_synt(&self, enode: &L) -> Option<AppliedId> {
