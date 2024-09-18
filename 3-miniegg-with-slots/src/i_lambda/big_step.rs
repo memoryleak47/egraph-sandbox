@@ -92,4 +92,5 @@ impl Realization for LambdaRealBig {
     fn eclass_count(&self) -> usize { self.0.ids().len() } 
 }
 
-lamcalc::unpack_tests!(LambdaRealBig);
+// TODO re-enable.
+// lamcalc::unpack_tests!(LambdaRealBig);

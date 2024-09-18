@@ -114,31 +114,6 @@ impl<L: Language> EGraph<L> {
         self.mk_applied_id(i, fresh_to_old)
     }
 
-    // TODO make this private in favor of alloc_eclass_fresh.
-    pub fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
-        let c_id = Id(self.unionfind.len()); // Pick the next unused Id.
-        let c = EClass {
-            nodes: HashMap::default(),
-            group: Group::identity(&slots),
-            slots: slots.clone(),
-            usages: HashSet::default(),
-            synt_slots: Default::default(),
-            redundancy_proof: None,
-            synt_enode: None,
-        };
-        self.classes.insert(c_id, c);
-        self.unionfind.set(c_id, &self.mk_identity_applied_id(c_id));
-
-        c_id
-    }
-
-    pub fn alloc_eclass_fresh(&mut self, slots: &HashSet<Slot>) -> AppliedId {
-        let bij = SlotMap::bijection_from_fresh_to(slots);
-        let id = self.alloc_eclass(&bij.keys());
-
-        self.mk_applied_id(id, bij)
-    }
-
     // adds (sh, bij) to the eclass `id`.
     pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (L, Bijection)) {
         let tmp1 = self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij);
@@ -167,4 +142,36 @@ impl<L: Language> EGraph<L> {
         }
     }
 
+}
+
+impl<L: Language> EGraph<L> {
+    // TODO make the public API auto "fresh" slots.
+    pub fn alloc_empty_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
+        panic!("Can't use alloc_empty_eclass if explanations are enabled!");
+        self.alloc_eclass(slots)
+    }
+
+    pub(in crate::egraph) fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
+        let c_id = Id(self.unionfind.len()); // Pick the next unused Id.
+        let c = EClass {
+            nodes: HashMap::default(),
+            group: Group::identity(&slots),
+            slots: slots.clone(),
+            usages: HashSet::default(),
+            synt_slots: Default::default(),
+            redundancy_proof: None,
+            synt_enode: None,
+        };
+        self.classes.insert(c_id, c);
+        self.unionfind.set(c_id, &self.mk_identity_applied_id(c_id));
+
+        c_id
+    }
+
+    pub(in crate::egraph) fn alloc_eclass_fresh(&mut self, slots: &HashSet<Slot>) -> AppliedId {
+        let bij = SlotMap::bijection_from_fresh_to(slots);
+        let id = self.alloc_eclass(&bij.keys());
+
+        self.mk_applied_id(id, bij)
+    }
 }
