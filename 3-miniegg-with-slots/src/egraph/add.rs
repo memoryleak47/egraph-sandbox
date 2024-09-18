@@ -1,5 +1,38 @@
 use crate::*;
 
+// synt add:
+impl<L: Language> EGraph<L> {
+    pub fn add_synt_expr(&mut self, re: RecExpr<L>) -> AppliedId {
+        let mut n = re.node;
+        let mut refs: Vec<&mut AppliedId> = n.applied_id_occurences_mut();
+        if CHECKS {
+            assert_eq!(re.children.len(), refs.len());
+        }
+        for (i, child) in re.children.into_iter().enumerate() {
+            *(refs[i]) = self.add_synt_expr(child);
+        }
+        self.add_synt(n)
+    }
+
+    pub fn add_synt(&mut self, enode: L) -> AppliedId {
+        if let Some(x) = self.lookup_synt(&enode) {
+            return x;
+        }
+        let (sh, bij) = enode.weak_shape();
+
+        let c = self.mk_singleton_class(sh);
+        c.apply_slotmap(&bij)
+    }
+
+    fn lookup_synt(&self, enode: &L) -> Option<AppliedId> {
+        let (sh, bij) = enode.weak_shape();
+        let i = self.synt_hashcons.get(&sh)?;
+        let i = i.apply_slotmap(&bij);
+        Some(i)
+    }
+}
+
+// normal add:
 impl<L: Language> EGraph<L> {
     pub fn add_expr(&mut self, re: RecExpr<L>) -> AppliedId {
         let mut n = re.node;
@@ -13,13 +46,14 @@ impl<L: Language> EGraph<L> {
         self.add(n)
     }
 
+
     pub fn add(&mut self, enode: L) -> AppliedId {
         self.add_internal(self.shape(&enode))
     }
 
     // self.add(x) = y implies that x.slots() is a superset of y.slots().
     // x.slots() - y.slots() are redundant slots.
-    pub(in crate::egraph) fn add_internal(&mut self, t: (L, Bijection)) -> AppliedId {
+    pub fn add_internal(&mut self, t: (L, SlotMap)) -> AppliedId {
         if let Some(x) = self.lookup_internal(&t) {
             return x;
         }
@@ -27,21 +61,6 @@ impl<L: Language> EGraph<L> {
 
         let c = self.mk_singleton_class(sh);
         c.apply_slotmap(&bij)
-    }
-
-    fn mk_singleton_class(&mut self, sh: L) -> AppliedId {
-        let old_slots = sh.slots();
-
-        let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
-        let old_to_fresh = fresh_to_old.inverse();
-
-        // allocate new class & slot set.
-        let fresh_slots = old_to_fresh.values();
-        let i = self.alloc_eclass(&fresh_slots);
-
-        self.raw_add_to_class(i, (sh, old_to_fresh));
-
-        self.mk_applied_id(i, fresh_to_old)
     }
 
     pub fn lookup(&self, n: &L) -> Option<AppliedId> {
@@ -76,6 +95,24 @@ impl<L: Language> EGraph<L> {
 
         Some(app_id)
     }
+}
+
+impl<L: Language> EGraph<L> {
+    // TODO add the synt_enode.
+    fn mk_singleton_class(&mut self, sh: L) -> AppliedId {
+        let old_slots = sh.slots();
+
+        let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
+        let old_to_fresh = fresh_to_old.inverse();
+
+        // allocate new class & slot set.
+        let fresh_slots = old_to_fresh.values();
+        let i = self.alloc_eclass(&fresh_slots);
+
+        self.raw_add_to_class(i, (sh, old_to_fresh));
+
+        self.mk_applied_id(i, fresh_to_old)
+    }
 
     // TODO make this private in favor of alloc_eclass_fresh.
     pub fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
@@ -85,9 +122,9 @@ impl<L: Language> EGraph<L> {
             group: Group::identity(&slots),
             slots: slots.clone(),
             usages: HashSet::default(),
-            term_slots: Default::default(),
+            synt_slots: Default::default(),
             redundancy_proof: None,
-            canonical_enode: None,
+            synt_enode: None,
         };
         self.classes.insert(c_id, c);
         self.unionfind.set(c_id, &self.mk_identity_applied_id(c_id));

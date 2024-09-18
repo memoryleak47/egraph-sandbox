@@ -12,6 +12,9 @@ pub use union::*;
 mod expl;
 pub use expl::*;
 
+/// Each E-Class can be understood "semantically" or "syntactically":
+/// - semantically means that it respects the equations already in the e-graph, and hence doesn't differentiate between equal things.
+/// - syntactically means that it only talks about the single representative term associated to each E-Class, recursively obtainable using synt_enode.
 #[derive(Clone, Debug)]
 pub struct EClass<L: Language> {
     // The set of equivalent ENodes that make up this eclass.
@@ -22,7 +25,7 @@ pub struct EClass<L: Language> {
     // Should not contain Slot(0).
     slots: HashSet<Slot>,
 
-    term_slots: HashSet<Slot>,
+    synt_slots: HashSet<Slot>,
 
     // Shows which Shapes refer to this EClass.
     usages: HashSet<L>,
@@ -30,7 +33,7 @@ pub struct EClass<L: Language> {
     // Expresses the self-symmetries of this e-class.
     group: Group,
 
-    canonical_enode: Option<L>,
+    synt_enode: Option<L>,
     redundancy_proof: Option<ProvenEq>,
 }
 
@@ -55,6 +58,9 @@ pub struct EGraph<L: Language> {
 
     // For each shape contained in the EGraph, maps to the EClass that contains it.
     hashcons: HashMap<L, Id>,
+
+    // For each (synt_slotset applied) non-normalized (i.e. "syntactic") weak shape, find the e-class who has this as synt_enode.
+    synt_hashcons: HashMap<L, AppliedId>,
 }
 
 impl<L: Language> EGraph<L> {
@@ -63,6 +69,7 @@ impl<L: Language> EGraph<L> {
             unionfind: Default::default(),
             classes: Default::default(),
             hashcons: Default::default(),
+            synt_hashcons: Default::default(),
         }
     }
 
