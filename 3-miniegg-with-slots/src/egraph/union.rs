@@ -4,11 +4,12 @@ impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
-        let out = self.union_internal(l, r);
+        let proof = self.prove_explicit(l, r, None);
+        let out = self.union_internal(l, r, proof);
         out
     }
 
-    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
+    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId, proof: Arc<ProvenEq>) -> bool {
         // normalize inputs
         let l = self.find_applied_id(&l);
         let r = self.find_applied_id(&r);
@@ -20,13 +21,13 @@ impl<L: Language> EGraph<L> {
 
         if l.slots() != cap {
             self.shrink_slots(&l, &cap);
-            self.union_internal(&l, &r);
+            self.union_internal(&l, &r, proof);
             return true;
         }
 
         if r.slots() != cap {
             self.shrink_slots(&r, &cap);
-            self.union_internal(&l, &r);
+            self.union_internal(&l, &r, proof);
             return true;
         }
 
@@ -194,7 +195,7 @@ impl<L: Language> EGraph<L> {
 
         // upwards merging found a match!
         if let Some(j) = self.lookup_internal(&t) {
-            self.union_internal(&i, &j);
+            self.union_internal(&i, &j, ProvenEq::null());
             return;
         }
 

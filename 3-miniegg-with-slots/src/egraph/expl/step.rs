@@ -1,7 +1,8 @@
 use crate::*;
 
 impl<L: Language> EGraph<L> {
-    pub fn prove_explicit(&self, eq: Equation, j: Option<String>) -> Arc<ProvenEq> {
+    pub fn prove_explicit(&self, l: &AppliedId, r: &AppliedId, j: Option<String>) -> Arc<ProvenEq> {
+        let eq = Equation { l: l.clone(), r: r.clone() };
         let proof = Proof::Explicit(j);
 
         self.prove(eq, proof).unwrap()
