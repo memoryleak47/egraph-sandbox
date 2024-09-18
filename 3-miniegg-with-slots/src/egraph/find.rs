@@ -12,15 +12,22 @@ pub(in crate::egraph) struct Unionfind {
     map: Mutex<Vec<AppliedId>>,
 }
 
-fn get_impl(i: Id, map: &mut [AppliedId]) -> AppliedId {
-    let next = map[i.0].clone();
+// TODO everything now also depends on eg. This is a mess. Let's clean this up.
+fn get_impl<L: Language>(i: Id, map: &mut [AppliedId], eg: &EGraph<L>) -> AppliedId {
+    let mut next = map[i.0].clone();
+
+    if next.m.keys() != eg.slots(next.id) {
+        // gets rid of redundant slots that we didn't yet put in the unionfind.
+        next = eg.semify_app_id(next);
+        map[i.0] = next.clone();
+    }
 
     if next.id == i {
         return next;
     }
 
     // repr.id is the final representant of i.
-    let repr = get_impl(next.id, map);
+    let repr = get_impl(next.id, map, eg);
 
     // next.m :: slots(next.id) -> slots(i)
     // repr.m :: slots(repr.id) -> slots(next.id)
@@ -42,17 +49,17 @@ impl Unionfind {
         }
     }
 
-    pub fn get(&self, i: Id) -> AppliedId {
+    pub fn get<L: Language>(&self, i: Id, eg: &EGraph<L>) -> AppliedId {
         let mut map = self.map.lock().unwrap();
-        get_impl(i, &mut *map)
+        get_impl(i, &mut *map, eg)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=(Id, AppliedId)> {
+    pub fn iter<L: Language>(&self, eg: &EGraph<L>) -> impl Iterator<Item=(Id, AppliedId)> {
         let mut map = self.map.lock().unwrap();
         let mut out = Vec::new();
 
         for x in (0..map.len()).map(Id) {
-            let y = get_impl(x, &mut *map);
+            let y = get_impl(x, &mut *map, eg);
             out.push((x, y));
         }
 
@@ -77,7 +84,7 @@ impl<L: Language> EGraph<L> {
     // Example 2:
     // 'find(c1(s3, s7, s8)) = c2(s8, s7)', where 'c1(s0, s1, s2) -> c2(s2, s1)' in unionfind,
     pub fn find_applied_id(&self, i: &AppliedId) -> AppliedId {
-        let a = &self.unionfind.get(i.id);
+        let a = self.unionfind.get(i.id, self);
 
         // I = self.slots(i.id);
         // A = self.slots(a.id);
@@ -92,6 +99,6 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn find_id(&self, i: Id) -> Id {
-        self.unionfind.get(i).id
+        self.unionfind.get(i, self).id
     }
 }

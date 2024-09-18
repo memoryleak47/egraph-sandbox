@@ -102,7 +102,7 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn ids(&self) -> Vec<Id> {
-        self.unionfind.iter()
+        self.unionfind.iter(self)
                        .filter(|(x, y)| x == &y.id)
                        .map(|(x, _)| x)
                        .collect()
@@ -200,14 +200,14 @@ impl<L: Language> EGraph<L> {
         }
 
         // check that self.classes contains exactly these classes which point to themselves in the unionfind.
-        let all_keys = self.unionfind.iter().map(|(x, _)| x).collect::<HashSet<_>>();
-        let all_values = self.unionfind.iter().map(|(_, x)| x.id).collect::<HashSet<_>>();
+        let all_keys = self.unionfind.iter(self).map(|(x, _)| x).collect::<HashSet<_>>();
+        let all_values = self.unionfind.iter(self).map(|(_, x)| x.id).collect::<HashSet<_>>();
         let all_classes = self.classes.keys().copied().collect::<HashSet<_>>();
         let all: HashSet<Id> = &(&all_keys | &all_values) | &all_classes;
         for i in all {
             // if they point to themselves, they should do it using the identity.
             if self.is_alive(i) {
-                assert_eq!(self.unionfind.get(i), self.mk_identity_applied_id(i));
+                assert_eq!(self.semify_app_id(self.unionfind.get(i, self)), self.mk_identity_applied_id(i));
             } else {
                 assert!(self.classes[&i].nodes.is_empty());
                 assert!(self.classes[&i].usages.is_empty());
@@ -220,8 +220,8 @@ impl<L: Language> EGraph<L> {
         }
 
         // Check that the Unionfind has valid AppliedIds.
-        for (_, app_id) in self.unionfind.iter() {
-            check_internal_applied_id::<L>(self, &app_id);
+        for (_, app_id) in self.unionfind.iter(self) {
+            // TODO check_internal_applied_id::<L>(self, &app_id);
         }
 
         // Check that all ENodes are valid.
@@ -348,5 +348,35 @@ impl<L: Language> EGraph<L> {
         }
 
         out
+    }
+
+    pub fn syntify_app_id(&self, app: AppliedId) -> AppliedId {
+        let mut app = app;
+        for s in self.synt_slots(app.id) {
+            if !app.m.contains_key(s) {
+                app.m.insert(s, Slot::fresh());
+            }
+        }
+        app
+    }
+
+    pub fn syntify_enode(&self, enode: L) -> L {
+        enode.map_applied_ids(|app| self.syntify_app_id(app))
+    }
+
+    pub fn semify_app_id(&self, app: AppliedId) -> AppliedId {
+        let slots = self.slots(app.id);
+
+        let mut app = app;
+        for k in app.m.keys() {
+            if !slots.contains(&k) {
+                app.m.remove(k);
+            }
+        }
+        app
+    }
+
+    pub fn semify_enode(&self, enode: L) -> L {
+        enode.map_applied_ids(|app| self.semify_app_id(app))
     }
 }

@@ -71,20 +71,6 @@ impl<L: Language> EGraph<L> {
         self.mk_singleton_class(t, enode)
     }
 
-    fn syntify_app_id(&self, app: AppliedId) -> AppliedId {
-        let mut app = app;
-        for s in self.synt_slots(app.id) {
-            if !app.m.contains_key(s) {
-                app.m.insert(s, Slot::fresh());
-            }
-        }
-        app
-    }
-
-    fn syntify_enode(&self, enode: L) -> L {
-        enode.map_applied_ids(|app| self.syntify_app_id(app))
-    }
-
     pub fn lookup(&self, n: &L) -> Option<AppliedId> {
         self.lookup_internal(&self.shape(n))
     }

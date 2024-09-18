@@ -53,6 +53,10 @@ impl SlotMap {
         self.map.iter().copied()
     }
 
+    pub fn into_iter(self) -> impl Iterator<Item=(Slot, Slot)> {
+        self.map.into_iter()
+    }
+
     // ordered by their keys!
     pub fn values_mut(&mut self) -> impl Iterator<Item=&mut Slot> + '_ {
         self.map.iter_mut().map(|(_, y)| y)

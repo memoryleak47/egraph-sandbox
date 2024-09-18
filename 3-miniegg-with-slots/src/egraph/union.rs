@@ -82,7 +82,7 @@ impl<L: Language> EGraph<L> {
 
         // cap :: set slots(id)
 
-        let c = &self.classes[&id];
+        let c = self.classes.get_mut(&id).unwrap();
         let grp = &c.group;
 
         let mut final_cap = cap.clone();
@@ -93,9 +93,17 @@ impl<L: Language> EGraph<L> {
             final_cap = &final_cap - &grp.orbit(d);
         }
 
-        let to = self.alloc_eclass_fresh(&final_cap);
-        let app_id = self.mk_identity_applied_id(id);
-        self.move_to(&app_id, &to);
+        c.slots = cap.clone();
+        let restrict = |perm: Perm| {
+            let out: Perm = perm.into_iter()
+                .filter(|(x, _)| cap.contains(x))
+                .collect();
+            out
+        };
+        let generators = c.group.generators().into_iter().map(restrict).collect();
+        c.group = Group::new(&cap, generators);
+
+        self.convert_eclass(from.id);
     }
 
     // moves everything from `from` to `to`.
