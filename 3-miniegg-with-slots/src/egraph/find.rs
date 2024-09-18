@@ -2,6 +2,8 @@ use crate::*;
 
 use std::sync::Mutex;
 
+type Entry = (AppliedId, Arc<ProvenEq>);
+
 #[derive(Default, Debug)]
 pub(in crate::egraph) struct Unionfind {
     // "map: HashMap<Id, Cell<AppliedId>>" is probably the optimal single-threaded choice.
@@ -9,49 +11,62 @@ pub(in crate::egraph) struct Unionfind {
     // "map: Vec<RwLock<AppliedId>>" might be similarly good, as we mostly read.
     // And only if get() notices a non-normalized entry, we need to lock mutably.
     //
-    map: Mutex<Vec<AppliedId>>,
+    map: Mutex<Vec<(AppliedId, Arc<ProvenEq>)>>,
+}
+
+// We lazily semify the entries, only when we encounter them.
+fn semify_entry<L: Language>(i: Id, entry: &mut Entry, eg: &EGraph<L>) {
+    let app_id = &mut entry.0;
+    if app_id.m.keys() != eg.slots(app_id.id) {
+        // gets rid of redundant slots that we didn't yet put in the unionfind.
+        *app_id = eg.semify_app_id(app_id.clone());
+    }
+    // TODO also update proof by transitivity with the shrink proof.
+    // This would also be necessary when the left-hand side of the equation shrinks.
 }
 
 // TODO everything now also depends on eg. This is a mess. Let's clean this up.
-fn get_impl<L: Language>(i: Id, map: &mut [AppliedId], eg: &EGraph<L>) -> AppliedId {
-    let mut next = map[i.0].clone();
+fn get_impl<L: Language>(i: Id, map: &mut [Entry], eg: &EGraph<L>) -> (AppliedId, Arc<ProvenEq>) {
+    let entry = &mut map[i.0];
+    semify_entry(i, entry, eg);
 
-    if next.m.keys() != eg.slots(next.id) {
-        // gets rid of redundant slots that we didn't yet put in the unionfind.
-        next = eg.semify_app_id(next);
-        map[i.0] = next.clone();
-    }
+    let mut next = entry.clone();
 
-    if next.id == i {
+    if next.0.id == i {
         return next;
     }
 
     // repr.id is the final representant of i.
-    let repr = get_impl(next.id, map, eg);
+    let repr = get_impl(next.0.id, map, eg);
 
     // next.m :: slots(next.id) -> slots(i)
     // repr.m :: slots(repr.id) -> slots(next.id)
 
     // out.m :: slots(repr.id) -> slots(i)
-    let out = repr.apply_slotmap(&next.m);
+    let out_app_id = repr.0.apply_slotmap(&next.0.m);
+    let out = (out_app_id, repr.1);
 
     map[i.0] = out.clone();
     out
 }
 
 impl Unionfind {
-    pub fn set(&self, i: Id, j: &AppliedId) {
+    pub fn set(&self, i: Id, j: AppliedId, proof: Arc<ProvenEq>) {
         let mut lock = self.map.lock().unwrap();
         if lock.len() == i.0 {
-            lock.push(j.clone());
+            lock.push((j, proof));
         } else {
-            lock[i.0] = j.clone();
+            lock[i.0] = (j, proof);
         }
     }
 
-    pub fn get<L: Language>(&self, i: Id, eg: &EGraph<L>) -> AppliedId {
+    pub fn get_proof<L: Language>(&self, i: Id, eg: &EGraph<L>) -> (AppliedId, Arc<ProvenEq>) {
         let mut map = self.map.lock().unwrap();
         get_impl(i, &mut *map, eg)
+    }
+
+    pub fn get<L: Language>(&self, i: Id, eg: &EGraph<L>) -> AppliedId {
+        self.get_proof(i, eg).0
     }
 
     pub fn iter<L: Language>(&self, eg: &EGraph<L>) -> impl Iterator<Item=(Id, AppliedId)> {
@@ -59,7 +74,7 @@ impl Unionfind {
         let mut out = Vec::new();
 
         for x in (0..map.len()).map(Id) {
-            let y = get_impl(x, &mut *map, eg);
+            let y = get_impl(x, &mut *map, eg).0;
             out.push((x, y));
         }
 

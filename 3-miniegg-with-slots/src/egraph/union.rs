@@ -109,7 +109,7 @@ impl<L: Language> EGraph<L> {
     // moves everything from `from` to `to`.
     fn move_to(&mut self, from: &AppliedId, to: &AppliedId) {
         let map = to.m.compose_partial(&from.m.inverse());
-        self.unionfind.set(from.id, &self.mk_applied_id(to.id, map));
+        self.unionfind.set(from.id, self.mk_applied_id(to.id, map), ProvenEq::null());
         self.convert_eclass(from.id);
     }
 
