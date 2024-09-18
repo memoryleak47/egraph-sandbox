@@ -17,3 +17,9 @@ pub enum Proof {
     Explicit(/*justification: */ Option<String>),
     Rename(Arc<ProvenEq>, SlotMap),
 }
+
+impl<L: Language> EGraph<L> {
+    pub fn explain_equivalence(&mut self, t1: &RecExpr<L>, t2: &RecExpr<L>) {
+        
+    }
+}

@@ -55,9 +55,6 @@ mod debug;
 mod egraph;
 pub use egraph::*;
 
-mod expl;
-pub use expl::*;
-
 mod extract;
 pub use extract::*;
 

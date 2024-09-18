@@ -9,6 +9,9 @@ pub use add::*;
 mod union;
 pub use union::*;
 
+mod expl;
+pub use expl::*;
+
 #[derive(Clone, Debug)]
 pub struct EClass<L: Language> {
     // The set of equivalent ENodes that make up this eclass.
@@ -337,5 +340,4 @@ impl<L: Language> EGraph<L> {
 
         out
     }
-
 }
