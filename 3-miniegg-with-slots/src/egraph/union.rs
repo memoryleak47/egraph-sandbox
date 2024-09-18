@@ -57,10 +57,12 @@ impl<L: Language> EGraph<L> {
                 c.nodes.len() + c.usages.len()
             };
 
-            if size(l.id) >= size(r.id) {
-                self.move_to(&r, &l)
+            let proof = ProvenEq::null();
+            if size(l.id) < size(r.id) {
+                self.move_to(&l, &r, proof)
             } else {
-                self.move_to(&l, &r)
+                let proof = self.prove_symmetry(proof);
+                self.move_to(&r, &l, proof)
             }
             true
         }
@@ -107,9 +109,9 @@ impl<L: Language> EGraph<L> {
     }
 
     // moves everything from `from` to `to`.
-    fn move_to(&mut self, from: &AppliedId, to: &AppliedId) {
+    fn move_to(&mut self, from: &AppliedId, to: &AppliedId, proof: Arc<ProvenEq>) {
         let map = to.m.compose_partial(&from.m.inverse());
-        self.unionfind.set(from.id, self.mk_applied_id(to.id, map), ProvenEq::null());
+        self.unionfind.set(from.id, self.mk_applied_id(to.id, map), proof);
         self.convert_eclass(from.id);
     }
 
