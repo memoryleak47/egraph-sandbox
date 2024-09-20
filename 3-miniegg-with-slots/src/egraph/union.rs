@@ -11,8 +11,17 @@ impl<L: Language> EGraph<L> {
 
     fn union_internal(&mut self, l: &AppliedId, r: &AppliedId, proof: ProvenEq) -> bool {
         // normalize inputs
-        let l = self.find_applied_id(&l);
-        let r = self.find_applied_id(&r);
+        let (l, p_l) = self.proven_find_applied_id(&l);
+        let (r, p_r) = self.proven_find_applied_id(&r);
+
+        let a = self.prove_symmetry(p_l);
+        let a = self.prove_transitivity(a, proof);
+        let a = self.prove_transitivity(a, p_r);
+        let proof = a;
+        if CHECKS {
+            assert_eq!(proof.l.id, l.id);
+            assert_eq!(proof.r.id, r.id);
+        }
 
         // early return, if union should not be made.
         if self.eq(&l, &r) { return false; }
