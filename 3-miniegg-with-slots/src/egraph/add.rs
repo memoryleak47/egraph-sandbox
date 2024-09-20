@@ -15,7 +15,7 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn add_syn(&mut self, enode: L) -> AppliedId {
-        let sem = self.add(enode.clone());
+        self.add(enode.clone());
 
         if let Some(x) = self.lookup_syn(&enode) {
             return x;
@@ -28,7 +28,6 @@ impl<L: Language> EGraph<L> {
         let enode = enode.apply_slotmap(&old_to_fresh);
 
         let c_a = self.mk_identity_applied_id(c);
-        let sem = sem.apply_slotmap(&old_to_fresh);
         self.add_syn_enode(c, enode);
 
         self.handle_congruence(&c_a);
