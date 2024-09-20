@@ -286,6 +286,11 @@ impl<L: Language> EGraph<L> {
 
             let slot_str = c.slots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ");
             println!("{:?}({}):", i, &slot_str);
+
+            if let Some(syn_n) = &c.syn_enode {
+                println!(">> {syn_n:?}");
+            }
+
             for (sh, (bij, _)) in &c.nodes {
                 let n = sh.apply_slotmap(bij);
                 println!(" - {:?}", n);

@@ -19,6 +19,8 @@ fn main() {
     let x2x3 = term("(app sym_x2 sym_x3)", eg);
     eg.union(&x1, &x2);
     eg.dump();
+    dbg!(&x1x3);
+    dbg!(&x2x3);
     eg.explain_equivalence(x1x3, x2x3).show();
 }
 
