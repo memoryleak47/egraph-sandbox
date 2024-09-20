@@ -31,7 +31,7 @@ impl<L: Language> EGraph<L> {
         let sem = sem.apply_slotmap(&old_to_fresh);
         self.add_syn_enode(c, enode);
 
-        self.handle_congruence(&c_a, &sem);
+        self.handle_congruence(&c_a);
 
         c_a
     }

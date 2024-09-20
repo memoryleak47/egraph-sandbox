@@ -215,9 +215,8 @@ impl<L: Language> EGraph<L> {
         let t = self.shape(&enode);
 
         // upwards merging found a match!
-        if let Some(j) = self.lookup_internal(&t) {
-            let src_id2 = self.classes[&j.id].nodes[&t.0].1.clone();
-            self.handle_congruence(&src_id, &src_id2);
+        if self.lookup_internal(&t).is_some() {
+            self.handle_congruence(&src_id);
             return;
         }
 
@@ -261,11 +260,12 @@ impl<L: Language> EGraph<L> {
         }
     }
 
-    pub(in crate::egraph) fn handle_congruence(&mut self, a: &AppliedId, b: &AppliedId) {
+    pub(in crate::egraph) fn handle_congruence(&mut self, a: &AppliedId) {
         let a_node = self.get_syn_node(a);
-        let b_node = self.get_syn_node(b);
+        let (t, vec_p1) = self.proven_shape(&a_node);
 
-        let (_, vec_p1) = self.proven_shape(&a_node);
+        let b = self.lookup_internal(&t).expect("handle_congruence should only be called on hashcons collision!");
+        let b_node = self.get_syn_node(&b);
         let (_, vec_p2) = self.proven_shape(&b_node);
 
         let mut vec = Vec::new();
