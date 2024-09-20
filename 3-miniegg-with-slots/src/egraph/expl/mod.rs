@@ -59,7 +59,9 @@ impl ProvenEqRaw {
                 format!("transitivity({}, {})", y1, y2)
             },
             Proof::Congruence(xs) => {
-                format!("{}", "congruence")
+                let xs: Vec<_> = xs.into_iter().map(|x| id_of(x, v).to_string()).collect();
+                let s = xs.join(", ");
+                format!("congruence({s})")
             },
 
             Proof::Shrink(x) => format!("shrink({})", id_of(x, v))

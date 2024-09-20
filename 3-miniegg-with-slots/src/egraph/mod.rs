@@ -282,10 +282,8 @@ impl<L: Language> EGraph<L> {
         v.sort_by_key(|(x, _)| *x);
 
         for (i, c) in v {
-            if !self.is_alive(*i) { continue; }
-
             let slot_str = c.slots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ");
-            println!("{:?}({}):", i, &slot_str);
+            println!("\n{:?}({}):", i, &slot_str);
 
             if let Some(syn_n) = &c.syn_enode {
                 println!(">> {syn_n:?}");
