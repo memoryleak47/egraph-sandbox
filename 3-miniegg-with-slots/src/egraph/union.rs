@@ -265,8 +265,10 @@ impl<L: Language> EGraph<L> {
         let (t, vec_p1) = self.proven_shape(&a_node);
 
         let b = self.lookup_internal(&t).expect("handle_congruence should only be called on hashcons collision!");
-        let b_node = self.get_syn_node(&b);
-        let (_, vec_p2) = self.proven_shape(&b_node);
+        let (bij, /*src id*/ c) = self.classes[&b.id].nodes[&t.0].clone();
+        let c = c.apply_slotmap_fresh(&b.m);
+        let c_node = self.get_syn_node(&c);
+        let (_, vec_p2) = self.proven_shape(&c_node);
 
         let mut vec = Vec::new();
         for (l, r) in vec_p1.into_iter().zip(vec_p2.into_iter()) {
@@ -275,7 +277,7 @@ impl<L: Language> EGraph<L> {
             vec.push(l_to_r);
         }
 
-        let proven_eq = self.prove_congruence(&a, &b, vec);
-        self.union_internal(&a, &b, proven_eq);
+        let proven_eq = self.prove_congruence(&a, &c, vec);
+        self.union_internal(&a, &c, proven_eq);
     }
 }
