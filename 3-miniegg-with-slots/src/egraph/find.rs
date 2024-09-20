@@ -30,6 +30,10 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn unionfind_set(&self, i: Id, app: AppliedId, proof: ProvenEq) {
+        if CHECKS {
+            assert_eq!(i, proof.l.id);
+            assert_eq!(app.id, proof.r.id);
+        }
         let mut lock = self.unionfind.lock().unwrap();
         if lock.len() == i.0 {
             lock.push((app, proof));
