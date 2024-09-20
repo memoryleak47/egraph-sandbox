@@ -164,12 +164,13 @@ pub fn match_app_id(a: &AppliedId, b: &AppliedId) -> Option<SlotMap> {
     Some(theta)
 }
 
-// returns the global renaming theta, s.t. a.apply_slotmap(theta) = b, if it exists.
+// returns the bijective renaming theta, s.t. a.apply_slotmap(theta) = b, if it exists.
 pub fn match_equation(a: &Equation, b: &Equation) -> Option<SlotMap> {
     let theta_l = match_app_id(&a.l, &b.l)?;
     let theta_r = match_app_id(&a.r, &b.r)?;
 
     let theta = theta_l.try_union(&theta_r)?;
+    assert(theta.is_bijection())?;
 
     if CHECKS {
         assert_eq!(&a.apply_slotmap(&theta), b);

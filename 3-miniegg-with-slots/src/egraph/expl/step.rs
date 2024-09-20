@@ -23,7 +23,6 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn prove_transitivity(&self, x: ProvenEq, y: ProvenEq) -> ProvenEq {
-        let eq = Equation { l: x.l.clone(), r: y.r.clone() };
         let proof = Proof::Transitivity(x.clone(), y.clone());
 
         let eq1 = x.clone();
@@ -33,7 +32,7 @@ impl<L: Language> EGraph<L> {
         let c = eq2.r.apply_slotmap_fresh(&theta);
         let out = Equation { l: a, r: c };
 
-        self.prove(eq, proof).unwrap()
+        self.prove(out, proof).unwrap()
     }
 
     pub fn prove_congruence(&self, l: &AppliedId, r: &AppliedId, child_proofs: Vec<ProvenEq>) -> ProvenEq {
