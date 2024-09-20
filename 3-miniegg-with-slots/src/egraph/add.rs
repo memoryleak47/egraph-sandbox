@@ -15,20 +15,27 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn add_syn(&mut self, enode: L) -> AppliedId {
+        let sem = self.add(enode.clone());
+
         if let Some(x) = self.lookup_syn(&enode) {
             return x;
         }
 
-        let t = self.shape(&enode);
-        let sem_lookup = self.lookup_internal(&t);
-        let i = self.mk_singleton_class(t, enode);
+        let old_slots = enode.slots();
+        let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
+        let old_to_fresh = fresh_to_old.inverse();
+        let c = self.alloc_eclass(&old_to_fresh.values());
+        let enode = enode.apply_slotmap(&old_to_fresh);
 
-        if let Some(sem) = sem_lookup {
-            // TODO: This shouldn't be an explicit union, but a congruence proof!
-            self.union(&sem, &i);
-        }
+        let c_a = self.mk_identity_applied_id(c);
+        let sem = sem.apply_slotmap(&old_to_fresh);
+        self.add_syn_enode(c, enode);
 
-        i
+        // TODO should be congruence.
+        let prf = self.prove_explicit(&c_a, &sem, None);
+        self.union_internal(&c_a, &sem, prf);
+
+        c_a
     }
 
     fn lookup_syn(&self, enode: &L) -> Option<AppliedId> {

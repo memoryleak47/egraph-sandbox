@@ -9,7 +9,7 @@ impl<L: Language> EGraph<L> {
         out
     }
 
-    fn union_internal(&mut self, l: &AppliedId, r: &AppliedId, proof: ProvenEq) -> bool {
+    pub(in crate::egraph) fn union_internal(&mut self, l: &AppliedId, r: &AppliedId, proof: ProvenEq) -> bool {
         // normalize inputs
         let (l, p_l) = self.proven_find_applied_id(&l);
         let (r, p_r) = self.proven_find_applied_id(&r);
