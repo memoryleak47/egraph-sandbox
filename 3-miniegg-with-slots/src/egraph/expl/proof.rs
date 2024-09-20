@@ -43,17 +43,6 @@ impl ProvenEqRaw {
     pub fn proof(&self) -> &Proof {
         &self.proof
     }
-
-    pub fn null() -> Arc<Self> {
-        let app_id = AppliedId::null();
-        let eq = Equation { l: app_id.clone(), r: app_id.clone() };
-        let proof = Proof::Reflexivity;
-
-        Arc::new(ProvenEqRaw {
-            eq,
-            proof,
-        })
-    }
 }
 
 #[derive(Debug, Clone)]
