@@ -288,9 +288,9 @@ impl<L: Language> EGraph<L> {
                 println!(">> {syn_n:?}");
             }
 
-            for (sh, (bij, _)) in &c.nodes {
+            for (sh, (bij, app_id)) in &c.nodes {
                 let n = sh.apply_slotmap(bij);
-                println!(" - {:?}", n);
+                println!(" - {n:?}    [originally {app_id:?}]");
             }
             for p in &c.group.generators() {
                 println!(" -- {:?}", p);
