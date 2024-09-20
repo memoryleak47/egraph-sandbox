@@ -152,7 +152,10 @@ pub fn match_app_id(a: &AppliedId, b: &AppliedId) -> Option<SlotMap> {
     assert(a.id == b.id)?;
     assert(a.m.keys() == b.m.keys())?;
 
-    let theta = b.m.compose(&a.m.inverse());
+    // a.m :: slots(i) -> A
+    // b.m :: slots(i) -> B
+    // theta :: A -> B
+    let theta = a.m.inverse().compose(&b.m);
 
     if CHECKS {
         assert_eq!(&a.apply_slotmap(&theta), b);
