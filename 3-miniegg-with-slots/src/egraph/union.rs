@@ -112,6 +112,10 @@ impl<L: Language> EGraph<L> {
 
     // moves everything from `from` to `to`.
     fn move_to(&mut self, from: &AppliedId, to: &AppliedId, proof: ProvenEq) {
+        if CHECKS {
+            assert_eq!(from.id, proof.l.id);
+            assert_eq!(to.id, proof.r.id);
+        }
         let map = to.m.compose_partial(&from.m.inverse());
         let app_id = self.mk_applied_id(to.id, map);
         self.unionfind_set(from.id, app_id, proof);
