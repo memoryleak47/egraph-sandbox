@@ -18,7 +18,8 @@ fn main() {
     let x1x3 = term("(app sym_x1 sym_x3)", eg);
     let x2x3 = term("(app sym_x2 sym_x3)", eg);
     eg.union(&x1, &x2);
-    dbg!(eg.explain_equivalence(x1x3, x2x3));
+    eg.dump();
+    eg.explain_equivalence(x1x3, x2x3).show();
 }
 
 #[test]
@@ -36,5 +37,5 @@ fn main2() {
     eg.union(&y1, &y2);
     eg.union(&y3, &y4);
     eg.union(&y2, &y3);
-    dbg!(eg.explain_equivalence(x1, x4));
+    eg.explain_equivalence(x1, x4).show();
 }
