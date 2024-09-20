@@ -195,9 +195,15 @@ impl<L: Language> EGraph<L> {
         self.classes.get_mut(&to.id).unwrap().group.add_set(set);
     }
 
-    pub fn semantic_add(&mut self, enode: &L, i: &AppliedId, src_id: AppliedId) {
+    pub fn semantic_add(&mut self, enode: &L, i_orig: &AppliedId, src_id: AppliedId) {
         let mut enode = self.find_enode(&enode);
-        let mut i = self.find_applied_id(i);
+        let mut i = self.find_applied_id(i_orig);
+        // i.m :: slots(i) -> X
+        // i_orig.m :: slots(i_orig) -> X
+        // old src_id.m :: slots(src_id.id) -> slots(i_orig)
+        // new src_id.m :: slots(src_id.id) -> slots(i)
+        let theta = i_orig.m.compose(&i.m.inverse());
+        let src_id = src_id.apply_slotmap_fresh(&theta);
         if !i.slots().is_subset(&enode.slots()) {
             let cap = &enode.slots() & &i.slots();
             self.shrink_slots(&i, &cap);
