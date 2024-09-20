@@ -17,8 +17,11 @@ impl<L: Language> EGraph<L> {
         let (_, prf2) = self.proven_unionfind_get(i2.id);
         let prf2 = self.prove_symmetry(prf2);
         let p = self.prove_transitivity(prf1, prf2);
-        assert_eq!(&p.l, &i1);
-        assert_eq!(&p.r, &i2);
+
+        if CHECKS {
+            let eq1 = Equation { l: i1, r: i2 };
+            match_equation(&eq1, &p).unwrap();
+        }
         p
     }
 }
