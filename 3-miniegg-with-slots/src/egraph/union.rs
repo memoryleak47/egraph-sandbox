@@ -194,7 +194,10 @@ impl<L: Language> EGraph<L> {
 
         // upwards merging found a match!
         if let Some(j) = self.lookup_internal(&t) {
-            self.union_internal(&i, &j, ProvenEqRaw::null()); // TODO this ProvenEq should be congruence!
+            let src_id2 = self.classes[&j.id].nodes[&t.0].1.clone();
+            // TODO use congruence here.
+            let proven_eq = self.prove_explicit(&src_id, &src_id2, None);
+            self.union_internal(&i, &j, proven_eq);
             return;
         }
 
