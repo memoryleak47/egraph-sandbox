@@ -62,7 +62,7 @@ pub trait Language: Debug + Clone + Hash + Eq {
         self.private_slot_occurences().into_iter().collect()
     }
 
-    fn map_applied_ids(&self, f: impl Fn(AppliedId) -> AppliedId) -> Self {
+    fn map_applied_ids(&self, mut f: impl FnMut(AppliedId) -> AppliedId) -> Self {
         let mut c = self.clone();
         for x in c.applied_id_occurences_mut() {
             *x = f(x.clone());

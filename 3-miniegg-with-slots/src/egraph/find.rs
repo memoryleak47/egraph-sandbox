@@ -59,7 +59,17 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn find_enode(&self, enode: &L) -> L {
-        enode.map_applied_ids(|x| self.find_applied_id(&x))
+        self.proven_find_enode(enode).0
+    }
+
+    pub fn proven_find_enode(&self, enode: &L) -> (L, Vec<ProvenEq>) {
+        let mut v = Vec::new();
+        let out = enode.map_applied_ids(|x| {
+            let (app, prf) = self.proven_find_applied_id(&x);
+            v.push(prf);
+            app
+        });
+        (out, v)
     }
 
     // normalize i.id
@@ -70,7 +80,12 @@ impl<L: Language> EGraph<L> {
     // Example 2:
     // 'find(c1(s3, s7, s8)) = c2(s8, s7)', where 'c1(s0, s1, s2) -> c2(s2, s1)' in unionfind,
     pub fn find_applied_id(&self, i: &AppliedId) -> AppliedId {
-        let a = self.unionfind_get(i.id);
+        self.proven_find_applied_id(i).0
+    }
+
+    pub fn proven_find_applied_id(&self, i: &AppliedId) -> (AppliedId, ProvenEq) {
+        let prf = self.unionfind_get_proof(i.id);
+        let a = prf.r.clone();
 
         // I = self.slots(i.id);
         // A = self.slots(a.id);
@@ -78,10 +93,11 @@ impl<L: Language> EGraph<L> {
         // a.m   :: A -> I
         // out.m :: A -> X
 
-        self.mk_applied_id(
+        let out = self.mk_applied_id(
             a.id,
             a.m.compose_partial(&i.m), // This is partial if `i.id` had redundant slots.
-        )
+        );
+        (out, prf)
     }
 
     pub fn find_id(&self, i: Id) -> Id {

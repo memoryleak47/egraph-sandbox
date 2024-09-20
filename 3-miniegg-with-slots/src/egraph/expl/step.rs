@@ -35,4 +35,10 @@ impl<L: Language> EGraph<L> {
 
         self.prove(eq, proof).unwrap()
     }
+
+    pub fn prove_congruence(&self, l: &AppliedId, r: &AppliedId, child_proofs: Vec<ProvenEq>) -> ProvenEq {
+        let eq = Equation { l: l.clone(), r: r.clone() };
+        // TODO
+        self.prove_explicit(l, r, None)
+    }
 }
