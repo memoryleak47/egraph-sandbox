@@ -91,10 +91,17 @@ impl<L: Language> EGraph<L> {
 
                 let null_l = nullify_app_ids(&l);
                 let null_r = nullify_app_ids(&r);
-                assert(null_l == null_r);
+                assert(null_l == null_r)?;
 
-                let l_v = l.applied_id_occurences().into_iter();
-                let r_v = r.applied_id_occurences().into_iter();
+                let l_v = l.applied_id_occurences();
+                let r_v = r.applied_id_occurences();
+
+                assert(l_v.len() == child_proofs.len())?;
+                assert(r_v.len() == child_proofs.len())?;
+
+                let l_v = l_v.into_iter();
+                let r_v = r_v.into_iter();
+
                 let c_v = child_proofs.into_iter();
                 for ((ll, rr), prf) in l_v.zip(r_v).zip(c_v) {
                     let eq1 = &Equation { l: ll, r: rr };
