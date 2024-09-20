@@ -118,31 +118,31 @@ impl<L: Language> EGraph<L> {
     // Remove everything that references this e-class, and then re-add it using "semantic_add".
     // Is typically called on e-classes that point to another e-class in the unionfind.
     fn convert_eclass(&mut self, from: Id) {
-        let mut adds: Vec<(L, AppliedId)> = Vec::new();
+        let mut adds: Vec<(L, AppliedId, AppliedId)> = Vec::new();
 
         // - remove all of its e-nodes
         let from_nodes = self.classes.get(&from).unwrap().nodes.clone();
         let from_id = self.mk_identity_applied_id(from);
-        for (sh, bij) in from_nodes {
+        for (sh, (bij, src_id)) in from_nodes {
             let enode = sh.apply_slotmap(&bij);
             self.raw_remove_from_class(from, (sh, bij));
-            adds.push((enode, from_id.clone()));
+            adds.push((enode, from_id.clone(), src_id));
         }
 
         // - remove all of its usages
         let from_usages = self.classes.get(&from).unwrap().usages.clone();
         for sh in from_usages {
             let k = self.hashcons[&sh];
-            let bij = self.classes[&k].nodes[&sh].clone();
+            let (bij, src_id) = self.classes[&k].nodes[&sh].clone();
             let enode = sh.apply_slotmap(&bij);
             self.raw_remove_from_class(k, (sh, bij));
             let applied_k = self.mk_identity_applied_id(k);
-            adds.push((enode, applied_k));
+            adds.push((enode, applied_k, src_id));
         }
 
         // re-add everything.
-        for (enode, j) in adds {
-            self.semantic_add(&enode, &j);
+        for (enode, j, src_id) in adds {
+            self.semantic_add(&enode, &j, src_id);
         }
 
 
@@ -179,7 +179,7 @@ impl<L: Language> EGraph<L> {
         self.classes.get_mut(&to.id).unwrap().group.add_set(set);
     }
 
-    pub fn semantic_add(&mut self, enode: &L, i: &AppliedId) {
+    pub fn semantic_add(&mut self, enode: &L, i: &AppliedId, src_id: AppliedId) {
         let mut enode = self.find_enode(&enode);
         let mut i = self.find_applied_id(i);
         if !i.slots().is_subset(&enode.slots()) {
@@ -208,7 +208,7 @@ impl<L: Language> EGraph<L> {
         }
         let bij = bij.compose(&m);
         let t = (sh, bij);
-        self.raw_add_to_class(i.id, t.clone());
+        self.raw_add_to_class(i.id, t.clone(), src_id);
 
         self.determine_self_symmetries(i.id, t);
     }

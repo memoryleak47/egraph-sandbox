@@ -78,7 +78,7 @@ impl<L: Language> EGraph<L> {
     pub(in crate::egraph) fn lookup_internal(&self, (shape, n_bij): &(L, Bijection)) -> Option<AppliedId> {
         let i = self.hashcons.get(&shape)?;
         let c = &self.classes[i];
-        let cn_bij = c.nodes.get(&shape).unwrap();
+        let cn_bij = &c.nodes[&shape].0;
 
         // X = shape.slots()
         // Y = n.slots()
@@ -117,7 +117,8 @@ impl<L: Language> EGraph<L> {
         let i = self.alloc_eclass(&fresh_slots);
 
         let m = bij.compose(&old_to_fresh);
-        self.raw_add_to_class(i, (sh, m));
+        let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode.slots()));
+        self.raw_add_to_class(i, (sh, m), syn_app_id);
         self.add_syn_enode(i, syn_enode);
         self.mk_applied_id(i, fresh_to_old)
     }
@@ -136,8 +137,8 @@ impl<L: Language> EGraph<L> {
     }
 
     // adds (sh, bij) to the eclass `id`.
-    pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (L, Bijection)) {
-        let tmp1 = self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), bij);
+    pub(in crate::egraph) fn raw_add_to_class(&mut self, id: Id, (sh, bij): (L, Bijection), src_id: AppliedId) {
+        let tmp1 = self.classes.get_mut(&id).unwrap().nodes.insert(sh.clone(), (bij, src_id));
         let tmp2 = self.hashcons.insert(sh.clone(), id);
         if CHECKS {
             assert!(tmp1.is_none());

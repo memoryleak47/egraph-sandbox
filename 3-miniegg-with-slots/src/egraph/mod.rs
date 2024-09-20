@@ -21,7 +21,7 @@ use std::sync::Mutex;
 pub struct EClass<L: Language> {
     // The set of equivalent ENodes that make up this eclass.
     // for (sh, bij) in nodes; sh.apply_slotmap(bij) represents the actual ENode.
-    nodes: HashMap<L, Bijection>,
+    nodes: HashMap<L, (Bijection, /*remembers the original AppliedId, where this came from*/ AppliedId)>,
 
     // All other slots are considered "redundant" (or they have to be qualified by a ENode::Lam).
     // Should not contain Slot(0).
@@ -116,7 +116,7 @@ impl<L: Language> EGraph<L> {
     // if x in enodes(i), then I'd expect x.slots() superset slots(i).
     pub fn enodes(&self, i: Id) -> HashSet<L> {
         let i = self.find_id(i);
-        self.classes[&i].nodes.iter().map(|(x, y)| x.apply_slotmap(y)).collect()
+        self.classes[&i].nodes.iter().map(|(x, (y, _))| x.apply_slotmap(y)).collect()
     }
 
     // Generates fresh slots for redundant slots.
@@ -230,7 +230,7 @@ impl<L: Language> EGraph<L> {
 
         // Check that all ENodes are valid.
         for (_, c) in &self.classes {
-            for (sh, bij) in &c.nodes {
+            for (sh, (bij, _)) in &c.nodes {
                 let real = sh.apply_slotmap(bij);
                 assert!(real.slots().is_superset(&c.slots));
 
@@ -286,7 +286,7 @@ impl<L: Language> EGraph<L> {
 
             let slot_str = c.slots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ");
             println!("{:?}({}):", i, &slot_str);
-            for (sh, bij) in &c.nodes {
+            for (sh, (bij, _)) in &c.nodes {
                 let n = sh.apply_slotmap(bij);
                 println!(" - {:?}", n);
             }
@@ -302,7 +302,7 @@ impl<L: Language> EGraph<L> {
         let mut out = Vec::new();
         for x in &self.classes[&i].usages {
             let j = self.lookup(x).unwrap().id;
-            let bij = &self.classes[&j].nodes[&x];
+            let bij = &self.classes[&j].nodes[&x].0;
             let x = x.apply_slotmap(bij);
             out.push(x);
         }
