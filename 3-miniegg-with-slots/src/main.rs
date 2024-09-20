@@ -22,7 +22,7 @@ fn main() {
     let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
         let s1 = term(s1, eg);
         let s2 = term(s2, eg);
-        eg.explain_equivalence(s1, s2).show();
+        eg.explain_equivalence(s1, s2).show_expr(eg);
     };
 
     equate("(var s0)", "(app (var s0) sym_x)", eg);

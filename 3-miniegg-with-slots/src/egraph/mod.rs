@@ -390,4 +390,16 @@ impl<L: Language> EGraph<L> {
     pub fn semify_enode(&self, enode: L) -> L {
         enode.map_applied_ids(|app| self.semify_app_id(app))
     }
+
+    pub fn get_syn_expr(&self, i: &AppliedId) -> RecExpr<L> {
+        let enode = self.get_syn_node(i);
+        let cs = enode.applied_id_occurences()
+                      .iter()
+                      .map(|x| self.get_syn_expr(x))
+                      .collect();
+        RecExpr {
+            node: nullify_app_ids(&enode),
+            children: cs,
+        }
+    }
 }

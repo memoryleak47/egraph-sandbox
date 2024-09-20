@@ -31,8 +31,18 @@ type ShowMap = HashMap<*const ProvenEqRaw, (usize, String)>;
 
 impl ProvenEqRaw {
     pub fn show(&self) {
+        self.show_impl(&|i| format!("{i:?}"))
+    }
+
+    pub fn show_expr<L: Language>(&self, eg: &EGraph<L>) {
+        self.show_impl(&|i| {
+            eg.get_syn_expr(i).to_string()
+        })
+    }
+
+    pub fn show_impl(&self, f: &impl Fn(&AppliedId) -> String) {
         let mut map = Default::default();
-        self.show_impl(&mut map);
+        self.show_impl2(&mut map, f);
 
         let mut map_sorted: Vec<_> = map.into_iter().collect();
         map_sorted.sort_by_key(|(_, (i, _))| *i);
@@ -41,17 +51,16 @@ impl ProvenEqRaw {
         }
     }
 
-    pub fn show_impl(&self, v: &mut ShowMap) {
+    pub fn show_impl2(&self, v: &mut ShowMap, f: &impl Fn(&AppliedId) -> String) {
         let ptr = (&*self) as *const ProvenEqRaw;
         if v.contains_key(&ptr) { return; }
 
         let id_of = |p: &ProvenEq, v: &mut ShowMap| -> usize {
-            p.show_impl(v);
+            p.show_impl2(v, f);
             let ptr = (&**p) as *const ProvenEqRaw;
             v[&ptr].0
         };
 
-        let Equation { l, r } = &**self;
         let prf = match self.proof() {
             Proof::Explicit(j) => format!("{j:?}"),
             Proof::Reflexivity => format!("refl"),
@@ -71,7 +80,8 @@ impl ProvenEqRaw {
         };
 
         let i = v.len();
-        let out = format!("lemma{i}: {l:?} = {r:?}");
+        let Equation { l, r } = &**self;
+        let out = format!("lemma{i}: '{} = {}'", f(l), f(r));
         let out = format!("{out}\n  by {prf}\n");
         v.insert(ptr, (i, out));
     }

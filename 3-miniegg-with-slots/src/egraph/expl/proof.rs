@@ -137,7 +137,7 @@ impl<L: Language> EGraph<L> {
         }
     }
 
-    fn get_syn_node(&self, i: &AppliedId) -> L {
+    pub fn get_syn_node(&self, i: &AppliedId) -> L {
         let syn = self.classes[&i.id].syn_enode.as_ref().unwrap();
         syn.apply_slotmap_fresh(&i.m)
     }
