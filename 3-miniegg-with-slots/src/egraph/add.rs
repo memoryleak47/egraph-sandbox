@@ -119,7 +119,7 @@ impl<L: Language> EGraph<L> {
         let m = bij.compose(&old_to_fresh);
         let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode.slots()));
         self.raw_add_to_class(i, (sh, m), syn_app_id);
-        self.add_syn_enode(i, syn_enode);
+        self.add_syn_enode(i, syn_enode.apply_slotmap(&old_to_fresh));
         self.mk_applied_id(i, fresh_to_old)
     }
 
