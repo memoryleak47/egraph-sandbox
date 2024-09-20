@@ -34,6 +34,9 @@ impl<L: Language> EGraph<L> {
     fn lookup_syn(&self, enode: &L) -> Option<AppliedId> {
         let (sh, bij) = enode.weak_shape();
         let i = self.syn_hashcons.get(&sh)?;
+
+        // bij :: SHAPE -> X
+        // i :: slots(i.id) -> SHAPE
         let i = i.apply_slotmap(&bij);
         Some(i)
     }
@@ -132,7 +135,7 @@ impl<L: Language> EGraph<L> {
 
         self.classes.get_mut(&i).unwrap().syn_enode = Some(syn_enode);
 
-        let app_id = AppliedId::new(i, bij);
+        let app_id = self.mk_applied_id(i, bij.inverse());
         self.syn_hashcons.insert(sh, app_id);
     }
 
