@@ -38,7 +38,7 @@ impl<L: Language> EGraph<L> {
 
     pub fn prove_congruence(&self, l: &AppliedId, r: &AppliedId, child_proofs: Vec<ProvenEq>) -> ProvenEq {
         let eq = Equation { l: l.clone(), r: r.clone() };
-        // TODO
-        self.prove_explicit(l, r, None)
+        let proof = Proof::Congruence(child_proofs);
+        self.prove(eq, proof).unwrap()
     }
 }

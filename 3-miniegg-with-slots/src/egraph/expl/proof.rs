@@ -88,7 +88,20 @@ impl<L: Language> EGraph<L> {
             Proof::Congruence(child_proofs) => {
                 let l = self.get_syn_node(&eq.l);
                 let r = self.get_syn_node(&eq.r);
-                todo!()
+
+                let null_l = nullify_app_ids(&l);
+                let null_r = nullify_app_ids(&r);
+                assert(null_l == null_r);
+
+                let l_v = l.applied_id_occurences().into_iter();
+                let r_v = r.applied_id_occurences().into_iter();
+                let c_v = child_proofs.into_iter();
+                for ((ll, rr), prf) in l_v.zip(r_v).zip(c_v) {
+                    let eq1 = &Equation { l: ll, r: rr };
+                    let eq2 = prf.deref();
+                    match_equation(eq1, eq2)?;
+                }
+                assert(true)
             }
 
             Proof::Shrink(witness) => {
