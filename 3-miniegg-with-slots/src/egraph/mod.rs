@@ -52,7 +52,7 @@ pub struct EGraph<L: Language> {
     // Each Id i that is an output of the unionfind itself has unionfind[i] = (i, identity()).
 
     // We use mutex to allow for inter mutability, so that find(&self) can do path compression.
-    unionfind: Mutex<Vec<ProvenEq>>,
+    unionfind: Mutex<Vec<(AppliedId, ProvenEq)>>,
 
     // if a class does't have unionfind[x].id = x, then it doesn't contain nodes / usages.
     // It's "shallow" if you will.
@@ -277,7 +277,6 @@ impl<L: Language> EGraph<L> {
 
     pub fn dump(&self) {
         println!("");
-
         let mut v: Vec<(&Id, &EClass<L>)> = self.classes.iter().collect();
         v.sort_by_key(|(x, _)| *x);
 

@@ -2,44 +2,49 @@ use crate::*;
 
 impl<L: Language> EGraph<L> {
     // We lazily semify the entries, only when we encounter them.
-    fn unionfind_semify_entry(&self, i: Id, entry: &mut ProvenEq) {
+    fn unionfind_semify_entry(&self, i: Id, entry: &mut (AppliedId, ProvenEq)) {
         // TODO update both sides of the equation using semify_app_id, if necessary.
         // This works by transitively chaining the shrink proofs to the entry.
     }
 
-    fn unionfind_get_impl(&self, i: Id, map: &mut [ProvenEq]) -> ProvenEq {
+    fn unionfind_get_impl(&self, i: Id, map: &mut [(AppliedId, ProvenEq)]) -> (AppliedId, ProvenEq) {
         let entry = &mut map[i.0];
         self.unionfind_semify_entry(i, entry);
 
         let entry = entry.clone();
 
-        if entry.r.id == i {
+        if entry.0.id == i {
             return entry;
         }
 
-        let entry_to_leader = self.unionfind_get_impl(entry.r.id, map);
-        let new = self.prove_transitivity(entry, entry_to_leader);
+        // entry.0.m :: slots(entry.0.id) -> slots(i)
+        // entry_to_leader.0.m :: slots(leader) -> slots(entry.0.id)
+        let entry_to_leader = self.unionfind_get_impl(entry.0.id, map);
+        let new = (
+            entry_to_leader.0.apply_slotmap(&entry.0.m),
+            self.prove_transitivity(entry.1, entry_to_leader.1),
+        );
 
         map[i.0] = new.clone();
         new
     }
 
-    pub fn unionfind_set(&self, i: Id, proof: ProvenEq) {
+    pub fn unionfind_set(&self, i: Id, app: AppliedId, proof: ProvenEq) {
         let mut lock = self.unionfind.lock().unwrap();
         if lock.len() == i.0 {
-            lock.push(proof);
+            lock.push((app, proof));
         } else {
-            lock[i.0] = proof;
+            lock[i.0] = (app, proof);
         }
     }
 
-    pub fn unionfind_get_proof(&self, i: Id) -> ProvenEq {
+    pub fn proven_unionfind_get(&self, i: Id) -> (AppliedId, ProvenEq) {
         let mut map = self.unionfind.lock().unwrap();
         self.unionfind_get_impl(i, &mut *map)
     }
 
     pub fn unionfind_get(&self, i: Id) -> AppliedId {
-        self.unionfind_get_proof(i).r.clone()
+        self.proven_unionfind_get(i).0
     }
 
     pub fn unionfind_iter(&self) -> impl Iterator<Item=(Id, AppliedId)> {
@@ -47,7 +52,7 @@ impl<L: Language> EGraph<L> {
         let mut out = Vec::new();
 
         for x in (0..map.len()).map(Id) {
-            let y = self.unionfind_get_impl(x, &mut *map).r.clone();
+            let y = self.unionfind_get_impl(x, &mut *map).0;
             out.push((x, y));
         }
 
@@ -84,8 +89,7 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn proven_find_applied_id(&self, i: &AppliedId) -> (AppliedId, ProvenEq) {
-        let prf = self.unionfind_get_proof(i.id);
-        let a = prf.r.clone();
+        let (a, prf) = self.proven_unionfind_get(i.id);
 
         // I = self.slots(i.id);
         // A = self.slots(a.id);
