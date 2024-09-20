@@ -216,24 +216,8 @@ impl<L: Language> EGraph<L> {
 
         // upwards merging found a match!
         if let Some(j) = self.lookup_internal(&t) {
-            let prf1 = self.shape(&enode);
             let src_id2 = self.classes[&j.id].nodes[&t.0].1.clone();
-
-            let src_syn = self.classes[&src_id.id].syn_enode.as_ref().unwrap();
-            let src_syn2 = self.classes[&src_id2.id].syn_enode.as_ref().unwrap();
-
-            let (_, vec_p1) = self.proven_shape(src_syn);
-            let (_, vec_p2) = self.proven_shape(src_syn2);
-
-            let mut vec = Vec::new();
-            for (l, r) in vec_p1.into_iter().zip(vec_p2.into_iter()) {
-                let r_inv = self.prove_symmetry(r);
-                let l_to_r = self.prove_transitivity(l, r_inv);
-                vec.push(l_to_r);
-            }
-
-            let proven_eq = self.prove_congruence(&src_id, &src_id2, vec);
-            self.union_internal(&i, &j, proven_eq);
+            self.handle_congruence(&src_id, &src_id2);
             return;
         }
 
@@ -277,4 +261,21 @@ impl<L: Language> EGraph<L> {
         }
     }
 
+    pub(in crate::egraph) fn handle_congruence(&mut self, a: &AppliedId, b: &AppliedId) {
+        let a_node = self.get_syn_node(a);
+        let b_node = self.get_syn_node(b);
+
+        let (_, vec_p1) = self.proven_shape(&a_node);
+        let (_, vec_p2) = self.proven_shape(&b_node);
+
+        let mut vec = Vec::new();
+        for (l, r) in vec_p1.into_iter().zip(vec_p2.into_iter()) {
+            let r_inv = self.prove_symmetry(r);
+            let l_to_r = self.prove_transitivity(l, r_inv);
+            vec.push(l_to_r);
+        }
+
+        let proven_eq = self.prove_congruence(&a, &b, vec);
+        self.union_internal(&a, &b, proven_eq);
+    }
 }

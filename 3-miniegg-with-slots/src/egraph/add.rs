@@ -31,9 +31,7 @@ impl<L: Language> EGraph<L> {
         let sem = sem.apply_slotmap(&old_to_fresh);
         self.add_syn_enode(c, enode);
 
-        // TODO should be congruence.
-        let prf = self.prove_explicit(&c_a, &sem, None);
-        self.union_internal(&c_a, &sem, prf);
+        self.handle_congruence(&c_a, &sem);
 
         c_a
     }
