@@ -36,6 +36,9 @@ pub use i_rise::*;
 mod tst;
 pub use tst::*;
 
+mod tst2;
+pub use tst2::*;
+
 mod i_array;
 pub use i_array::*;
 

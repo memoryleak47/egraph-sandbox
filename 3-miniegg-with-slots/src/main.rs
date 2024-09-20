@@ -1,6 +1,38 @@
 use miniegg_with_slots::*;
 
 fn main() {
+    let mut eg: &mut EGraph<TstENode> = &mut EGraph::new();
+    let id = |s, eg: &mut EGraph<TstENode>| -> AppliedId {
+        let re = RecExpr::parse(s).unwrap();
+        eg.add_syn_expr(re.clone())
+    };
+
+    let term = |s, eg: &mut EGraph<TstENode>| -> RecExpr<TstENode> {
+        let re = RecExpr::parse(s).unwrap();
+        eg.add_syn_expr(re.clone());
+        re
+    };
+
+    let equate = |s1, s2, eg: &mut EGraph<TstENode>| {
+        let s1 = id(s1, eg);
+        let s2 = id(s2, eg);
+        eg.union(&s1, &s2);
+    };
+
+    let explain = |s1, s2, eg: &mut EGraph<TstENode>| {
+        let s1 = term(s1, eg);
+        let s2 = term(s2, eg);
+        eg.explain_equivalence(s1, s2).show();
+    };
+
+    equate("(f s1 s2)", "(g s2 s1)", eg);
+    equate("(g s1 s2)", "(h s1 s2)", eg);
+    eg.dump();
+    explain("(f s1 s2)", "(h s2 s1)", eg);
+}
+
+#[test]
+fn main3() {
     let mut eg: &mut EGraph<RiseENode> = &mut EGraph::new();
     let id = |s, eg: &mut EGraph<RiseENode>| {
         let re = RecExpr::parse(s).unwrap();
