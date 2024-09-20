@@ -120,9 +120,10 @@ impl<L: Language> EGraph<L> {
         let i = self.alloc_eclass(&fresh_slots);
 
         let m = bij.compose(&old_to_fresh);
-        let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode.slots()));
+        let syn_enode_real = syn_enode.apply_slotmap(&old_to_fresh);
+        let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode_real.slots()));
         self.raw_add_to_class(i, (sh, m), syn_app_id);
-        self.add_syn_enode(i, syn_enode.apply_slotmap(&old_to_fresh));
+        self.add_syn_enode(i, syn_enode_real);
         self.mk_applied_id(i, fresh_to_old)
     }
 
