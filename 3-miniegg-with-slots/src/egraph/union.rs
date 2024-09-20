@@ -32,6 +32,7 @@ impl<L: Language> EGraph<L> {
         }
 
         if l.id == r.id {
+            panic!("For now, we don't support symmetries.");
             let id = l.id;
 
             // l.m :: slots(id) -> X
@@ -69,6 +70,7 @@ impl<L: Language> EGraph<L> {
     }
 
     fn shrink_slots(&mut self, from: &AppliedId, cap: &HashSet<Slot>) {
+        panic!("For now, we don't support shrinking");
         let (id, cap) = {
             // from.m :: slots(from.id) -> X
             // cap :: set X
