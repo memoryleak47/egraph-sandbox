@@ -27,6 +27,7 @@ pub type ProvenEq = Arc<ProvenEqRaw>;
 #[derive(Debug, Clone)]
 pub struct ProvenEqRaw {
     // fields are intentionally private so that only "add_proof" can construct instances for it.
+    // These equations should always be fully "syn", i.e. they should not have any missing slot arguments, even redundant slots have to be passed explicitly.
     eq: Equation,
     proof: Proof,
 }
