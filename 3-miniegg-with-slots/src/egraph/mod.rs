@@ -378,6 +378,7 @@ impl<L: Language> EGraph<L> {
             }
             s = next;
         }
+
         s
     }
 

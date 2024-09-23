@@ -234,13 +234,13 @@ impl<L: Language> EGraph<L> {
         }
         let bij = bij.compose(&m);
         let t = (sh, bij);
-        self.raw_add_to_class(i.id, t.clone(), src_id);
+        self.raw_add_to_class(i.id, t.clone(), src_id.clone());
 
-        self.determine_self_symmetries(i.id, t);
+        self.determine_self_symmetries(i.id, t, src_id.id);
     }
 
     // finds self-symmetries in the e-class i, caused by the e-node t.
-    fn determine_self_symmetries(&mut self, i: Id, t: (L, Bijection)) {
+    fn determine_self_symmetries(&mut self, i: Id, t: (L, Bijection), src_id: Id) {
         let (sh, bij) = t;
         let enode = sh.apply_slotmap(&bij);
         for (n, prfs) in self.proven_get_group_compatible_variants(&enode) {
@@ -258,9 +258,12 @@ impl<L: Language> EGraph<L> {
                 // - i == sh * bij2
 
                 // -> i == i * bij^-1 * bij2
+
+                // TODO we need to differentiate better between `i` and `src_id`.
+                // I think the congruence proof will need to be done on `src_id`, but the group-equation needs to be lifted to `i`.
                 let perm = bij.inverse().compose(&bij2);
-                let syn_slots = self.syn_slots(i);
-                let l = AppliedId::new(i, Perm::identity(&syn_slots));
+                let syn_slots = self.syn_slots(src_id);
+                let l = AppliedId::new(src_id, Perm::identity(&syn_slots));
                 let r = l.apply_slotmap_fresh(&perm);
                 let eq = Equation { l, r };
                 let prf = CongruenceProof(prfs).check(&eq, self).unwrap();
