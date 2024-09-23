@@ -15,7 +15,7 @@ impl Permutation for Perm {
     fn inverse(&self) -> Self { Self::inverse(self) }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ProvenPerm(Perm, ProvenEq);
 
 impl PartialEq for ProvenPerm {
@@ -44,6 +44,20 @@ impl Permutation for ProvenPerm {
         ProvenPerm(map, prf)
     }
 }
+
+impl ProvenPerm {
+    pub fn identity<L: Language>(i: Id, eg: &EGraph<L>) -> Self {
+        let slots = &eg.slots(i);
+        let map = Perm::identity(slots);
+
+        let syn_slots = &eg.syn_slots(i);
+        let identity = SlotMap::identity(syn_slots);
+        let app_id = eg.mk_applied_id(i, identity);
+        let prf = prove_reflexivity(&app_id);
+        ProvenPerm(map, prf)
+    }
+}
+
 
 impl Index<Slot> for ProvenPerm {
     type Output = Slot;
