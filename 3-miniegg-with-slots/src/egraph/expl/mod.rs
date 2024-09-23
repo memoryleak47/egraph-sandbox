@@ -75,8 +75,6 @@ impl ProvenEqRaw {
                 let s = xs.join(", ");
                 format!("congruence({s})")
             },
-
-            Proof::Shrink(x) => format!("shrink({})", id_of(x, v))
         };
 
         let i = v.len();

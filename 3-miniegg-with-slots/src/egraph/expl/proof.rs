@@ -54,8 +54,6 @@ pub enum Proof {
     Transitivity(ProvenEq, ProvenEq),
     Congruence(Vec<ProvenEq>),
 
-    Shrink(/*an equation witnessing redundant slots*/ ProvenEq),
-
     // Both global renaming within equations and alpha-equivalence will be handled in the other rules too.
     // All equations will be understood as an arbitrary representative from its global renaming equivalence class.
     // So f(x, y) = g(x, y) is conceptually the same equation as f(a, b) = g(a, b).
@@ -110,30 +108,6 @@ impl<L: Language> EGraph<L> {
                 }
                 assert(true)
             }
-
-            Proof::Shrink(witness) => {
-                // witness: f(x, y) = c(x)
-                // -> eq:   f(x, y) = f(x)
-                assert(eq.l.id == eq.r.id)?;
-                for (x, y) in eq.r.m.iter() {
-                    assert(eq.l.m.get(x)? == y)?;
-                }
-
-                // The slots that are declared redundant by the "eq".
-                // Note that we talk about the "values", not the "keys" here.
-                // Thus these aren't public slots of the e-class "eq.l.id".
-                let new_redundants = &eq.l.slots() - &eq.r.slots();
-
-                let theta = match_app_id(&witness.l, &eq.l)?;
-                let witness_r = witness.r.apply_slotmap_fresh(&theta);
-
-                // Every slot that is named as redundant by the "eq", has to be missing in the r of the witness.
-                let r_witness_slots = witness_r.slots();
-                for x in new_redundants {
-                    assert(!r_witness_slots.contains(&x))?;
-                }
-                assert(true)
-            },
         }
     }
 
