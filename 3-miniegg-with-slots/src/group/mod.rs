@@ -1,7 +1,24 @@
 use crate::*;
 
+use std::ops::Index;
+use std::hash::Hash;
+
 #[cfg(test)]
 mod tst;
+
+pub trait Permutation: Index<Slot, Output=Slot> + Clone + Eq + Hash {
+    fn iter(&self) -> impl Iterator<Item=(Slot, Slot)>;
+    fn identity(omega: &HashSet<Slot>) -> Self;
+    fn compose(&self, other: &Self) -> Self;
+    fn inverse(&self) -> Self;
+}
+
+impl Permutation for Perm {
+    fn iter(&self) -> impl Iterator<Item=(Slot, Slot)> { Self::iter(self) }
+    fn identity(omega: &HashSet<Slot>) -> Self { Self::identity(omega) }
+    fn compose(&self, other: &Self) -> Self { Self::compose(self, other) }
+    fn inverse(&self) -> Self { Self::inverse(self) }
+}
 
 // In order to be compatible with the literature:
 // https://en.wikipedia.org/wiki/Schreier%27s_lemma
@@ -9,26 +26,26 @@ mod tst;
 
 // Trivial implementation of permutation Group.
 #[derive(Clone, Debug)]
-pub struct Group {
+pub struct Group<P: Permutation> {
     // all perms are bijections : omega -> omega.
     omega: HashSet<Slot>,
-    next: Option<Box<Next>>,
+    next: Option<Box<Next<P>>>,
 }
 
 #[derive(Clone, Debug)]
-struct Next {
+struct Next<P: Permutation> {
     // the Slot we are stabilizing
     stab: Slot,
 
     // the orbit tree.
     // ot[x] is a perm that maps stab to x.
-    ot: HashMap<Slot, Perm>,
+    ot: HashMap<Slot, P>,
 
-    g: Group,
+    g: Group<P>,
 }
 
-impl Group {
-    pub fn new(omega: &HashSet<Slot>, generators: HashSet<Perm>) -> Self {
+impl<P: Permutation> Group<P> {
+    pub fn new(omega: &HashSet<Slot>, generators: HashSet<P>) -> Self {
         let omega = omega.clone();
         let next = find_lowest_nonstab(&generators)
                     .map(|s| Box::new(Next::new(s, &omega, generators)));
@@ -46,23 +63,23 @@ impl Group {
             .collect()
     }
 
-    fn generators_impl(&self) -> HashSet<Perm> {
+    fn generators_impl(&self) -> HashSet<P> {
         match &self.next {
             None => HashSet::default(),
             Some(n) => &n.ot.values().cloned().collect::<HashSet<_>>() | &n.g.generators_impl(),
         }
     }
 
-    pub fn generators(&self) -> HashSet<Perm> {
+    pub fn generators(&self) -> HashSet<P> {
         let mut out = self.generators_impl();
-        out.remove(&SlotMap::identity(&self.omega));
+        out.remove(&P::identity(&self.omega));
         out
     }
 
     // Should be very rarely called.
-    pub fn all_perms(&self) -> HashSet<Perm> {
+    pub fn all_perms(&self) -> HashSet<P> {
         match &self.next {
-            None => [Perm::identity(&self.omega)].into_iter().collect(),
+            None => [P::identity(&self.omega)].into_iter().collect(),
             Some(n) => {
                 let mut out = HashSet::default();
 
@@ -84,7 +101,7 @@ impl Group {
         }
     }
 
-    pub fn contains(&self, p: &Perm) -> bool {
+    pub fn contains(&self, p: &P) -> bool {
         match &self.next {
             None => p.iter().all(|(x, y)| x == y),
             Some(n) => {
@@ -94,11 +111,11 @@ impl Group {
         }
     }
 
-    pub fn add(&mut self, p: Perm) {
+    pub fn add(&mut self, p: P) {
         self.add_set([p].into_iter().collect());
     }
 
-    pub fn add_set(&mut self, mut perms: HashSet<Perm>) {
+    pub fn add_set(&mut self, mut perms: HashSet<P>) {
         // There might be ways to make this faster, by iterating through the stab chain and determining at which layer this perm actually has an effect.
         // But it's polytime, so fast enough I guess.
 
@@ -117,8 +134,8 @@ impl Group {
     }
 }
 
-impl Next {
-    fn new(stab: Slot, omega: &HashSet<Slot>, generators: HashSet<Perm>) -> Self {
+impl<P: Permutation> Next<P> {
+    fn new(stab: Slot, omega: &HashSet<Slot>, generators: HashSet<P>) -> Self {
         let ot = build_ot(stab, omega, &generators);
         let generators = schreiers_lemma(stab, &ot, generators);
         let g = Group::new(omega, generators);
@@ -126,9 +143,9 @@ impl Next {
     }
 }
 
-fn build_ot(stab: Slot, omega: &HashSet<Slot>, generators: &HashSet<Perm>) -> HashMap<Slot, Perm> {
+fn build_ot<P: Permutation>(stab: Slot, omega: &HashSet<Slot>, generators: &HashSet<P>) -> HashMap<Slot, P> {
     let mut ot = HashMap::default();
-    ot.insert(stab, SlotMap::identity(omega));
+    ot.insert(stab, P::identity(omega));
 
     loop {
         let len = ot.len();
@@ -151,7 +168,7 @@ fn build_ot(stab: Slot, omega: &HashSet<Slot>, generators: &HashSet<Perm>) -> Ha
 }
 
 // extends the set of generators using Schreiers Lemma.
-fn schreiers_lemma(stab: Slot, ot: &HashMap<Slot, Perm>, generators: HashSet<Perm>) -> HashSet<Perm> {
+fn schreiers_lemma<P: Permutation>(stab: Slot, ot: &HashMap<Slot, P>, generators: HashSet<P>) -> HashSet<P> {
     let mut out = HashSet::default();
     for (_, r) in ot {
         for s in &generators {
@@ -164,7 +181,7 @@ fn schreiers_lemma(stab: Slot, ot: &HashMap<Slot, Perm>, generators: HashSet<Per
 }
 
 // finds the lowest Slot that's not stabilized in at least one of the generators.
-fn find_lowest_nonstab(generators: &HashSet<Perm>) -> Option<Slot> {
+fn find_lowest_nonstab<P: Permutation>(generators: &HashSet<P>) -> Option<Slot> {
     let mut min = None;
     for gen in generators {
         for (x, y) in gen.iter() {

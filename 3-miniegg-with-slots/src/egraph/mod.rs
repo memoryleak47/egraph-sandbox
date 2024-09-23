@@ -31,7 +31,7 @@ pub struct EClass<L: Language> {
     usages: HashSet<L>,
 
     // Expresses the self-symmetries of this e-class.
-    group: Group,
+    group: Group<Perm>,
 
     syn_enode: Option<L>,
     redundancy_proof: Option<ProvenEq>,

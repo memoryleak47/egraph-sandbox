@@ -41,7 +41,6 @@ impl<L: Language> EGraph<L> {
         }
 
         if l.id == r.id {
-            panic!("For now, we don't support symmetries.");
             let id = l.id;
 
             // l.m :: slots(id) -> X
