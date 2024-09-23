@@ -113,7 +113,7 @@ impl<L: Language> EGraph<L> {
             out
         };
         let generators = c.group.generators().into_iter().map(restrict).collect();
-        c.group = Group::new(&cap, generators);
+        c.group = Group::new(&SlotMap::identity(&cap), generators);
 
         self.convert_eclass(from.id);
     }

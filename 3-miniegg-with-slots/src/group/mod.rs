@@ -8,14 +8,12 @@ mod tst;
 
 pub trait Permutation: Index<Slot, Output=Slot> + Clone + Eq + Hash {
     fn iter(&self) -> impl Iterator<Item=(Slot, Slot)>;
-    fn identity(omega: &HashSet<Slot>) -> Self;
     fn compose(&self, other: &Self) -> Self;
     fn inverse(&self) -> Self;
 }
 
 impl Permutation for Perm {
     fn iter(&self) -> impl Iterator<Item=(Slot, Slot)> { Self::iter(self) }
-    fn identity(omega: &HashSet<Slot>) -> Self { Self::identity(omega) }
     fn compose(&self, other: &Self) -> Self { Self::compose(self, other) }
     fn inverse(&self) -> Self { Self::inverse(self) }
 }
@@ -28,7 +26,8 @@ impl Permutation for Perm {
 #[derive(Clone, Debug)]
 pub struct Group<P: Permutation> {
     // all perms are bijections : omega -> omega.
-    omega: HashSet<Slot>,
+    // omega = keys(identity) = values(identity).
+    identity: P,
     next: Option<Box<Next<P>>>,
 }
 
@@ -45,19 +44,19 @@ struct Next<P: Permutation> {
 }
 
 impl<P: Permutation> Group<P> {
-    pub fn new(omega: &HashSet<Slot>, generators: HashSet<P>) -> Self {
-        let omega = omega.clone();
+    pub fn new(identity: &P, generators: HashSet<P>) -> Self {
+        let identity = identity.clone();
         let next = find_lowest_nonstab(&generators)
-                    .map(|s| Box::new(Next::new(s, &omega, generators)));
-        Group { omega, next }
+                    .map(|s| Box::new(Next::new(s, &identity, generators)));
+        Group { identity, next }
     }
 
-    pub fn identity(omega: &HashSet<Slot>) -> Self {
-        Self::new(omega, HashSet::default())
+    pub fn identity(identity: &P) -> Self {
+        Self::new(identity, HashSet::default())
     }
 
     pub fn orbit(&self, s: Slot) -> HashSet<Slot> {
-        build_ot(s, &self.omega, &self.generators())
+        build_ot(s, &self.identity, &self.generators())
             .keys()
             .cloned()
             .collect()
@@ -72,14 +71,14 @@ impl<P: Permutation> Group<P> {
 
     pub fn generators(&self) -> HashSet<P> {
         let mut out = self.generators_impl();
-        out.remove(&P::identity(&self.omega));
+        out.remove(&self.identity);
         out
     }
 
     // Should be very rarely called.
     pub fn all_perms(&self) -> HashSet<P> {
         match &self.next {
-            None => [P::identity(&self.omega)].into_iter().collect(),
+            None => [self.identity.clone()].into_iter().collect(),
             Some(n) => {
                 let mut out = HashSet::default();
 
@@ -122,7 +121,7 @@ impl<P: Permutation> Group<P> {
         perms.retain(|x| !self.contains(x));
 
         if !perms.is_empty() {
-            *self = Group::new(&self.omega, &self.generators() | &perms);
+            *self = Group::new(&self.identity, &self.generators() | &perms);
         }
     }
 
@@ -135,17 +134,17 @@ impl<P: Permutation> Group<P> {
 }
 
 impl<P: Permutation> Next<P> {
-    fn new(stab: Slot, omega: &HashSet<Slot>, generators: HashSet<P>) -> Self {
-        let ot = build_ot(stab, omega, &generators);
+    fn new(stab: Slot, identity: &P, generators: HashSet<P>) -> Self {
+        let ot = build_ot(stab, identity, &generators);
         let generators = schreiers_lemma(stab, &ot, generators);
-        let g = Group::new(omega, generators);
+        let g = Group::new(identity, generators);
         Next { stab, ot, g }
     }
 }
 
-fn build_ot<P: Permutation>(stab: Slot, omega: &HashSet<Slot>, generators: &HashSet<P>) -> HashMap<Slot, P> {
+fn build_ot<P: Permutation>(stab: Slot, identity: &P, generators: &HashSet<P>) -> HashMap<Slot, P> {
     let mut ot = HashMap::default();
-    ot.insert(stab, P::identity(omega));
+    ot.insert(stab, identity.clone());
 
     loop {
         let len = ot.len();
