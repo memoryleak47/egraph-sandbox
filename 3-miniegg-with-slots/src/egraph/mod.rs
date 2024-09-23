@@ -327,24 +327,31 @@ impl<L: Language> EGraph<L> {
 
     // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
     // TODO every usage of this function hurts performance drastically. Which of them can I eliminate?
-    pub fn get_group_compatible_variants(&self, enode: &L) -> HashSet<L> {
+    pub fn proven_get_group_compatible_variants(&self, enode: &L) -> HashSet<(L, Vec<ProvenEq>)> {
         let mut s = HashSet::default();
-        s.insert(enode.clone());
+        // TODO I should insert refl proof here.
+        s.insert((enode.clone(), Vec::new()));
 
         for (i, app_id) in enode.applied_id_occurences().iter().enumerate() {
             let grp_perms = self.classes[&app_id.id].group.all_perms();
             let mut next = HashSet::default();
-            for x in s {
-                for y in &grp_perms {
+            for (x, x_prfs) in s {
+                for ProvenPerm(y, y_prf) in &grp_perms {
                     let mut x = x.clone();
                     let rf: &mut SlotMap = &mut x.applied_id_occurences_mut()[i].m;
-                    *rf = y.0.compose(rf);
-                    next.insert(x);
+                    *rf = y.compose(rf);
+
+                    // TODO I should use transitivity here.
+                    next.insert((x, Vec::new()));
                 }
             }
             s = next;
         }
         s
+    }
+
+    pub fn get_group_compatible_variants(&self, enode: &L) -> HashSet<L> {
+        self.proven_get_group_compatible_variants(enode).into_iter().map(|(x, _)| x).collect()
     }
 
     pub fn get_group_compatible_weak_variants(&self, enode: &L) -> HashSet<L> {

@@ -1,6 +1,8 @@
 use crate::*;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+use std::hash::{Hasher, Hash};
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Equation {
     pub l: AppliedId,
     pub r: AppliedId,
@@ -40,6 +42,21 @@ pub struct ProvenEqRaw {
     eq: Equation,
     proof: Proof,
 }
+
+impl PartialEq for ProvenEqRaw {
+    // TODO normalize slotnames before this?
+    fn eq(&self, other: &Self) -> bool { self.eq == other.eq }
+}
+
+impl Eq for ProvenEqRaw { }
+
+impl Hash for ProvenEqRaw {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        // TODO normalize slotnames before this?
+        self.eq.hash(hasher);
+    }
+}
+
 
 impl ExplicitProof {
     pub fn check(&self, eq: &Equation) -> Option<ProvenEq> {
