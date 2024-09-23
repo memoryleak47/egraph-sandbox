@@ -6,6 +6,123 @@ pub struct Equation {
     pub r: AppliedId,
 }
 
+#[derive(Clone, Debug)]
+pub struct ExplicitProof(pub /*justification: */ Option<String>);
+#[derive(Clone, Debug)]
+pub struct ReflexivityProof;
+#[derive(Clone, Debug)]
+pub struct SymmetryProof(pub ProvenEq);
+#[derive(Clone, Debug)]
+pub struct TransitivityProof(pub ProvenEq, pub ProvenEq);
+#[derive(Clone, Debug)]
+pub struct CongruenceProof(pub Vec<ProvenEq>);
+
+#[derive(Debug, Clone)]
+pub enum Proof {
+    Explicit(ExplicitProof),
+    Reflexivity(ReflexivityProof),
+    Symmetry(SymmetryProof),
+    Transitivity(TransitivityProof),
+    Congruence(CongruenceProof),
+
+    // Both global renaming within equations and alpha-equivalence will be handled in the other rules too.
+    // All equations will be understood as an arbitrary representative from its global renaming equivalence class.
+    // So f(x, y) = g(x, y) is conceptually the same equation as f(a, b) = g(a, b).
+    // In other words, whenever you use an equation, you always do it using "match_app_id".
+}
+
+pub type ProvenEq = Arc<ProvenEqRaw>;
+
+#[derive(Debug, Clone)]
+pub struct ProvenEqRaw {
+    // fields are intentionally private so that only this module can construct instances for it.
+    // These equations should always be fully "syn", i.e. they should not have any missing slot arguments, even redundant slots have to be passed explicitly.
+    eq: Equation,
+    proof: Proof,
+}
+
+impl ExplicitProof {
+    pub fn check(&self, eq: &Equation) -> Option<ProvenEq> {
+        assert(true)?;
+
+        let eq = eq.clone();
+        let proof = Proof::Explicit(self.clone());
+        Some(Arc::new(ProvenEqRaw { eq, proof }))
+    }
+}
+
+impl ReflexivityProof {
+    pub fn check(&self, eq: &Equation) -> Option<ProvenEq>{
+        assert(eq.l == eq.r)?;
+
+        let eq = eq.clone();
+        let proof = Proof::Reflexivity(self.clone());
+        Some(Arc::new(ProvenEqRaw { eq, proof }))
+    }
+}
+
+impl SymmetryProof {
+    pub fn check(&self, eq: &Equation) -> Option<ProvenEq> {
+        let SymmetryProof(x) = self;
+
+        let flipped = Equation { l: x.r.clone(), r: x.l.clone() };
+        match_equation(eq, &flipped).map(|_|())?;
+
+        let eq = eq.clone();
+        let proof = Proof::Symmetry(self.clone());
+        Some(Arc::new(ProvenEqRaw { eq, proof }))
+    }
+}
+
+impl TransitivityProof {
+    pub fn check(&self, eq: &Equation) -> Option<ProvenEq> {
+        let TransitivityProof(eq1, eq2) = self;
+
+        let theta = match_app_id(&eq2.l, &eq1.r)?;
+        let a = eq1.l.clone();
+        let c = eq2.r.apply_slotmap_fresh(&theta);
+        let out = Equation { l: a, r: c };
+        match_equation(eq, &out).map(|_|())?;
+
+        let eq = eq.clone();
+        let proof = Proof::Transitivity(self.clone());
+        Some(Arc::new(ProvenEqRaw { eq, proof }))
+    }
+}
+
+impl CongruenceProof {
+    pub fn check<L: Language>(&self, eq: &Equation, eg: &EGraph<L>) -> Option<ProvenEq> {
+        let CongruenceProof(child_proofs) = self;
+
+        let l = eg.get_syn_node(&eq.l);
+        let r = eg.get_syn_node(&eq.r);
+
+        let null_l = nullify_app_ids(&l);
+        let null_r = nullify_app_ids(&r);
+        assert(null_l == null_r)?;
+
+        let l_v = l.applied_id_occurences();
+        let r_v = r.applied_id_occurences();
+
+        assert(l_v.len() == child_proofs.len())?;
+        assert(r_v.len() == child_proofs.len())?;
+
+        let l_v = l_v.into_iter();
+        let r_v = r_v.into_iter();
+
+        let c_v = child_proofs.into_iter();
+        for ((ll, rr), prf) in l_v.zip(r_v).zip(c_v) {
+            let eq1 = &Equation { l: ll, r: rr };
+            let eq2 = prf.deref();
+            match_equation(eq1, eq2)?;
+        }
+
+        let eq = eq.clone();
+        let proof = Proof::Congruence(self.clone());
+        Some(Arc::new(ProvenEqRaw { eq, proof }))
+    }
+}
+
 impl Equation {
     pub fn apply_slotmap(&self, m: &SlotMap) -> Self {
         Equation {
@@ -22,16 +139,6 @@ impl Equation {
     }
 }
 
-pub type ProvenEq = Arc<ProvenEqRaw>;
-
-#[derive(Debug, Clone)]
-pub struct ProvenEqRaw {
-    // fields are intentionally private so that only "add_proof" can construct instances for it.
-    // These equations should always be fully "syn", i.e. they should not have any missing slot arguments, even redundant slots have to be passed explicitly.
-    eq: Equation,
-    proof: Proof,
-}
-
 impl Deref for ProvenEqRaw {
     type Target = Equation;
 
@@ -46,79 +153,10 @@ impl ProvenEqRaw {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum Proof {
-    Explicit(/*justification: */ Option<String>),
-
-    Reflexivity,
-    Symmetry(ProvenEq),
-    Transitivity(ProvenEq, ProvenEq),
-    Congruence(Vec<ProvenEq>),
-
-    // Both global renaming within equations and alpha-equivalence will be handled in the other rules too.
-    // All equations will be understood as an arbitrary representative from its global renaming equivalence class.
-    // So f(x, y) = g(x, y) is conceptually the same equation as f(a, b) = g(a, b).
-    // In other words, whenever you use an equation, you always do it using "match_app_id".
-}
-
 impl<L: Language> EGraph<L> {
-    pub fn prove(&self, eq: Equation, proof: Proof) -> Option<ProvenEq> {
-        self.check_proof(&eq, &proof)?;
-
-        Some(Arc::new(ProvenEqRaw { eq, proof }))
-    }
-
-    pub fn check_proof(&self, eq: &Equation, proof: &Proof) -> Option<()> {
-        match proof {
-            Proof::Explicit(_) => assert(true),
-
-            Proof::Reflexivity => assert(eq.l == eq.r),
-            Proof::Symmetry(x) => {
-                let flipped = Equation { l: x.r.clone(), r: x.l.clone() };
-                match_equation(eq, &flipped).map(|_|())
-            }
-            Proof::Transitivity(eq1, eq2) => {
-                let theta = match_app_id(&eq2.l, &eq1.r)?;
-                let a = eq1.l.clone();
-                let c = eq2.r.apply_slotmap_fresh(&theta);
-                let out = Equation { l: a, r: c };
-                match_equation(eq, &out).map(|_|())
-            },
-            Proof::Congruence(child_proofs) => {
-                let l = self.get_syn_node(&eq.l);
-                let r = self.get_syn_node(&eq.r);
-
-                let null_l = nullify_app_ids(&l);
-                let null_r = nullify_app_ids(&r);
-                assert(null_l == null_r)?;
-
-                let l_v = l.applied_id_occurences();
-                let r_v = r.applied_id_occurences();
-
-                assert(l_v.len() == child_proofs.len())?;
-                assert(r_v.len() == child_proofs.len())?;
-
-                let l_v = l_v.into_iter();
-                let r_v = r_v.into_iter();
-
-                let c_v = child_proofs.into_iter();
-                for ((ll, rr), prf) in l_v.zip(r_v).zip(c_v) {
-                    let eq1 = &Equation { l: ll, r: rr };
-                    let eq2 = prf.deref();
-                    match_equation(eq1, eq2)?;
-                }
-                assert(true)
-            }
-        }
-    }
-
     pub fn get_syn_node(&self, i: &AppliedId) -> L {
         let syn = self.classes[&i.id].syn_enode.as_ref().unwrap();
         syn.apply_slotmap_fresh(&i.m)
-    }
-
-    fn get_sem_node(&self, i: &AppliedId) -> L {
-        self.semify_enode(self.get_syn_node(i))
     }
 }
 
@@ -158,7 +196,6 @@ pub fn apply_equation(x: &AppliedId, eq: &Equation) -> Option<AppliedId> {
     let theta = match_app_id(&eq.l, x)?;
     Some(eq.r.apply_slotmap_fresh(&theta))
 }
-
 
 pub fn assert(b: bool) -> Option<()> {
     if b { Some(()) }

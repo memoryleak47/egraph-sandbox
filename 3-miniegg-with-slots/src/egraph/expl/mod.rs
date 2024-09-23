@@ -15,8 +15,8 @@ impl<L: Language> EGraph<L> {
 
         let (_, prf1) = self.proven_unionfind_get(i1.id);
         let (_, prf2) = self.proven_unionfind_get(i2.id);
-        let prf2 = self.prove_symmetry(prf2);
-        let p = self.prove_transitivity(prf1, prf2);
+        let prf2 = prove_symmetry(prf2);
+        let p = prove_transitivity(prf1, prf2);
 
         if CHECKS {
             let eq1 = Equation { l: i1, r: i2 };
@@ -62,15 +62,15 @@ impl ProvenEqRaw {
         };
 
         let prf = match self.proof() {
-            Proof::Explicit(j) => format!("{j:?}"),
-            Proof::Reflexivity => format!("refl"),
-            Proof::Symmetry(x) => format!("symmetry({})", id_of(x, v)),
-            Proof::Transitivity(x1, x2) => {
+            Proof::Explicit(ExplicitProof(j)) => format!("{j:?}"),
+            Proof::Reflexivity(ReflexivityProof) => format!("refl"),
+            Proof::Symmetry(SymmetryProof(x)) => format!("symmetry({})", id_of(x, v)),
+            Proof::Transitivity(TransitivityProof(x1, x2)) => {
                 let y1 = id_of(x1, v);
                 let y2 = id_of(x2, v);
                 format!("transitivity({}, {})", y1, y2)
             },
-            Proof::Congruence(xs) => {
+            Proof::Congruence(CongruenceProof(xs)) => {
                 let xs: Vec<_> = xs.into_iter().map(|x| id_of(x, v).to_string()).collect();
                 let s = xs.join(", ");
                 format!("congruence({s})")

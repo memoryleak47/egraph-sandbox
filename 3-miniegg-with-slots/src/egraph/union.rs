@@ -4,7 +4,7 @@ impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
-        let proof = self.prove_explicit(l, r, None);
+        let proof = prove_explicit(l, r, None);
         let out = self.union_internal(l, r, proof);
         out
     }
@@ -14,9 +14,9 @@ impl<L: Language> EGraph<L> {
         let (l, p_l) = self.proven_find_applied_id(&l);
         let (r, p_r) = self.proven_find_applied_id(&r);
 
-        let a = self.prove_symmetry(p_l);
-        let a = self.prove_transitivity(a, proof);
-        let a = self.prove_transitivity(a, p_r);
+        let a = prove_symmetry(p_l);
+        let a = prove_transitivity(a, proof);
+        let a = prove_transitivity(a, p_r);
         let proof = a;
         if CHECKS {
             assert_eq!(proof.l.id, l.id);
@@ -70,7 +70,7 @@ impl<L: Language> EGraph<L> {
             if size(l.id) < size(r.id) {
                 self.move_to(&l, &r, proof)
             } else {
-                let proof = self.prove_symmetry(proof);
+                let proof = prove_symmetry(proof);
                 self.move_to(&r, &l, proof)
             }
             true
@@ -271,12 +271,12 @@ impl<L: Language> EGraph<L> {
 
         let mut vec = Vec::new();
         for (l, r) in vec_p1.into_iter().zip(vec_p2.into_iter()) {
-            let r_inv = self.prove_symmetry(r);
-            let l_to_r = self.prove_transitivity(l, r_inv);
+            let r_inv = prove_symmetry(r);
+            let l_to_r = prove_transitivity(l, r_inv);
             vec.push(l_to_r);
         }
 
-        let proven_eq = self.prove_congruence(&a, &c, vec);
+        let proven_eq = prove_congruence(&a, &c, vec, self);
         self.union_internal(&a, &c, proven_eq);
     }
 }
