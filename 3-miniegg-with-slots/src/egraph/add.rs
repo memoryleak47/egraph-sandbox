@@ -185,7 +185,7 @@ impl<L: Language> EGraph<L> {
         let c_id = Id(self.unionfind_len()); // Pick the next unused Id.
         let c = EClass {
             nodes: HashMap::default(),
-            group: Group::identity(&SlotMap::identity(&slots)),
+            group: Group::identity(&ProvenPerm::identity(c_id, &slots, &slots)), // TODO syn_slots computation should be syn_enode-dependent
             slots: slots.clone(),
             usages: HashSet::default(),
             redundancy_proof: None,

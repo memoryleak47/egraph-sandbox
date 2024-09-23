@@ -52,10 +52,12 @@ impl<L: Language> EGraph<L> {
                 assert_eq!(&perm.keys(), &self.classes[&id].slots);
             }
 
-            let grp = &mut self.classes.get_mut(&id).unwrap().group;
-            if grp.contains(&perm) { return false; }
+            let proven_perm = ProvenPerm(perm, proof);
 
-            grp.add(perm);
+            let grp = &mut self.classes.get_mut(&id).unwrap().group;
+            if grp.contains(&proven_perm) { return false; }
+
+            grp.add(proven_perm);
 
             self.convert_eclass(id);
 
@@ -112,8 +114,10 @@ impl<L: Language> EGraph<L> {
                 .collect();
             out
         };
-        let generators = c.group.generators().into_iter().map(restrict).collect();
-        c.group = Group::new(&SlotMap::identity(&cap), generators);
+        let restrict_proven = |proven_perm: ProvenPerm| ProvenPerm(restrict(proven_perm.0), proven_perm.1);
+        let generators = c.group.generators().into_iter().map(restrict_proven).collect();
+        let syn_slots = &self.syn_slots(id);
+        c.group = Group::new(&ProvenPerm::identity(id, &cap, syn_slots), generators);
 
         self.convert_eclass(from.id);
     }
@@ -186,10 +190,11 @@ impl<L: Language> EGraph<L> {
 
             perm
         };
+        let change_proven_permutation_from_from_to_to = |proven_perm: ProvenPerm| ProvenPerm(change_permutation_from_from_to_to(proven_perm.0), proven_perm.1 /* TODO transitivity with unionfind edge?*/);
 
         let set = self.classes[&from.id].group.generators()
             .into_iter()
-            .map(change_permutation_from_from_to_to)
+            .map(change_proven_permutation_from_from_to_to)
             .collect();
         self.classes.get_mut(&to.id).unwrap().group.add_set(set);
     }
@@ -254,7 +259,8 @@ impl<L: Language> EGraph<L> {
                 // - i == sh * bij2
 
                 // -> i == i * bij^-1 * bij2
-                grp.add(bij.inverse().compose(&bij2));
+                let proven_perm = ProvenPerm(bij.inverse().compose(&bij2), todo!());
+                grp.add(proven_perm);
             }
         }
     }

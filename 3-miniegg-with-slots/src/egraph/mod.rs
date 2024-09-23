@@ -31,7 +31,7 @@ pub struct EClass<L: Language> {
     usages: HashSet<L>,
 
     // Expresses the self-symmetries of this e-class.
-    group: Group<Perm>,
+    group: Group<ProvenPerm>,
 
     syn_enode: Option<L>,
     redundancy_proof: Option<ProvenEq>,
@@ -173,7 +173,8 @@ impl<L: Language> EGraph<L> {
             assert_eq!(&perm.values(), &self.classes[&id].slots);
         }
 
-        self.classes[&id].group.contains(&perm)
+        let proven_perm = ProvenPerm(perm, todo!());
+        self.classes[&id].group.contains(&proven_perm)
     }
 
     pub fn check(&self) {
@@ -337,7 +338,7 @@ impl<L: Language> EGraph<L> {
                 for y in &grp_perms {
                     let mut x = x.clone();
                     let rf: &mut SlotMap = &mut x.applied_id_occurences_mut()[i].m;
-                    *rf = y.compose(rf);
+                    *rf = y.0.compose(rf);
                     next.insert(x);
                 }
             }
