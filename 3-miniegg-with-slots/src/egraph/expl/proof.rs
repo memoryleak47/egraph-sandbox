@@ -43,6 +43,16 @@ pub struct ProvenEqRaw {
     proof: Proof,
 }
 
+impl ProvenEqRaw {
+    pub fn null() -> ProvenEq {
+        let app_id = AppliedId::new(Id(0), Default::default());
+        Arc::new(ProvenEqRaw {
+            eq: Equation { l: app_id.clone(), r: app_id.clone() },
+            proof: Proof::Explicit(ExplicitProof(None)),
+        })
+    }
+}
+
 impl PartialEq for ProvenEqRaw {
     // TODO normalize slotnames before this?
     fn eq(&self, other: &Self) -> bool { self.eq == other.eq }

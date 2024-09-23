@@ -173,7 +173,8 @@ impl<L: Language> EGraph<L> {
             assert_eq!(&perm.values(), &self.classes[&id].slots);
         }
 
-        let proven_perm = ProvenPerm(perm, todo!());
+        // TODO fix ::null()
+        let proven_perm = ProvenPerm(perm, ProvenEqRaw::null());
         self.classes[&id].group.contains(&proven_perm)
     }
 
