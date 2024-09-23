@@ -243,10 +243,9 @@ impl<L: Language> EGraph<L> {
     fn determine_self_symmetries(&mut self, i: Id, t: (L, Bijection)) {
         let (sh, bij) = t;
         let enode = sh.apply_slotmap(&bij);
-        for n in self.get_group_compatible_variants(&enode) {
+        for (n, prfs) in self.proven_get_group_compatible_variants(&enode) {
             let (sh2, bij2) = n.weak_shape();
             if sh2 == sh {
-                let grp = &mut self.classes.get_mut(&i).unwrap().group;
 
                 // I'm looking for an equation like i == i * BIJ to add BIJ to the group.
 
@@ -259,7 +258,14 @@ impl<L: Language> EGraph<L> {
                 // - i == sh * bij2
 
                 // -> i == i * bij^-1 * bij2
-                let proven_perm = ProvenPerm(bij.inverse().compose(&bij2), todo!());
+                let perm = bij.inverse().compose(&bij2);
+                let syn_slots = self.syn_slots(i);
+                let l = AppliedId::new(i, Perm::identity(&syn_slots));
+                let r = l.apply_slotmap_fresh(&perm);
+                let eq = Equation { l, r };
+                let prf = CongruenceProof(prfs).check(&eq, self).unwrap();
+                let proven_perm = ProvenPerm(perm, prf);
+                let grp = &mut self.classes.get_mut(&i).unwrap().group;
                 grp.add(proven_perm);
             }
         }
