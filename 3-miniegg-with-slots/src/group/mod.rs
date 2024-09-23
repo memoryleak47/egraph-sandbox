@@ -1,22 +1,10 @@
 use crate::*;
 
-use std::ops::Index;
-use std::hash::Hash;
-
 #[cfg(test)]
 mod tst;
 
-pub trait Permutation: Index<Slot, Output=Slot> + Clone + Eq + Hash {
-    fn iter(&self) -> impl Iterator<Item=(Slot, Slot)>;
-    fn compose(&self, other: &Self) -> Self;
-    fn inverse(&self) -> Self;
-}
-
-impl Permutation for Perm {
-    fn iter(&self) -> impl Iterator<Item=(Slot, Slot)> { Self::iter(self) }
-    fn compose(&self, other: &Self) -> Self { Self::compose(self, other) }
-    fn inverse(&self) -> Self { Self::inverse(self) }
-}
+mod api;
+pub use api::*;
 
 // In order to be compatible with the literature:
 // https://en.wikipedia.org/wiki/Schreier%27s_lemma
