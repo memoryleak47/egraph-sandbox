@@ -318,12 +318,25 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn proven_shape(&self, e: &L) -> ((L, Bijection), Vec<ProvenEq>) {
-        let (e, v) = self.proven_find_enode(e);
-        let t = self.get_group_compatible_variants(&e)
-            .iter()
-            .map(|x| x.weak_shape())
-            .min_by_key(|(x, _)| x.all_slot_occurences()).unwrap();
-        (t, v)
+        let (e, v1) = self.proven_find_enode(e);
+        let (t, v2) = self.proven_get_group_compatible_variants(&e)
+            .into_iter()
+            .map(|(x, prfs)| (x.weak_shape(), prfs))
+            .min_by_key(|((x, _), _)| x.all_slot_occurences()).unwrap();
+
+        let mut out: Vec<ProvenEq> = Vec::new();
+
+        assert_eq!(v1.len(), e.applied_id_occurences().len());
+        assert_eq!(v2.len(), e.applied_id_occurences().len());
+
+        let v1 = v1.into_iter();
+        let v2 = v2.into_iter();
+
+        for (l, r) in v1.zip(v2) {
+            out.push(prove_transitivity(l, r));
+        }
+
+        (t, out)
     }
 
     // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
@@ -331,7 +344,8 @@ impl<L: Language> EGraph<L> {
     pub fn proven_get_group_compatible_variants(&self, enode: &L) -> HashSet<(L, Vec<ProvenEq>)> {
         let mut s = HashSet::default();
         // TODO I should insert refl proof here.
-        s.insert((enode.clone(), Vec::new()));
+        let n = enode.applied_id_occurences().len();
+        s.insert((enode.clone(), vec![ProvenEqRaw::null(); n]));
 
         for (i, app_id) in enode.applied_id_occurences().iter().enumerate() {
             let grp_perms = self.classes[&app_id.id].group.all_perms();
@@ -343,7 +357,7 @@ impl<L: Language> EGraph<L> {
                     *rf = y.compose(rf);
 
                     // TODO I should use transitivity here.
-                    next.insert((x, Vec::new()));
+                    next.insert((x, vec![ProvenEqRaw::null(); n]));
                 }
             }
             s = next;
