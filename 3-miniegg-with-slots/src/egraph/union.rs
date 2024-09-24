@@ -268,7 +268,7 @@ impl<L: Language> EGraph<L> {
                 let r = l.apply_slotmap_fresh(&src_perm);
                 let eq = Equation { l, r };
                 // src_id[...] == src_id[...]
-                let prf = CongruenceProof(dbg!(prfs)).check(&dbg!(eq), self).unwrap();
+                let prf = CongruenceProof(prfs).check(&eq, self).unwrap();
                 assert_eq!(prf.l.id, src_id);
                 assert_eq!(prf.r.id, src_id);
 
