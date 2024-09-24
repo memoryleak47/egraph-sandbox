@@ -1,6 +1,7 @@
 use miniegg_with_slots::*;
 
-fn main() {
+#[test]
+fn main7() {
     let mut eg: &mut EGraph<RiseENode> = &mut EGraph::new();
     let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
         let re = RecExpr::parse(s).unwrap();
@@ -28,7 +29,12 @@ fn main() {
     equate("(app (app (var s0) (var s1)) (var s2))", "(app (app (var s1) (var s0)) (var s2))", eg);
     equate("(app (app (var s0) (var s1)) (var s2))", "(app (app (var s0) (var s2)) (var s1))", eg);
     eg.dump();
+    explain("(app (app (var s0) (var s1)) (var s2))", "(app (app (var s0) (var s1)) (var s2))", eg);
+    explain("(app (app (var s0) (var s1)) (var s2))", "(app (app (var s0) (var s2)) (var s1))", eg);
+    explain("(app (app (var s0) (var s1)) (var s2))", "(app (app (var s1) (var s0)) (var s2))", eg);
     explain("(app (app (var s0) (var s1)) (var s2))", "(app (app (var s1) (var s2)) (var s0))", eg);
+    explain("(app (app (var s0) (var s1)) (var s2))", "(app (app (var s2) (var s0)) (var s1))", eg);
+    explain("(app (app (var s0) (var s1)) (var s2))", "(app (app (var s2) (var s1)) (var s0))", eg);
 }
 
 #[test]
