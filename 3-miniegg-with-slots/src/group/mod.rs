@@ -98,6 +98,24 @@ impl<P: Permutation> Group<P> {
         }
     }
 
+    pub fn proven_contains(&self, p: &Perm) -> Option<P> {
+        match &self.next {
+            None if p.iter().all(|(x, y)| x == y) => Some(self.identity.clone()),
+            None => None,
+            Some(n) => {
+                let part = &n.ot.get(&p[n.stab])?;
+                let step = n.g.proven_contains(&p.compose(&part.inverse().to_slotmap()))?;
+                // step == p * part^-1
+                // -> step * part == p
+                let out = step.compose(part);
+                if CHECKS {
+                    assert_eq!(&out.to_slotmap(), p);
+                }
+                Some(out)
+            },
+        }
+    }
+
     pub fn add(&mut self, p: P) {
         self.add_set([p].into_iter().collect());
     }
