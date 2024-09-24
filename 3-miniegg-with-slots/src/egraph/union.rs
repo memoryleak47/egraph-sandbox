@@ -274,6 +274,7 @@ impl<L: Language> EGraph<L> {
                 let r = l.apply_slotmap_fresh(&src_perm);
                 let eq = Equation { l, r };
                 // src_id[...] == src_id[...]
+                // TODO `prfs` need to work with the applied ids from the original syn-enode. However they work with the modern equivalents of them.
                 let prf = CongruenceProof(prfs).check(&eq, self).unwrap();
                 assert_eq!(prf.l.id, src_id);
                 assert_eq!(prf.r.id, src_id);
