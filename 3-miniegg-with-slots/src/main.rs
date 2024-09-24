@@ -1,6 +1,10 @@
 use miniegg_with_slots::*;
 
 fn main() {
+}
+
+#[test]
+fn main8() {
     let mut eg: &mut EGraph<RiseENode> = &mut EGraph::new();
     let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
         let re = RecExpr::parse(s).unwrap();
