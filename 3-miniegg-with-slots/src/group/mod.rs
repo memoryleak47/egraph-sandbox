@@ -89,6 +89,9 @@ impl<P: Permutation> Group<P> {
     }
 
     pub fn contains(&self, p: &Perm) -> bool {
+        if CHECKS {
+            assert_eq!(p.to_slotmap().values(), self.identity.to_slotmap().values());
+        }
         match &self.next {
             None => p.iter().all(|(x, y)| x == y),
             Some(n) => {
@@ -99,6 +102,9 @@ impl<P: Permutation> Group<P> {
     }
 
     pub fn proven_contains(&self, p: &Perm) -> Option<P> {
+        if CHECKS {
+            assert_eq!(p.to_slotmap().values(), self.identity.to_slotmap().values());
+        }
         match &self.next {
             None if p.iter().all(|(x, y)| x == y) => Some(self.identity.clone()),
             None => None,

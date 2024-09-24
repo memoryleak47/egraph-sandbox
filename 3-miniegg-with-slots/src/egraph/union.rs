@@ -242,17 +242,28 @@ impl<L: Language> EGraph<L> {
         let t = (sh, bij);
         self.raw_add_to_class(i.id, t.clone(), src_id.clone());
 
-        self.determine_self_symmetries(i.id, t, src_id.id);
+        self.determine_self_symmetries(src_id.id);
     }
 
-    // finds self-symmetries in the e-class i, caused by the e-node t.
-    fn determine_self_symmetries(&mut self, i: Id, t: (L, Bijection), src_id: Id) {
-        let (sh, bij) = t;
-        let enode = sh.apply_slotmap(&bij);
-        for (n, prfs) in self.proven_get_group_compatible_variants(&enode) {
-            let (sh2, bij2) = n.weak_shape();
-            if sh2 == sh {
+    // finds self-symmetries caused by the e-node `src_id`.
+    fn determine_self_symmetries(&mut self, src_id: Id) {
+        let (leader, leader_prf) = self.proven_unionfind_get(src_id);
+        let neg_leader_prf = prove_symmetry(leader_prf.clone());
+        let i = leader.id;
+        let leader_bij = leader.m;
 
+        let syn_slots = self.syn_slots(src_id);
+        let src_identity = AppliedId::new(src_id, Perm::identity(&syn_slots));
+        let syn_node = self.get_syn_node(&src_identity);
+        if CHECKS {
+            assert_eq!(&syn_slots, &syn_node.slots());
+        }
+
+        let (enode, prfs) = self.proven_find_enode(&syn_node);
+        let (weak, bij) = enode.weak_shape();
+        for (n, prfs2) in self.proven_get_group_compatible_variants(&enode) {
+            let (weak2, bij2) = n.weak_shape();
+            if weak == weak2 {
                 // I'm looking for an equation like i == i * BIJ to add BIJ to the group.
 
                 // - i == sh * bij == enode == n
@@ -265,26 +276,40 @@ impl<L: Language> EGraph<L> {
 
                 // -> i == i * bij^-1 * bij2
 
-                let (leader, leader_prf) = self.proven_unionfind_get(src_id);
-                let leader_bij = leader.m.inverse();
-                let new_perm = bij.inverse().compose(&bij2);
-                let src_perm = leader_bij.compose(&new_perm).compose(&leader_bij.inverse());
-                let syn_slots = self.syn_slots(src_id);
-                let l = AppliedId::new(src_id, Perm::identity(&syn_slots));
-                let r = l.apply_slotmap_fresh(&src_perm);
+                let perm = bij.inverse().compose(&bij2);
+                if CHECKS { assert!(perm.is_perm()); }
+
+                let l = src_identity.clone();
+                let r = l.apply_slotmap(&perm);
+
+                let mut combined_prfs = Vec::new();
+                for (old_to_new_ids, perm_prf) in prfs.iter().zip(prfs2.iter()) {
+                    let new_to_old_ids = prove_symmetry(old_to_new_ids.clone());
+                    combined_prfs.push(prove_transitivity(prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids));
+                }
+
                 let eq = Equation { l, r };
                 // src_id[...] == src_id[...]
-                // TODO `prfs` need to work with the applied ids from the original syn-enode. However they work with the modern equivalents of them.
-                let prf = CongruenceProof(prfs).check(&eq, self).unwrap();
+                let prf = CongruenceProof(combined_prfs).check(&eq, self).unwrap();
                 assert_eq!(prf.l.id, src_id);
                 assert_eq!(prf.r.id, src_id);
 
-                let neg_leader_prf = prove_symmetry(leader_prf.clone());
                 // i[...] == i[...]
-                let prf = prove_transitivity(neg_leader_prf, prove_transitivity(prf, leader_prf));
+                let prf = prove_transitivity(neg_leader_prf.clone(), prove_transitivity(prf, leader_prf.clone()));
+                let perm = leader_bij.compose(&perm.compose(&leader_bij.inverse()));
+
+                let slots = self.slots(i);
                 assert_eq!(prf.l.id, i);
                 assert_eq!(prf.r.id, i);
-                let proven_perm = ProvenPerm(new_perm, prf);
+                assert_eq!(&prf.l.m.values(), &slots);
+                assert_eq!(&prf.l.m.keys(), &slots);
+                assert_eq!(&prf.r.m.values(), &slots);
+                assert_eq!(&prf.r.m.keys(), &slots);
+                let proven_perm = ProvenPerm(perm, prf);
+
+                assert!(proven_perm.0.is_perm());
+                assert_eq!(proven_perm.0.keys(), slots);
+
                 let grp = &mut self.classes.get_mut(&i).unwrap().group;
                 grp.add(proven_perm);
             }
