@@ -281,14 +281,15 @@ impl<L: Language> EGraph<L> {
 
                 let l = src_identity.clone();
                 let r = l.apply_slotmap(&perm);
+                let eq = Equation { l: r, r: l };
 
                 let mut combined_prfs = Vec::new();
                 for (old_to_new_ids, perm_prf) in prfs.iter().zip(prfs2.iter()) {
                     let new_to_old_ids = prove_symmetry(old_to_new_ids.clone());
-                    combined_prfs.push(prove_transitivity(prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids));
+                    let combined = prove_transitivity(prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids);
+                    combined_prfs.push(combined);
                 }
 
-                let eq = Equation { l, r };
                 // src_id[...] == src_id[...]
                 let prf = CongruenceProof(combined_prfs).check(&eq, self).unwrap();
                 assert_eq!(prf.l.id, src_id);
