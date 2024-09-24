@@ -259,23 +259,25 @@ impl<L: Language> EGraph<L> {
 
                 // -> i == i * bij^-1 * bij2
 
-                let perm = bij.inverse().compose(&bij2);
+                let (leader, leader_prf) = self.proven_unionfind_get(src_id);
+                let leader_bij = leader.m.inverse();
+                let new_perm = bij.inverse().compose(&bij2);
+                let src_perm = leader_bij.compose(&new_perm).compose(&leader_bij.inverse());
                 let syn_slots = self.syn_slots(src_id);
                 let l = AppliedId::new(src_id, Perm::identity(&syn_slots));
-                let r = l.apply_slotmap_fresh(&perm);
+                let r = l.apply_slotmap_fresh(&src_perm);
                 let eq = Equation { l, r };
                 // src_id[...] == src_id[...]
-                let prf = CongruenceProof(prfs).check(&eq, self).unwrap();
+                let prf = CongruenceProof(dbg!(prfs)).check(&dbg!(eq), self).unwrap();
                 assert_eq!(prf.l.id, src_id);
                 assert_eq!(prf.r.id, src_id);
 
-                let (_, leader_prf) = self.proven_unionfind_get(src_id);
                 let neg_leader_prf = prove_symmetry(leader_prf.clone());
                 // i[...] == i[...]
                 let prf = prove_transitivity(neg_leader_prf, prove_transitivity(prf, leader_prf));
                 assert_eq!(prf.l.id, i);
                 assert_eq!(prf.r.id, i);
-                let proven_perm = ProvenPerm(perm, prf);
+                let proven_perm = ProvenPerm(new_perm, prf);
                 let grp = &mut self.classes.get_mut(&i).unwrap().group;
                 grp.add(proven_perm);
             }
