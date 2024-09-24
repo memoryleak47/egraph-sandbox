@@ -357,9 +357,30 @@ impl<L: Language> EGraph<L> {
     // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
     // TODO every usage of this function hurts performance drastically. Which of them can I eliminate?
     pub fn proven_get_group_compatible_variants(&self, enode: &L) -> HashSet<(L, Vec<ProvenEq>)> {
-        let mut s = HashSet::default();
+        // should only be called with an up-to-date e-node.
+        if CHECKS {
+            for x in enode.applied_id_occurences() {
+                assert!(self.is_alive(x.id));
+            }
+        }
 
         let n = enode.applied_id_occurences().len();
+        let mut s: HashSet<(L, Vec<ProvenEq>)> = HashSet::default();
+
+        // the proofs in `s` should express how its node changed relative to `enode`.
+        let s_inv = |s: &HashSet<(L, Vec<ProvenEq>)>| {
+            if CHECKS {
+                for (new_enode, prfs) in s {
+                    for i in 0..n {
+                        let l = enode.applied_id_occurences()[i].clone();
+                        let r = new_enode.applied_id_occurences()[i].clone();
+                        let eq = Equation { l, r };
+                        match_equation(&eq, &prfs[i]).unwrap();
+                    }
+                }
+            }
+        };
+
 
         let mut init = Vec::new();
         for x in enode.applied_id_occurences() {
@@ -368,9 +389,12 @@ impl<L: Language> EGraph<L> {
 
         s.insert((enode.clone(), init));
 
+        s_inv(&s);
+
         for (i, app_id) in enode.applied_id_occurences().iter().enumerate() {
             let grp_perms = self.classes[&app_id.id].group.all_perms();
             let mut next = HashSet::default();
+            s_inv(&s);
             for (x, x_prfs) in s {
                 for proven_perm in &grp_perms {
                     proven_perm.check(self);
@@ -388,6 +412,7 @@ impl<L: Language> EGraph<L> {
                 }
             }
             s = next;
+            s_inv(&s);
         }
 
         s
