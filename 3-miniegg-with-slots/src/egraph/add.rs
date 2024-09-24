@@ -183,9 +183,12 @@ impl<L: Language> EGraph<L> {
 
     pub(in crate::egraph) fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
         let c_id = Id(self.unionfind_len()); // Pick the next unused Id.
+
+        // TODO syn_slots computation should be syn_enode-dependent
+        let proven_perm = ProvenPerm::identity(c_id, &slots, &slots);
         let c = EClass {
             nodes: HashMap::default(),
-            group: Group::identity(&ProvenPerm::identity(c_id, &slots, &slots)), // TODO syn_slots computation should be syn_enode-dependent
+            group: Group::identity(&proven_perm),
             slots: slots.clone(),
             usages: HashSet::default(),
             redundancy_proof: None,

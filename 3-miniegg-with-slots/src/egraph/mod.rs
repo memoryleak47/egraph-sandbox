@@ -176,7 +176,17 @@ impl<L: Language> EGraph<L> {
         self.classes[&id].group.contains(&perm)
     }
 
+    pub fn check_groups(&self) {
+        for (i, c) in &self.classes {
+            for p in c.group.all_perms() {
+                p.check(self);
+            }
+        }
+    }
+
     pub fn check(&self) {
+        self.check_groups();
+
         // Checks whether the hashcons / usages are correct.
         // And also checks that each Shape comes up in at most one EClass!
         let mut hashcons = HashMap::default();

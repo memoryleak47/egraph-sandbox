@@ -37,6 +37,8 @@ impl Hash for ProvenPerm {
 impl Permutation for ProvenPerm {
     fn iter(&self) -> impl Iterator<Item=(Slot, Slot)> { self.0.iter() }
     fn compose(&self, other: &Self) -> Self {
+        self.self_check();
+        other.self_check();
         if CHECKS {
             assert_eq!(self.1.l.id, self.1.r.id);
             assert_eq!(other.1.l.id, other.1.r.id);
@@ -44,13 +46,18 @@ impl Permutation for ProvenPerm {
         }
         let map = self.0.compose(&other.0);
         let prf = prove_transitivity(self.1.clone(), other.1.clone());
-        ProvenPerm(map, prf)
+        let out = ProvenPerm(map, prf);
+        out.self_check();
+        out
     }
 
     fn inverse(&self) -> Self {
+        self.self_check();
         let map = self.0.inverse();
         let prf = prove_symmetry(self.1.clone());
-        ProvenPerm(map, prf)
+        let out = ProvenPerm(map, prf);
+        out.self_check();
+        out
     }
 }
 
@@ -64,6 +71,11 @@ impl ProvenPerm {
         ProvenPerm(map, prf)
     }
 
+    fn to_string(&self) -> String {
+        format!("{:?}", (&self.0, &**self.1))
+    }
+
+    #[track_caller]
     pub fn check<L: Language>(&self, eg: &EGraph<L>) {
         let id = self.1.l.id;
         let slots = eg.slots(id);
@@ -80,6 +92,26 @@ impl ProvenPerm {
         assert!(self.0.is_perm());
 
         let eq = Equation { l: eg.mk_identity_applied_id(id), r: eg.mk_applied_id(id, self.0.clone()) };
+        match_equation(&eq, &self.1).unwrap();
+    }
+
+    #[track_caller]
+    pub fn self_check(&self) {
+        let id = self.1.l.id;
+        let slots = self.0.keys();
+        let syn_slots = self.1.l.m.keys();
+
+        assert_eq!(id, self.1.l.id);
+        assert_eq!(id, self.1.r.id);
+        assert_eq!(&self.0.keys(), &slots);
+        assert_eq!(&self.0.values(), &slots);
+        assert_eq!(&self.1.l.m.keys(), &syn_slots);
+        assert_eq!(&self.1.l.m.values(), &syn_slots);
+        assert_eq!(&self.1.r.m.keys(), &syn_slots);
+        assert_eq!(&self.1.r.m.values(), &syn_slots);
+        assert!(self.0.is_perm());
+
+        let eq = Equation { l: AppliedId::new(id, SlotMap::identity(&slots)), r: AppliedId::new(id, self.0.clone()) };
         match_equation(&eq, &self.1).unwrap();
     }
 }

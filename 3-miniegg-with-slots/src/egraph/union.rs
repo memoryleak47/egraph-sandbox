@@ -6,6 +6,7 @@ impl<L: Language> EGraph<L> {
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
         let proof = prove_explicit(l, r, None);
         let out = self.union_internal(l, r, proof);
+
         out
     }
 
@@ -53,13 +54,16 @@ impl<L: Language> EGraph<L> {
             }
 
             let proven_perm = ProvenPerm(perm, proof);
+            assert_eq!(proven_perm.1.l.id, id);
 
+            proven_perm.check(self);
             let grp = &mut self.classes.get_mut(&id).unwrap().group;
             if grp.contains(&proven_perm.to_slotmap()) { return false; }
 
             grp.add(proven_perm);
 
             self.convert_eclass(id);
+
 
             true
         } else {
@@ -114,10 +118,17 @@ impl<L: Language> EGraph<L> {
                 .collect();
             out
         };
-        let restrict_proven = |proven_perm: ProvenPerm| ProvenPerm(restrict(proven_perm.0), proven_perm.1);
+        let restrict_proven = |proven_perm: ProvenPerm| {
+            proven_perm.check(self);
+            let out = ProvenPerm(restrict(proven_perm.0), proven_perm.1);
+            out.check(self);
+            out
+        };
         let generators = c.group.generators().into_iter().map(restrict_proven).collect();
         let syn_slots = &self.syn_slots(id);
-        c.group = Group::new(&ProvenPerm::identity(id, &cap, syn_slots), generators);
+        let identity = ProvenPerm::identity(id, &cap, syn_slots);
+        identity.check(self);
+        c.group = Group::new(&identity, generators);
 
         self.convert_eclass(from.id);
     }
@@ -311,6 +322,9 @@ impl<L: Language> EGraph<L> {
                 assert!(proven_perm.0.is_perm());
                 assert_eq!(proven_perm.0.keys(), slots);
 
+                if CHECKS {
+                    proven_perm.check(self);
+                }
                 let grp = &mut self.classes.get_mut(&i).unwrap().group;
                 grp.add(proven_perm);
             }
