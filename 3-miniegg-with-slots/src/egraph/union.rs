@@ -292,7 +292,7 @@ impl<L: Language> EGraph<L> {
 
                 let l = src_identity.clone();
                 let r = l.apply_slotmap(&perm);
-                let eq = Equation { l: r, r: l };
+                let eq = Equation { l, r };
 
                 let mut combined_prfs = Vec::new();
                 for (old_to_new_ids, perm_prf) in prfs.iter().zip(prfs2.iter()) {

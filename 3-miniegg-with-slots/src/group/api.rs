@@ -44,8 +44,9 @@ impl Permutation for ProvenPerm {
             assert_eq!(other.1.l.id, other.1.r.id);
             assert_eq!(self.1.l.id, other.1.l.id);
         }
+        // TODO why is this the other way around?
         let map = self.0.compose(&other.0);
-        let prf = prove_transitivity(self.1.clone(), other.1.clone());
+        let prf = prove_transitivity(other.1.clone(), self.1.clone());
         let out = ProvenPerm(map, prf);
         out.self_check();
         out
