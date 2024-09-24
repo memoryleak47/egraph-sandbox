@@ -190,7 +190,13 @@ impl<L: Language> EGraph<L> {
 
             perm
         };
-        let change_proven_permutation_from_from_to_to = |proven_perm: ProvenPerm| ProvenPerm(change_permutation_from_from_to_to(proven_perm.0), proven_perm.1 /* TODO transitivity with unionfind edge?*/);
+        let (_, prf) = self.proven_find_applied_id(&from);
+        let prf_rev = prove_symmetry(prf.clone());
+        let change_proven_permutation_from_from_to_to = |proven_perm: ProvenPerm| {
+            let new_perm = change_permutation_from_from_to_to(proven_perm.0);
+            let new_proof = prove_transitivity(prf_rev.clone(), prove_transitivity(proven_perm.1, prf.clone()));
+            ProvenPerm(new_perm, new_proof)
+        };
 
         let set = self.classes[&from.id].group.generators()
             .into_iter()
