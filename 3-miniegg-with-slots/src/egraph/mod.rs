@@ -294,7 +294,7 @@ impl<L: Language> EGraph<L> {
                 let n = sh.apply_slotmap(bij);
                 println!(" - {n:?}    [originally {app_id:?}]");
             }
-            for p in &c.group.generators() {
+            for ProvenPerm(p, _) in &c.group.generators() {
                 println!(" -- {:?}", p);
             }
         }
