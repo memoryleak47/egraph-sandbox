@@ -346,6 +346,16 @@ impl<L: Language> EGraph<L> {
         prove_reflexivity(&app_id)
     }
 
+    fn apply_proven_perm(&self, (x, x_prf): (AppliedId, ProvenEq), ProvenPerm(y, y_prf): &ProvenPerm) -> (AppliedId, ProvenEq) {
+        let mut x = x;
+        let mut x_prf = x_prf;
+
+        // TODO these seem to be in different order. why is that?
+        x = self.mk_applied_id(x.id, y.compose(&x.m));
+        x_prf = prove_transitivity(x_prf, y_prf.clone());
+        (x, x_prf)
+    }
+
     // for all AppliedIds that are contained in `enode`, permute their arguments as their groups allow.
     // TODO every usage of this function hurts performance drastically. Which of them can I eliminate?
     pub fn proven_get_group_compatible_variants(&self, enode: &L) -> HashSet<(L, Vec<ProvenEq>)> {
@@ -361,19 +371,21 @@ impl<L: Language> EGraph<L> {
         s.insert((enode.clone(), init));
 
         for (i, app_id) in enode.applied_id_occurences().iter().enumerate() {
-            // TODO: remove this 'break'.
-            break;
-
             let grp_perms = self.classes[&app_id.id].group.all_perms();
             let mut next = HashSet::default();
             for (x, x_prfs) in s {
-                for ProvenPerm(y, y_prf) in &grp_perms {
-                    let mut x = x.clone();
-                    let rf: &mut SlotMap = &mut x.applied_id_occurences_mut()[i].m;
-                    *rf = y.compose(rf);
+                for proven_perm in &grp_perms {
+                    let x_i = x.applied_id_occurences()[i].clone();
+                    let x_prfs_i = x_prfs[i].clone();
+                    let (app_id, prf) = self.apply_proven_perm((x_i, x_prfs_i), proven_perm);
 
-                    // TODO I should use transitivity here.
-                    next.insert((x, vec![ProvenEqRaw::null(); n]));
+                    let mut x2 = x.clone();
+                    *x2.applied_id_occurences_mut()[i] = app_id;
+
+                    let mut x_prfs2 = x_prfs.clone();
+                    x_prfs2[i] = prf;
+
+                    next.insert((x2, x_prfs2));
                 }
             }
             s = next;
