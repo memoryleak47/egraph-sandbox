@@ -373,6 +373,7 @@ impl<L: Language> EGraph<L> {
             let mut next = HashSet::default();
             for (x, x_prfs) in s {
                 for proven_perm in &grp_perms {
+                    proven_perm.check(self);
                     let x_i = x.applied_id_occurences()[i].clone();
                     let x_prfs_i = x_prfs[i].clone();
                     let (app_id, prf) = self.apply_proven_perm((x_i, x_prfs_i), proven_perm);

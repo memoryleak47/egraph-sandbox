@@ -63,8 +63,26 @@ impl ProvenPerm {
         let prf = prove_reflexivity(&app_id);
         ProvenPerm(map, prf)
     }
-}
 
+    pub fn check<L: Language>(&self, eg: &EGraph<L>) {
+        let id = self.1.l.id;
+        let slots = eg.slots(id);
+        let syn_slots = eg.syn_slots(id);
+
+        assert_eq!(id, self.1.l.id);
+        assert_eq!(id, self.1.r.id);
+        assert_eq!(&self.0.keys(), &slots);
+        assert_eq!(&self.0.values(), &slots);
+        assert_eq!(&self.1.l.m.keys(), &syn_slots);
+        assert_eq!(&self.1.l.m.values(), &syn_slots);
+        assert_eq!(&self.1.r.m.keys(), &syn_slots);
+        assert_eq!(&self.1.r.m.values(), &syn_slots);
+        assert!(self.0.is_perm());
+
+        let eq = Equation { l: eg.mk_identity_applied_id(id), r: eg.mk_applied_id(id, self.0.clone()) };
+        match_equation(&eq, &self.1).unwrap();
+    }
+}
 
 impl Index<Slot> for ProvenPerm {
     type Output = Slot;
