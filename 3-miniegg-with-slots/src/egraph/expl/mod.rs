@@ -13,8 +13,18 @@ impl<L: Language> EGraph<L> {
 
         if !self.eq(&i1, &i2) { panic!("Can't explain an equivalence that does not hold!"); }
 
-        let (_, prf1) = self.proven_unionfind_get(i1.id);
-        let (_, prf2) = self.proven_unionfind_get(i2.id);
+        let (l1, prf1) = self.proven_find_applied_id(&i1);
+        let (l2, prf2) = self.proven_find_applied_id(&i2);
+
+        if CHECKS {
+            assert_eq!(l1.id, l2.id);
+        }
+        let id = l1.id;
+
+        let bij = l2.m.compose(&l1.m.inverse());
+        let symmetry_prf = &self.classes[&id].group.proven_contains(&bij).unwrap();
+        let (l1, prf1) = self.apply_proven_perm((l1, prf1), symmetry_prf);
+
         let prf2 = prove_symmetry(prf2);
         let p = prove_transitivity(prf1, prf2);
 
