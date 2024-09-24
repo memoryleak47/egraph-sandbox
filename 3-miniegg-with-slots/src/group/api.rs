@@ -33,6 +33,11 @@ impl Hash for ProvenPerm {
 impl Permutation for ProvenPerm {
     fn iter(&self) -> impl Iterator<Item=(Slot, Slot)> { self.0.iter() }
     fn compose(&self, other: &Self) -> Self {
+        if CHECKS {
+            assert_eq!(self.1.l.id, self.1.r.id);
+            assert_eq!(other.1.l.id, other.1.r.id);
+            assert_eq!(self.1.l.id, other.1.l.id);
+        }
         let map = self.0.compose(&other.0);
         let prf = prove_transitivity(self.1.clone(), other.1.clone());
         ProvenPerm(map, prf)
