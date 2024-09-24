@@ -88,12 +88,12 @@ impl<P: Permutation> Group<P> {
         }
     }
 
-    pub fn contains(&self, p: &P) -> bool {
+    pub fn contains(&self, p: &Perm) -> bool {
         match &self.next {
             None => p.iter().all(|(x, y)| x == y),
             Some(n) => {
                 let Some(part) = &n.ot.get(&p[n.stab]) else { return false };
-                n.g.contains(&p.compose(&part.inverse()))
+                n.g.contains(&p.compose(&part.inverse().to_slotmap()))
             },
         }
     }
@@ -106,7 +106,7 @@ impl<P: Permutation> Group<P> {
         // There might be ways to make this faster, by iterating through the stab chain and determining at which layer this perm actually has an effect.
         // But it's polytime, so fast enough I guess.
 
-        perms.retain(|x| !self.contains(x));
+        perms.retain(|x| !self.contains(&x.to_slotmap()));
 
         if !perms.is_empty() {
             *self = Group::new(&self.identity, &self.generators() | &perms);

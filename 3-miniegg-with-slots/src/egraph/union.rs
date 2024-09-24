@@ -55,7 +55,7 @@ impl<L: Language> EGraph<L> {
             let proven_perm = ProvenPerm(perm, proof);
 
             let grp = &mut self.classes.get_mut(&id).unwrap().group;
-            if grp.contains(&proven_perm) { return false; }
+            if grp.contains(&proven_perm.to_slotmap()) { return false; }
 
             grp.add(proven_perm);
 
