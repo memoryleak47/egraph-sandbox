@@ -5,28 +5,29 @@ impl<L: Language> EGraph<L> {
     fn unionfind_semify_entry(&self, entry: &mut (AppliedId, ProvenEq)) {
         if entry.0.m.keys().len() > self.slots(entry.0.id).len() {
             entry.0 = self.semify_app_id(entry.0.clone());
-
-            // doing this double-locks the Mutex. It's just an optimization anyways though.
-            // entry.1 = self.disassociate_proven_eq(entry.1.clone());
         }
+
+        // maybe I want something like this to disassociate?
+        // but definitely only when necessary.
+        // entry.1 = prove_transitivity(entry.1.clone(), self.classes[&entry.0.id].redundancy_proof.clone());
     }
 
     fn unionfind_get_impl(&self, i: Id, map: &mut [(AppliedId, ProvenEq)]) -> (AppliedId, ProvenEq) {
         let entry = &mut map[i.0];
-        self.unionfind_semify_entry(entry);
-
-        let entry = entry.clone();
 
         if entry.0.id == i {
-            return entry;
+            self.unionfind_semify_entry(entry);
+            return entry.clone();
         }
+
+        let entry = entry.clone();
 
         // entry.0.m :: slots(entry.0.id) -> slots(i)
         // entry_to_leader.0.m :: slots(leader) -> slots(entry.0.id)
         let entry_to_leader = self.unionfind_get_impl(entry.0.id, map);
         let new = (
             entry_to_leader.0.apply_slotmap(&entry.0.m),
-            self.prove_transitivity(entry.1, entry_to_leader.1),
+            prove_transitivity(entry.1, entry_to_leader.1),
         );
 
         map[i.0] = new.clone();
