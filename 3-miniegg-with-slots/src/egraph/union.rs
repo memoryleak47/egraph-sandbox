@@ -130,21 +130,25 @@ impl<L: Language> EGraph<L> {
         }
 
         c.slots = cap.clone();
-        let restrict = |perm: Perm| {
-            let out: Perm = perm.into_iter()
-                .filter(|(x, _)| cap.contains(x))
-                .collect();
-            out
-        };
+        let generators = c.group.generators();
+        let _ = c;
+
         let restrict_proven = |proven_perm: ProvenPerm| {
             proven_perm.check();
-            let out = ProvenPerm(restrict(proven_perm.0), proven_perm.1);
+
+            let perm = proven_perm.0.into_iter()
+                .filter(|(x, _)| cap.contains(x))
+                .collect();
+            let prf = self.disassociate_proven_eq(proven_perm.1);
+            let out = ProvenPerm(perm, prf);
             out.check();
             out
         };
-        let generators = c.group.generators().into_iter().map(restrict_proven).collect();
+
+        let generators = generators.into_iter().map(restrict_proven).collect();
         let identity = ProvenPerm::identity(id, &cap, syn_slots);
         identity.check();
+        let c = self.classes.get_mut(&id).unwrap();
         c.group = Group::new(&identity, generators);
 
         self.convert_eclass(from.id);
