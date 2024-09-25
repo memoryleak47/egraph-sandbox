@@ -36,6 +36,7 @@ impl<L: Language> EGraph<L> {
 
     pub fn unionfind_set(&self, i: Id, app: AppliedId, proof: ProvenEq) {
         if CHECKS {
+            proof.check(self);
             assert_eq!(i, proof.l.id);
             assert_eq!(app.id, proof.r.id);
         }
@@ -99,6 +100,7 @@ impl<L: Language> EGraph<L> {
 
     pub fn proven_find_applied_id(&self, i: &AppliedId) -> (AppliedId, ProvenEq) {
         let (a, prf) = self.proven_unionfind_get(i.id);
+        prf.check(self);
 
         // I = self.slots(i.id);
         // A = self.slots(a.id);
