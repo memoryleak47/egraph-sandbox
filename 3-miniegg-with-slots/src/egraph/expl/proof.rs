@@ -52,7 +52,7 @@ impl ProvenEqRaw {
         })
     }
 
-    pub fn eq(&self) -> Equation {
+    pub fn equ(&self) -> Equation {
         (**self).clone()
     }
 }
