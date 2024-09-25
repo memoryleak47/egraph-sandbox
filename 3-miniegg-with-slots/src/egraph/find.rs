@@ -50,7 +50,13 @@ impl<L: Language> EGraph<L> {
 
     pub fn proven_unionfind_get(&self, i: Id) -> (AppliedId, ProvenEq) {
         let mut map = self.unionfind.try_lock().unwrap();
-        self.unionfind_get_impl(i, &mut *map)
+        let (app_id, peq) = self.unionfind_get_impl(i, &mut *map);
+        std::mem::drop(map);
+
+        // We can directly access the redundancy_proof here, because we know that 'app_id.id' is a leader.
+        let red = self.classes[&app_id.id].redundancy_proof.clone();
+        let peq = prove_transitivity(peq, red);
+        (app_id, peq)
     }
 
     pub fn unionfind_get(&self, i: Id) -> AppliedId {
