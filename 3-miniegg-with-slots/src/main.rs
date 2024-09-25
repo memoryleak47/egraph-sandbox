@@ -1,7 +1,38 @@
 use miniegg_with_slots::*;
 
 fn main() {
-    let mut eg: &mut EGraph<RiseENode> = &mut EGraph::new();
+    let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
+    let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
+        let re = RecExpr::parse(s).unwrap();
+        eg.add_syn_expr(re.clone())
+    };
+
+    let term = |s, eg: &mut EGraph<RiseENode>| -> RecExpr<RiseENode> {
+        let re = RecExpr::parse(s).unwrap();
+        eg.add_syn_expr(re.clone());
+        re
+    };
+
+    let equate = |s1, s2, eg: &mut EGraph<RiseENode>| {
+        let s1 = id(s1, eg);
+        let s2 = id(s2, eg);
+        eg.union(&s1, &s2);
+    };
+
+    let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
+        let s1 = term(s1, eg);
+        let s2 = term(s2, eg);
+        eg.explain_equivalence(s1, s2).show_expr(eg);
+    };
+
+    equate("(app (var s0) (var s1))", "sym_x", eg);
+    eg.dump();
+    explain("(app (var s0) (var s1))", "(app (var s1) (var s0))", eg);
+}
+
+#[test]
+fn main9() {
+    let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
     let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
         let re = RecExpr::parse(s).unwrap();
         eg.add_syn_expr(re.clone())
@@ -32,7 +63,7 @@ fn main() {
 
 #[test]
 fn main8() {
-    let mut eg: &mut EGraph<RiseENode> = &mut EGraph::new();
+    let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
     let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
         let re = RecExpr::parse(s).unwrap();
         eg.add_syn_expr(re.clone())
@@ -65,7 +96,7 @@ fn main8() {
 
 #[test]
 fn main7() {
-    let mut eg: &mut EGraph<RiseENode> = &mut EGraph::new();
+    let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
     let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
         let re = RecExpr::parse(s).unwrap();
         eg.add_syn_expr(re.clone())
@@ -102,7 +133,7 @@ fn main7() {
 
 #[test]
 fn main6() {
-    let mut eg: &mut EGraph<RiseENode> = &mut EGraph::new();
+    let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
     let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
         let re = RecExpr::parse(s).unwrap();
         eg.add_syn_expr(re.clone())
@@ -133,7 +164,7 @@ fn main6() {
 
 #[test]
 fn main5() {
-    let mut eg: &mut EGraph<RiseENode> = &mut EGraph::new();
+    let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
     let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
         let re = RecExpr::parse(s).unwrap();
         eg.add_syn_expr(re.clone())
@@ -165,7 +196,7 @@ fn main5() {
 
 #[test]
 fn main4() {
-    let mut eg: &mut EGraph<TstENode> = &mut EGraph::new();
+    let eg: &mut EGraph<TstENode> = &mut EGraph::new();
     let id = |s, eg: &mut EGraph<TstENode>| -> AppliedId {
         let re = RecExpr::parse(s).unwrap();
         eg.add_syn_expr(re.clone())
@@ -197,7 +228,7 @@ fn main4() {
 
 #[test]
 fn main3() {
-    let mut eg: &mut EGraph<RiseENode> = &mut EGraph::new();
+    let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
     let id = |s, eg: &mut EGraph<RiseENode>| {
         let re = RecExpr::parse(s).unwrap();
         eg.add_syn_expr(re.clone())
