@@ -13,6 +13,12 @@ impl Debug for Id {
     }
 }
 
+impl Debug for Equation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{:?} = {:?}", self.l, self.r)
+    }
+}
+
 impl Debug for SlotMap {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "[")?;

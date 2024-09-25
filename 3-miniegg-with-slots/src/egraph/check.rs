@@ -51,17 +51,7 @@ impl<L: Language> EGraph<L> {
     }
 
 
-    pub fn check_groups(&self) {
-        for (i, c) in &self.classes {
-            for p in c.group.all_perms() {
-                p.check();
-            }
-        }
-    }
-
     pub fn check(&self) {
-        self.check_groups();
-
         // Checks whether the hashcons / usages are correct.
         // And also checks that each Shape comes up in at most one EClass!
         let mut hashcons = HashMap::default();
@@ -86,6 +76,12 @@ impl<L: Language> EGraph<L> {
         assert_eq!(hashcons, self.hashcons);
         for (i, c) in &self.classes {
             assert_eq!(usages[&i], c.usages);
+        }
+
+        for (i, c) in &self.classes {
+            for p in c.group.all_perms() {
+                p.check();
+            }
         }
 
         // check that self.classes contains exactly these classes which point to themselves in the unionfind.

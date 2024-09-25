@@ -2,7 +2,7 @@ use crate::*;
 
 use std::hash::{Hasher, Hash};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Equation {
     pub l: AppliedId,
     pub r: AppliedId,

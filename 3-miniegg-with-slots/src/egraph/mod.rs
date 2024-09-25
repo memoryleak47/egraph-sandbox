@@ -193,6 +193,7 @@ impl<L: Language> EGraph<L> {
             println!("\n{:?}({}):", i, &slot_str);
 
             println!(">> {:?}", &c.syn_enode);
+            println!(">>> {:?}", &c.redundancy_proof.equ());
 
             for (sh, (bij, app_id)) in &c.nodes {
                 let n = sh.apply_slotmap(bij);
