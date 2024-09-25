@@ -37,9 +37,40 @@ pub fn prove_congruence<L: Language>(l: &AppliedId, r: &AppliedId, child_proofs:
 }
 
 impl<L: Language> EGraph<L> {
+    fn disassociation_necessary(&self, peq: &ProvenEq) -> bool {
+        let l_rev = peq.l.m.inverse();
+        let r_rev = peq.r.m.inverse();
+        let l_slots = self.slots(peq.l.id);
+        let r_slots = self.slots(peq.r.id);
+        for s in &peq.l.slots() & &peq.r.slots() {
+            if !l_slots.contains(&l_rev[s]) { return true; }
+            if !r_slots.contains(&r_rev[s]) { return true; }
+        }
+
+        false
+    }
+
+    fn get_redundancy_proof(&self, i: Id) -> Option<ProvenEq> {
+        let (leader, prf) = self.proven_unionfind_get(i);
+        let red_prf = self.classes[&leader.id].redundancy_proof.clone()?;
+        let inv_prf = prove_symmetry(prf.clone());
+        let out = prove_transitivity(prf, prove_transitivity(red_prf, inv_prf));
+        Some(out)
+    }
+
     pub fn disassociate_proven_eq(&self, peq: ProvenEq) -> ProvenEq {
-        // TODO
-        peq
+        if self.disassociation_necessary(&peq) {
+            let mut peq = peq;
+            if let Some(x) = self.get_redundancy_proof(peq.l.id) {
+                peq = prove_transitivity(x, peq);
+            }
+            if let Some(x) = self.get_redundancy_proof(peq.r.id) {
+                peq = prove_transitivity(peq, x);
+            }
+            peq
+        } else {
+            peq
+        }
     }
 
     pub fn prove_explicit(&self, l: &AppliedId, r: &AppliedId, j: Option<String>) -> ProvenEq { self.disassociate_proven_eq(prove_explicit(l, r, j)) }
