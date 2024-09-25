@@ -26,12 +26,14 @@ impl<L: Language> EGraph<L> {
         let (l1, prf1) = self.apply_proven_perm((l1, prf1), symmetry_prf);
 
         let prf2 = self.prove_symmetry(prf2);
-        let p = self.prove_transitivity(prf1, prf2);
+
+        let final_eq = Equation { l: i1, r: i2 };
+        let p = TransitivityProof(prf1, prf2).check(&final_eq).unwrap();
 
         if CHECKS {
-            let eq1 = Equation { l: i1, r: i2 };
-            assert_match_equation(&eq1, &p);
+            proves_equation(&p, &final_eq);
         }
+
         p
     }
 }

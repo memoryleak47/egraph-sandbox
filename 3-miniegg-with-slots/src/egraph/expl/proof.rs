@@ -105,11 +105,49 @@ impl TransitivityProof {
     pub fn check(&self, eq: &Equation) -> Option<ProvenEq> {
         let TransitivityProof(eq1, eq2) = self;
 
-        let theta = match_app_id(&eq2.l, &eq1.r)?;
-        let a = eq1.l.clone();
-        let c = eq2.r.apply_slotmap_fresh(&theta);
-        let out = Equation { l: a, r: c };
-        match_equation(eq, &out).map(|_|())?;
+        let mut theta1 = {
+            // eq1.l*theta1 == eq.l
+            // -> theta1 == eq1.l^-1 * eq.l
+            eq1.l.m.inverse().compose_partial(&eq.l.m)
+        };
+        let mut theta2 = {
+            // eq2.r*theta2 == eq.r
+            // -> theta2 == eq2.r^-1 * eq.r
+            eq2.r.m.inverse().compose_partial(&eq.r.m)
+        };
+
+        let recompute_theta1 = |theta1: &mut SlotMap, theta2: &SlotMap| -> Option<()> {
+            // eq1.r*theta1 == eq2.l*theta2
+            // -> theta1 == eq1.r^-1 * eq2.l * theta2
+            *theta1 = theta1.try_union(&eq1.r.m.inverse().compose_partial(&eq2.l.m).compose_partial(theta2))?;
+            Some(())
+        };
+
+        let recompute_theta2 = |theta1: &SlotMap, theta2: &mut SlotMap| -> Option<()> {
+            // eq1.r*theta1 == eq2.l*theta2
+            // -> theta2 == eq2.l^-1 * eq1.r * theta2
+            *theta2 = theta2.try_union(&eq2.l.m.inverse().compose_partial(&eq1.r.m).compose_partial(theta1))?;
+            Some(())
+        };
+
+        recompute_theta1(&mut theta1, &theta2)?;
+        recompute_theta2(&theta1, &mut theta2)?;
+
+        for x in eq1.slots() {
+            if !theta1.contains_key(x) { theta1.insert(x, Slot::fresh()); }
+        }
+        recompute_theta2(&theta1, &mut theta2)?;
+        for x in eq2.slots() {
+            if !theta2.contains_key(x) { theta2.insert(x, Slot::fresh()); }
+        }
+
+        let renamed_eq1 = eq1.apply_slotmap(&theta1);
+        let renamed_eq2 = eq2.apply_slotmap(&theta2);
+
+        assert(renamed_eq1.l == eq.l)?;
+        assert(renamed_eq2.r == eq.r)?;
+        assert(renamed_eq1.r == renamed_eq2.l)?;
+
 
         let eq = eq.clone();
         let proof = Proof::Transitivity(self.clone());
@@ -151,6 +189,11 @@ impl CongruenceProof {
 }
 
 impl Equation {
+    pub fn slots(&self) -> HashSet<Slot> {
+        &self.l.slots() | &self.r.slots()
+    }
+
+    #[track_caller]
     pub fn apply_slotmap(&self, m: &SlotMap) -> Self {
         Equation {
             l: self.l.apply_slotmap(&m),
@@ -159,9 +202,15 @@ impl Equation {
     }
 
     pub fn apply_slotmap_fresh(&self, m: &SlotMap) -> Self {
+        let mut m = m.clone();
+        for s in &self.l.slots() | &self.r.slots() {
+            if !m.contains_key(s) {
+                m.insert(s, Slot::fresh());
+            }
+        }
         Equation {
-            l: self.l.apply_slotmap_fresh(&m),
-            r: self.r.apply_slotmap_fresh(&m),
+            l: self.l.apply_slotmap(&m),
+            r: self.r.apply_slotmap(&m),
         }
     }
 }
@@ -241,11 +290,6 @@ pub fn proves_equation(peq: &ProvenEq, eq: &Equation) -> bool {
     }
 
     match_equation(&e, eq).is_some()
-}
-
-pub fn apply_equation(x: &AppliedId, eq: &Equation) -> Option<AppliedId> {
-    let theta = match_app_id(&eq.l, x)?;
-    Some(eq.r.apply_slotmap_fresh(&theta))
 }
 
 pub fn assert(b: bool) -> Option<()> {
