@@ -143,8 +143,8 @@ impl<L: Language> EGraph<L> {
         let b = self.find_applied_id(b);
 
         if CHECKS {
-            self.check_applied_id(&a);
-            self.check_applied_id(&b);
+            self.check_sem_applied_id(&a);
+            self.check_sem_applied_id(&b);
         }
 
         if a.id != b.id { return false; }
@@ -257,7 +257,7 @@ impl<L: Language> EGraph<L> {
         let mut x_prf = x_prf;
 
         // TODO these seem to be in different order. why is that?
-        x = self.mk_applied_id(x.id, y.compose(&x.m));
+        x = self.mk_sem_applied_id(x.id, y.compose(&x.m));
         x_prf = self.prove_transitivity(x_prf, y_prf.clone());
         (x, x_prf)
     }

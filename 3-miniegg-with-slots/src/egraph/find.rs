@@ -101,7 +101,7 @@ impl<L: Language> EGraph<L> {
         // a.m   :: A -> I
         // out.m :: A -> X
 
-        let out = self.mk_applied_id(
+        let out = self.mk_sem_applied_id(
             a.id,
             a.m.compose_partial(&i.m), // This is partial if `i.id` had redundant slots.
         );

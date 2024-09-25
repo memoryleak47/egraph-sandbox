@@ -1,34 +1,6 @@
 use crate::*;
 
 impl<L: Language> EGraph<L> {
-    // mk_applied_id & friends.
-    #[track_caller]
-    pub fn mk_applied_id(&self, i: Id, m: SlotMap) -> AppliedId {
-        let app_id = AppliedId::new(i, m);
-
-        if CHECKS {
-            self.check_applied_id(&app_id);
-        }
-
-        app_id
-    }
-
-    #[track_caller]
-    pub fn mk_identity_applied_id(&self, i: Id) -> AppliedId {
-        self.mk_applied_id(i, SlotMap::identity(&self.classes[&i].slots))
-    }
-
-    #[track_caller]
-    pub fn check_applied_id(&self, app_id: &AppliedId) {
-        app_id.check();
-        let set = app_id.m.keys();
-        let mini = self.slots(app_id.id);
-        let maxi = self.syn_slots(app_id.id);
-        assert!(set.is_subset(&maxi), "checking AppliedId failed: Too large key-set, {app_id:?}");
-        assert!(set.is_superset(&mini), "checking AppliedId failed: Too small key-set, {app_id:?}");
-    }
-
-
     // mk_sem_applied_id & friends.
     #[track_caller]
     pub fn mk_sem_applied_id(&self, i: Id, m: SlotMap) -> AppliedId {
@@ -42,7 +14,7 @@ impl<L: Language> EGraph<L> {
     }
 
     #[track_caller]
-    pub fn mk_identity_sem_applied_id(&self, i: Id) -> AppliedId {
+    pub fn mk_sem_identity_applied_id(&self, i: Id) -> AppliedId {
         self.mk_sem_applied_id(i, SlotMap::identity(&self.slots(i)))
     }
 
@@ -51,6 +23,7 @@ impl<L: Language> EGraph<L> {
         app_id.check();
         assert_eq!(self.slots(app_id.id), app_id.m.keys(), "checking sem AppliedId failed: Wrong key-set, {app_id:?}");
     }
+
 
     // mk_syn_applied_id & friends.
     #[track_caller]
@@ -66,7 +39,7 @@ impl<L: Language> EGraph<L> {
 
 
     #[track_caller]
-    pub fn mk_identity_syn_applied_id(&self, i: Id) -> AppliedId {
+    pub fn mk_syn_identity_applied_id(&self, i: Id) -> AppliedId {
         self.mk_syn_applied_id(i, SlotMap::identity(&self.syn_slots(i)))
     }
 
@@ -123,7 +96,7 @@ impl<L: Language> EGraph<L> {
         for i in all {
             // if they point to themselves, they should do it using the identity.
             if self.is_alive(i) {
-                assert_eq!(self.unionfind_get(i), self.mk_identity_applied_id(i));
+                assert_eq!(self.unionfind_get(i), self.mk_sem_identity_applied_id(i));
             } else {
                 assert!(self.classes[&i].nodes.is_empty());
                 assert!(self.classes[&i].usages.is_empty());

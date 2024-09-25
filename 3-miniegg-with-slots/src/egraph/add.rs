@@ -27,9 +27,9 @@ impl<L: Language> EGraph<L> {
         let c = self.alloc_eclass(&old_to_fresh.values());
         let enode = enode.apply_slotmap(&old_to_fresh);
 
-        let c_a = self.mk_identity_applied_id(c);
         self.add_syn_enode(c, enode);
 
+        let c_a = self.mk_syn_identity_applied_id(c);
         self.handle_congruence(&c_a);
 
         c_a
@@ -99,7 +99,7 @@ impl<L: Language> EGraph<L> {
         // They shouldn't come up in the AppliedId.
         let out = out.iter().filter(|(x, _)| c.slots.contains(x)).collect();
 
-        let app_id = self.mk_applied_id(
+        let app_id = self.mk_sem_applied_id(
             *i,
             out,
         );
@@ -128,7 +128,7 @@ impl<L: Language> EGraph<L> {
         let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode_real.slots()));
         self.raw_add_to_class(i, (sh, m), syn_app_id);
         self.add_syn_enode(i, syn_enode_real);
-        self.mk_applied_id(i, fresh_to_old)
+        self.mk_syn_applied_id(i, fresh_to_old)
     }
 
     fn add_syn_enode(&mut self, i: Id, syn_enode: L) {
@@ -140,7 +140,7 @@ impl<L: Language> EGraph<L> {
 
         self.classes.get_mut(&i).unwrap().syn_enode = Some(syn_enode);
 
-        let app_id = self.mk_applied_id(i, bij.inverse());
+        let app_id = self.mk_syn_applied_id(i, bij.inverse());
         self.syn_hashcons.insert(sh, app_id);
     }
 
@@ -195,7 +195,7 @@ impl<L: Language> EGraph<L> {
             syn_enode: None,
         };
         self.classes.insert(c_id, c);
-        let app_id = self.mk_identity_applied_id(c_id);
+        let app_id = self.mk_sem_identity_applied_id(c_id);
         let prf = self.prove_reflexivity(&app_id);
         self.unionfind_set(c_id, app_id, prf);
 
@@ -206,6 +206,6 @@ impl<L: Language> EGraph<L> {
         let bij = SlotMap::bijection_from_fresh_to(slots);
         let id = self.alloc_eclass(&bij.keys());
 
-        self.mk_applied_id(id, bij)
+        self.mk_syn_applied_id(id, bij)
     }
 }

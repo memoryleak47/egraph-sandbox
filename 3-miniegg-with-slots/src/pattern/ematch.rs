@@ -14,7 +14,7 @@ struct State {
 pub fn ematch_all<L: Language>(eg: &EGraph<L>, pattern: &Pattern<L>) -> Vec<Subst> {
     let mut out = Vec::new();
     for i in eg.ids() {
-        let i = eg.mk_identity_applied_id(i);
+        let i = eg.mk_sem_identity_applied_id(i);
         out.extend(
             ematch_impl(pattern, State::default(), i, eg)
                 .into_iter()

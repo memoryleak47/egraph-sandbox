@@ -161,7 +161,7 @@ impl<L: Language> EGraph<L> {
             assert_eq!(to.id, proof.r.id);
         }
         let map = to.m.compose_partial(&from.m.inverse());
-        let app_id = self.mk_applied_id(to.id, map);
+        let app_id = self.mk_sem_applied_id(to.id, map);
         self.unionfind_set(from.id, app_id, proof);
         self.convert_eclass(from.id);
     }
@@ -173,7 +173,7 @@ impl<L: Language> EGraph<L> {
 
         // - remove all of its e-nodes
         let from_nodes = self.classes.get(&from).unwrap().nodes.clone();
-        let from_id = self.mk_identity_applied_id(from);
+        let from_id = self.mk_sem_identity_applied_id(from);
         for (sh, (bij, src_id)) in from_nodes {
             let enode = sh.apply_slotmap(&bij);
             self.raw_remove_from_class(from, (sh, bij));
@@ -187,7 +187,7 @@ impl<L: Language> EGraph<L> {
             let (bij, src_id) = self.classes[&k].nodes[&sh].clone();
             let enode = sh.apply_slotmap(&bij);
             self.raw_remove_from_class(k, (sh, bij));
-            let applied_k = self.mk_identity_applied_id(k);
+            let applied_k = self.mk_sem_identity_applied_id(k);
             adds.push((enode, applied_k, src_id));
         }
 
@@ -200,7 +200,7 @@ impl<L: Language> EGraph<L> {
         // re-add the group equations as well.
 
         // This basically calls self.union(from, from * perm) for each perm generator in the group of from.
-        let from = self.mk_identity_applied_id(from);
+        let from = self.mk_sem_identity_applied_id(from);
         let to = self.find_applied_id(&from);
         // from.m :: slots(from.id) -> C
         // to.m :: slots(to.id) -> C
