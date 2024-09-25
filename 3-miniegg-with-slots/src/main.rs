@@ -1,30 +1,15 @@
 use miniegg_with_slots::*;
 
+
+
 fn main() {
+    let p = "(lam s0 (app (lam s1 (lam s2 s2)) s0))";
+
+}
+
+#[test]
+fn main12() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone())
-    };
-
-    let term = |s, eg: &mut EGraph<RiseENode>| -> RecExpr<RiseENode> {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone());
-        re
-    };
-
-    let equate = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = id(s1, eg);
-        let s2 = id(s2, eg);
-        eg.union(&s1, &s2);
-    };
-
-    let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = term(s1, eg);
-        let s2 = term(s2, eg);
-        eg.explain_equivalence(s1, s2).show_expr(eg);
-    };
-
     equate("(var s0)", "sym_y", eg);
     eg.dump();
     explain("(lam s1 (var s1))", "(lam s0 (var s0))", eg);
@@ -34,28 +19,6 @@ fn main() {
 #[test]
 fn main11() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone())
-    };
-
-    let term = |s, eg: &mut EGraph<RiseENode>| -> RecExpr<RiseENode> {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone());
-        re
-    };
-
-    let equate = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = id(s1, eg);
-        let s2 = id(s2, eg);
-        eg.union(&s1, &s2);
-    };
-
-    let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = term(s1, eg);
-        let s2 = term(s2, eg);
-        eg.explain_equivalence(s1, s2).show_expr(eg);
-    };
 
     equate("(app (var s0) (var s1))", "(app (var s0) sym_x)", eg);
     equate("(app (var s0) (var s1))", "(app (var s1) (var s0))", eg);
@@ -66,29 +29,6 @@ fn main11() {
 #[test]
 fn main10() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone())
-    };
-
-    let term = |s, eg: &mut EGraph<RiseENode>| -> RecExpr<RiseENode> {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone());
-        re
-    };
-
-    let equate = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = id(s1, eg);
-        let s2 = id(s2, eg);
-        eg.union(&s1, &s2);
-    };
-
-    let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = term(s1, eg);
-        let s2 = term(s2, eg);
-        eg.explain_equivalence(s1, s2).show_expr(eg);
-    };
-
     equate("(app (var s0) (var s1))", "sym_x", eg);
     eg.dump();
     explain("(app (var s0) (var s1))", "(app (var s1) (var s0))", eg);
@@ -97,29 +37,6 @@ fn main10() {
 #[test]
 fn main9() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone())
-    };
-
-    let term = |s, eg: &mut EGraph<RiseENode>| -> RecExpr<RiseENode> {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone());
-        re
-    };
-
-    let equate = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = id(s1, eg);
-        let s2 = id(s2, eg);
-        eg.union(&s1, &s2);
-    };
-
-    let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = term(s1, eg);
-        let s2 = term(s2, eg);
-        eg.explain_equivalence(s1, s2).show_expr(eg);
-    };
-
     equate("(app (var s0) sym_x)", "sym_y", eg);
     eg.dump();
     explain("(app (var s0) sym_x)", "(app (var s1) sym_x)", eg);
@@ -128,29 +45,6 @@ fn main9() {
 #[test]
 fn main8() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone())
-    };
-
-    let term = |s, eg: &mut EGraph<RiseENode>| -> RecExpr<RiseENode> {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone());
-        re
-    };
-
-    let equate = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = id(s1, eg);
-        let s2 = id(s2, eg);
-        eg.union(&s1, &s2);
-    };
-
-    let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = term(s1, eg);
-        let s2 = term(s2, eg);
-        eg.explain_equivalence(s1, s2).show_expr(eg);
-    };
-
     equate("(app (app (var s0) (var s1)) sym_x)", "(app (app (var s1) (var s0)) sym_x)", eg);
     equate("(app (app (var s0) (var s1)) sym_y)", "(app (app (var s1) (var s0)) sym_y)", eg);
     equate("(app (app (var s0) (var s1)) sym_x)", "(app (app (var s0) (var s1)) sym_y)", eg);
@@ -161,29 +55,6 @@ fn main8() {
 #[test]
 fn main7() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone())
-    };
-
-    let term = |s, eg: &mut EGraph<RiseENode>| -> RecExpr<RiseENode> {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone());
-        re
-    };
-
-    let equate = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = id(s1, eg);
-        let s2 = id(s2, eg);
-        eg.union(&s1, &s2);
-    };
-
-    let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = term(s1, eg);
-        let s2 = term(s2, eg);
-        eg.explain_equivalence(s1, s2).show_expr(eg);
-    };
-
     equate("(app (app (var s0) (var s1)) (var s2))", "(app (app (var s1) (var s0)) (var s2))", eg);
     equate("(app (app (var s0) (var s1)) (var s2))", "(app (app (var s0) (var s2)) (var s1))", eg);
     eg.dump();
@@ -198,29 +69,6 @@ fn main7() {
 #[test]
 fn main6() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone())
-    };
-
-    let term = |s, eg: &mut EGraph<RiseENode>| -> RecExpr<RiseENode> {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone());
-        re
-    };
-
-    let equate = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = id(s1, eg);
-        let s2 = id(s2, eg);
-        eg.union(&s1, &s2);
-    };
-
-    let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = term(s1, eg);
-        let s2 = term(s2, eg);
-        eg.explain_equivalence(s1, s2).show_expr(eg);
-    };
-
     equate("(app (var s0) (var s1))", "(app (var s1) (var s0))", eg);
     eg.dump();
     explain("(app (var s0) (var s1))", "(app (var s1) (var s0))", eg);
@@ -229,29 +77,6 @@ fn main6() {
 #[test]
 fn main5() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone())
-    };
-
-    let term = |s, eg: &mut EGraph<RiseENode>| -> RecExpr<RiseENode> {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone());
-        re
-    };
-
-    let equate = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = id(s1, eg);
-        let s2 = id(s2, eg);
-        eg.union(&s1, &s2);
-    };
-
-    let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
-        let s1 = term(s1, eg);
-        let s2 = term(s2, eg);
-        eg.explain_equivalence(s1, s2).show_expr(eg);
-    };
-
     equate("(var s0)", "(app (var s0) sym_x)", eg);
     equate("sym_x", "sym_y", eg);
     eg.dump();
@@ -261,29 +86,6 @@ fn main5() {
 #[test]
 fn main4() {
     let eg: &mut EGraph<TstENode> = &mut EGraph::new();
-    let id = |s, eg: &mut EGraph<TstENode>| -> AppliedId {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone())
-    };
-
-    let term = |s, eg: &mut EGraph<TstENode>| -> RecExpr<TstENode> {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone());
-        re
-    };
-
-    let equate = |s1, s2, eg: &mut EGraph<TstENode>| {
-        let s1 = id(s1, eg);
-        let s2 = id(s2, eg);
-        eg.union(&s1, &s2);
-    };
-
-    let explain = |s1, s2, eg: &mut EGraph<TstENode>| {
-        let s1 = term(s1, eg);
-        let s2 = term(s2, eg);
-        eg.explain_equivalence(s1, s2).show();
-    };
-
     equate("(f s1 s2)", "(g s2 s1)", eg);
     equate("(g s1 s2)", "(h s1 s2)", eg);
     eg.dump();
@@ -293,17 +95,6 @@ fn main4() {
 #[test]
 fn main3() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    let id = |s, eg: &mut EGraph<RiseENode>| {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone())
-    };
-
-    let term = |s, eg: &mut EGraph<RiseENode>| {
-        let re = RecExpr::parse(s).unwrap();
-        eg.add_syn_expr(re.clone());
-        re
-    };
-
     let x1 = id("sym_x1", eg);
     let x2 = id("sym_x2", eg);
     let x1x3 = term("(app sym_x1 sym_x3)", eg);
@@ -331,4 +122,30 @@ fn main2() {
     eg.union(&y3, &y4);
     eg.union(&y2, &y3);
     eg.explain_equivalence(x1, x4).show();
+}
+
+
+// misc functions.
+
+fn id<L: Language>(s: &str, eg: &mut EGraph<L>) -> AppliedId {
+    let re = RecExpr::parse(s).unwrap();
+    eg.add_syn_expr(re.clone())
+}
+
+fn term<L: Language>(s: &str, eg: &mut EGraph<L>) -> RecExpr<L> {
+    let re = RecExpr::parse(s).unwrap();
+    eg.add_syn_expr(re.clone());
+    re
+}
+
+fn equate<L: Language>(s1: &str, s2: &str, eg: &mut EGraph<L>) {
+    let s1 = id(s1, eg);
+    let s2 = id(s2, eg);
+    eg.union(&s1, &s2);
+}
+
+fn explain<L: Language>(s1: &str, s2: &str, eg: &mut EGraph<L>) {
+    let s1 = term(s1, eg);
+    let s2 = term(s2, eg);
+    eg.explain_equivalence(s1, s2).show_expr(eg);
 }
