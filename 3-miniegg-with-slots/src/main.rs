@@ -7,7 +7,7 @@ fn main() {
     equate("(app (var s0) (var s1))", "(app (var s1) (var s2))", eg);
     eg.dump();
     eg.check();
-    explain("(app (app (var s0) (var s1)) sym_x)", "(app (app (var s0) (var s0)) sym_x)", eg);
+    explain("(app (app (var s0) (var s1)) sym_x)", "(app (app (var s2) (var s3)) sym_x)", eg);
 }
 
 #[test]
