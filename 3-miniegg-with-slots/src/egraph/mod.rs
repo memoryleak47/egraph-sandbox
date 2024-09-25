@@ -36,7 +36,7 @@ pub struct EClass<L: Language> {
     // Expresses the self-symmetries of this e-class.
     group: Group<ProvenPerm>,
 
-    syn_enode: Option<L>,
+    syn_enode: L,
 
     // is of the form `c[...] = c[...]` where everything is stabilized, except for the redundant slots which are just used on one side.
     // only exists for the leader of an e-class.
@@ -86,7 +86,7 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn syn_slots(&self, id: Id) -> HashSet<Slot> {
-        self.classes[&id].syn_enode.as_ref().unwrap().slots()
+        self.classes[&id].syn_enode.slots()
     }
 
     pub fn ids(&self) -> Vec<Id> {
@@ -192,9 +192,7 @@ impl<L: Language> EGraph<L> {
             let slot_str = c.slots.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ");
             println!("\n{:?}({}):", i, &slot_str);
 
-            if let Some(syn_n) = &c.syn_enode {
-                println!(">> {syn_n:?}");
-            }
+            println!(">> {:?}", &c.syn_enode);
 
             for (sh, (bij, app_id)) in &c.nodes {
                 let n = sh.apply_slotmap(bij);

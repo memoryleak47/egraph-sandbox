@@ -231,7 +231,7 @@ impl ProvenEqRaw {
 
 impl<L: Language> EGraph<L> {
     pub fn get_syn_node(&self, i: &AppliedId) -> L {
-        let syn = self.classes[&i.id].syn_enode.as_ref().unwrap();
+        let syn = &self.classes[&i.id].syn_enode;
         syn.apply_slotmap_fresh(&i.m)
     }
 }

@@ -24,10 +24,8 @@ impl<L: Language> EGraph<L> {
         let old_slots = enode.slots();
         let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
         let old_to_fresh = fresh_to_old.inverse();
-        let c = self.alloc_eclass(&old_to_fresh.values());
         let enode = enode.apply_slotmap(&old_to_fresh);
-
-        self.add_syn_enode(c, enode);
+        let c = self.alloc_eclass(&old_to_fresh.values(), enode.clone());
 
         let c_a = self.mk_syn_identity_applied_id(c);
         self.handle_congruence(&c_a);
@@ -121,27 +119,13 @@ impl<L: Language> EGraph<L> {
 
         // allocate new class & slot set.
         let fresh_slots = old_to_fresh.values();
-        let i = self.alloc_eclass(&fresh_slots);
+        let syn_enode_real = syn_enode.apply_slotmap(&old_to_fresh);
+        let i = self.alloc_eclass(&fresh_slots, syn_enode_real.clone());
 
         let m = bij.compose(&old_to_fresh);
-        let syn_enode_real = syn_enode.apply_slotmap(&old_to_fresh);
         let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode_real.slots()));
         self.raw_add_to_class(i, (sh, m), syn_app_id);
-        self.add_syn_enode(i, syn_enode_real);
         self.mk_syn_applied_id(i, fresh_to_old)
-    }
-
-    fn add_syn_enode(&mut self, i: Id, syn_enode: L) {
-        let (sh, bij) = syn_enode.weak_shape();
-
-        if CHECKS {
-            assert!(!self.syn_hashcons.contains_key(&sh));
-        }
-
-        self.classes.get_mut(&i).unwrap().syn_enode = Some(syn_enode);
-
-        let app_id = self.mk_syn_applied_id(i, bij.inverse());
-        self.syn_hashcons.insert(sh, app_id);
     }
 
     // adds (sh, bij) to the eclass `id`.
@@ -178,34 +162,40 @@ impl<L: Language> EGraph<L> {
     // TODO make the public API auto "fresh" slots.
     pub fn alloc_empty_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
         panic!("Can't use alloc_empty_eclass if explanations are enabled!");
-        self.alloc_eclass(slots)
+        self.alloc_eclass(slots, panic!())
     }
 
-    pub(in crate::egraph) fn alloc_eclass(&mut self, slots: &HashSet<Slot>) -> Id {
+    pub(in crate::egraph) fn alloc_eclass(&mut self, slots: &HashSet<Slot>, syn_enode: L) -> Id {
         let c_id = Id(self.unionfind_len()); // Pick the next unused Id.
 
-        // TODO syn_slots computation should be syn_enode-dependent
-        let proven_perm = ProvenPerm::identity(c_id, &slots, &slots);
+        let syn_slots = syn_enode.slots();
+        let proven_perm = ProvenPerm::identity(c_id, &slots, &syn_slots);
+
         let c = EClass {
             nodes: HashMap::default(),
             group: Group::identity(&proven_perm),
             slots: slots.clone(),
             usages: HashSet::default(),
             redundancy_proof: None,
-            syn_enode: None,
+            syn_enode: syn_enode.clone(),
         };
         self.classes.insert(c_id, c);
+
+        { // add syn_enode to the hashcons.
+            let (sh, bij) = syn_enode.weak_shape();
+
+            if CHECKS {
+                assert!(!self.syn_hashcons.contains_key(&sh));
+            }
+
+            let app_id = self.mk_syn_applied_id(c_id, bij.inverse());
+            self.syn_hashcons.insert(sh, app_id);
+        }
+
         let app_id = self.mk_sem_identity_applied_id(c_id);
         let prf = self.prove_reflexivity(&app_id);
         self.unionfind_set(c_id, app_id, prf);
 
         c_id
-    }
-
-    pub(in crate::egraph) fn alloc_eclass_fresh(&mut self, slots: &HashSet<Slot>) -> AppliedId {
-        let bij = SlotMap::bijection_from_fresh_to(slots);
-        let id = self.alloc_eclass(&bij.keys());
-
-        self.mk_syn_applied_id(id, bij)
     }
 }
