@@ -155,12 +155,17 @@ impl TransitivityProof {
     }
 }
 
+fn alpha_normalize<L: Language>(n: &L) -> L {
+    let (sh, bij) = n.weak_shape();
+    sh.apply_slotmap(&bij)
+}
+
 impl CongruenceProof {
     pub fn check<L: Language>(&self, eq: &Equation, eg: &EGraph<L>) -> Option<ProvenEq> {
         let CongruenceProof(child_proofs) = self;
 
-        let l = eg.get_syn_node(&eq.l);
-        let r = eg.get_syn_node(&eq.r);
+        let l = alpha_normalize(&eg.get_syn_node(&eq.l));
+        let r = alpha_normalize(&eg.get_syn_node(&eq.r));
 
         let null_l = nullify_app_ids(&l);
         let null_r = nullify_app_ids(&r);
@@ -232,7 +237,7 @@ impl ProvenEqRaw {
 impl<L: Language> EGraph<L> {
     pub fn get_syn_node(&self, i: &AppliedId) -> L {
         let syn = &self.classes[&i.id].syn_enode;
-        syn.apply_slotmap_fresh(&i.m)
+        syn.apply_slotmap(&i.m)
     }
 }
 
