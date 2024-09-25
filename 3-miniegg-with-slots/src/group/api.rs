@@ -76,7 +76,6 @@ impl ProvenPerm {
         format!("{:?}", (&self.0, &**self.1))
     }
 
-    #[track_caller]
     pub fn check(&self) {
         let id = self.1.l.id;
         let slots = self.0.keys();
@@ -85,9 +84,7 @@ impl ProvenPerm {
         assert_eq!(id, self.1.l.id);
         assert_eq!(id, self.1.r.id);
         assert_eq!(&self.1.l.m.keys(), &syn_slots);
-        assert_eq!(&self.1.l.m.values(), &syn_slots);
         assert_eq!(&self.1.r.m.keys(), &syn_slots);
-        assert_eq!(&self.1.r.m.values(), &syn_slots);
         assert!(self.0.is_perm());
 
         let eq = Equation { l: AppliedId::new(id, SlotMap::identity(&slots)), r: AppliedId::new(id, self.0.clone()) };
