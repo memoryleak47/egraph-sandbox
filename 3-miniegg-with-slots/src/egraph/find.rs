@@ -38,7 +38,7 @@ impl<L: Language> EGraph<L> {
             assert_eq!(i, proof.l.id);
             assert_eq!(app.id, proof.r.id);
         }
-        let mut lock = self.unionfind.lock().unwrap();
+        let mut lock = self.unionfind.try_lock().unwrap();
         if lock.len() == i.0 {
             lock.push((app, proof));
         } else {
@@ -47,7 +47,7 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn proven_unionfind_get(&self, i: Id) -> (AppliedId, ProvenEq) {
-        let mut map = self.unionfind.lock().unwrap();
+        let mut map = self.unionfind.try_lock().unwrap();
         self.unionfind_get_impl(i, &mut *map)
     }
 
@@ -56,7 +56,7 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn unionfind_iter(&self) -> impl Iterator<Item=(Id, AppliedId)> {
-        let mut map = self.unionfind.lock().unwrap();
+        let mut map = self.unionfind.try_lock().unwrap();
         let mut out = Vec::new();
 
         for x in (0..map.len()).map(Id) {
@@ -68,7 +68,7 @@ impl<L: Language> EGraph<L> {
     }
 
     pub fn unionfind_len(&self) -> usize {
-        self.unionfind.lock().unwrap().len()
+        self.unionfind.try_lock().unwrap().len()
     }
 
     pub fn find_enode(&self, enode: &L) -> L {
