@@ -281,7 +281,7 @@ impl<L: Language> EGraph<L> {
                         let l = enode.applied_id_occurences()[i].clone();
                         let r = new_enode.applied_id_occurences()[i].clone();
                         let eq = Equation { l, r };
-                        assert!(proves_equation(&prfs[i], &eq));
+                        assert_proves_equation(&prfs[i], &eq);
                     }
                 }
             }

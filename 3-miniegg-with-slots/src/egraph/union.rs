@@ -323,7 +323,7 @@ impl<L: Language> EGraph<L> {
                 }
 
                 // src_id[...] == src_id[...]
-                let prf = CongruenceProof(combined_prfs).check(&eq, self).unwrap();
+                let prf = CongruenceProof(combined_prfs).check(&eq, self);
                 if CHECKS {
                     assert_eq!(prf.l.id, src_id);
                     assert_eq!(prf.r.id, src_id);

@@ -69,40 +69,38 @@ impl Hash for ProvenEqRaw {
 
 
 impl ExplicitProof {
-    pub fn check(&self, eq: &Equation) -> Option<ProvenEq> {
-        assert(true)?;
-
+    pub fn check(&self, eq: &Equation) -> ProvenEq {
         let eq = eq.clone();
         let proof = Proof::Explicit(self.clone());
-        Some(Arc::new(ProvenEqRaw { eq, proof }))
+        Arc::new(ProvenEqRaw { eq, proof })
     }
 }
 
 impl ReflexivityProof {
-    pub fn check(&self, eq: &Equation) -> Option<ProvenEq>{
-        assert(eq.l == eq.r)?;
+    pub fn check(&self, eq: &Equation) -> ProvenEq {
+        assert_eq!(eq.l, eq.r);
 
         let eq = eq.clone();
         let proof = Proof::Reflexivity(self.clone());
-        Some(Arc::new(ProvenEqRaw { eq, proof }))
+        Arc::new(ProvenEqRaw { eq, proof })
     }
 }
 
 impl SymmetryProof {
-    pub fn check(&self, eq: &Equation) -> Option<ProvenEq> {
+    pub fn check(&self, eq: &Equation) -> ProvenEq {
         let SymmetryProof(x) = self;
 
         let flipped = Equation { l: x.r.clone(), r: x.l.clone() };
-        match_equation(eq, &flipped).map(|_|())?;
+        assert_match_equation(eq, &flipped);
 
         let eq = eq.clone();
         let proof = Proof::Symmetry(self.clone());
-        Some(Arc::new(ProvenEqRaw { eq, proof }))
+        Arc::new(ProvenEqRaw { eq, proof })
     }
 }
 
 impl TransitivityProof {
-    pub fn check(&self, eq: &Equation) -> Option<ProvenEq> {
+    pub fn check(&self, eq: &Equation) -> ProvenEq {
         let TransitivityProof(eq1, eq2) = self;
 
         let mut theta1 = {
@@ -116,27 +114,25 @@ impl TransitivityProof {
             eq2.r.m.inverse().compose_partial(&eq.r.m)
         };
 
-        let recompute_theta1 = |theta1: &mut SlotMap, theta2: &SlotMap| -> Option<()> {
+        let recompute_theta1 = |theta1: &mut SlotMap, theta2: &SlotMap| {
             // eq1.r*theta1 == eq2.l*theta2
             // -> theta1 == eq1.r^-1 * eq2.l * theta2
-            *theta1 = theta1.try_union(&eq1.r.m.inverse().compose_partial(&eq2.l.m).compose_partial(theta2))?;
-            Some(())
+            *theta1 = theta1.try_union(&eq1.r.m.inverse().compose_partial(&eq2.l.m).compose_partial(theta2)).unwrap();
         };
 
-        let recompute_theta2 = |theta1: &SlotMap, theta2: &mut SlotMap| -> Option<()> {
+        let recompute_theta2 = |theta1: &SlotMap, theta2: &mut SlotMap| {
             // eq1.r*theta1 == eq2.l*theta2
             // -> theta2 == eq2.l^-1 * eq1.r * theta2
-            *theta2 = theta2.try_union(&eq2.l.m.inverse().compose_partial(&eq1.r.m).compose_partial(theta1))?;
-            Some(())
+            *theta2 = theta2.try_union(&eq2.l.m.inverse().compose_partial(&eq1.r.m).compose_partial(theta1)).unwrap();
         };
 
-        recompute_theta1(&mut theta1, &theta2)?;
-        recompute_theta2(&theta1, &mut theta2)?;
+        recompute_theta1(&mut theta1, &theta2);
+        recompute_theta2(&theta1, &mut theta2);
 
         for x in eq1.slots() {
             if !theta1.contains_key(x) { theta1.insert(x, Slot::fresh()); }
         }
-        recompute_theta2(&theta1, &mut theta2)?;
+        recompute_theta2(&theta1, &mut theta2);
         for x in eq2.slots() {
             if !theta2.contains_key(x) { theta2.insert(x, Slot::fresh()); }
         }
@@ -144,14 +140,14 @@ impl TransitivityProof {
         let renamed_eq1 = eq1.apply_slotmap(&theta1);
         let renamed_eq2 = eq2.apply_slotmap(&theta2);
 
-        assert(renamed_eq1.l == eq.l)?;
-        assert(renamed_eq2.r == eq.r)?;
-        assert(renamed_eq1.r == renamed_eq2.l)?;
+        assert_eq!(renamed_eq1.l, eq.l);
+        assert_eq!(renamed_eq2.r, eq.r);
+        assert_eq!(renamed_eq1.r, renamed_eq2.l);
 
 
         let eq = eq.clone();
         let proof = Proof::Transitivity(self.clone());
-        Some(Arc::new(ProvenEqRaw { eq, proof }))
+        Arc::new(ProvenEqRaw { eq, proof })
     }
 }
 
@@ -161,7 +157,7 @@ fn alpha_normalize<L: Language>(n: &L) -> L {
 }
 
 impl CongruenceProof {
-    pub fn check<L: Language>(&self, eq: &Equation, eg: &EGraph<L>) -> Option<ProvenEq> {
+    pub fn check<L: Language>(&self, eq: &Equation, eg: &EGraph<L>) -> ProvenEq {
         let CongruenceProof(child_proofs) = self;
 
         let l = alpha_normalize(&eg.get_syn_node(&eq.l));
@@ -169,13 +165,13 @@ impl CongruenceProof {
 
         let null_l = nullify_app_ids(&l);
         let null_r = nullify_app_ids(&r);
-        assert(null_l == null_r)?;
+        assert_eq!(null_l, null_r);
 
         let l_v = l.applied_id_occurences();
         let r_v = r.applied_id_occurences();
 
-        assert(l_v.len() == child_proofs.len())?;
-        assert(r_v.len() == child_proofs.len())?;
+        assert_eq!(l_v.len(), child_proofs.len());
+        assert_eq!(r_v.len(), child_proofs.len());
 
         let l_v = l_v.into_iter();
         let r_v = r_v.into_iter();
@@ -184,12 +180,12 @@ impl CongruenceProof {
         for ((ll, rr), prf) in l_v.zip(r_v).zip(c_v) {
             let eq1 = &Equation { l: ll, r: rr };
             let eq2 = prf.deref();
-            match_equation(eq1, eq2)?;
+            assert_match_equation(eq1, eq2);
         }
 
         let eq = eq.clone();
         let proof = Proof::Congruence(self.clone());
-        Some(Arc::new(ProvenEqRaw { eq, proof }))
+        Arc::new(ProvenEqRaw { eq, proof })
     }
 }
 
@@ -242,9 +238,9 @@ impl<L: Language> EGraph<L> {
 }
 
 // returns the global renaming theta, s.t. a.apply_slotmap(theta) = b, if it exists.
-pub fn match_app_id(a: &AppliedId, b: &AppliedId) -> Option<SlotMap> {
-    assert(a.id == b.id)?;
-    assert(a.m.keys() == b.m.keys())?;
+pub fn match_app_id(a: &AppliedId, b: &AppliedId) -> SlotMap {
+    assert_eq!(a.id, b.id);
+    assert_eq!(a.m.keys(), b.m.keys());
 
     // a.m :: slots(i) -> A
     // b.m :: slots(i) -> B
@@ -255,31 +251,25 @@ pub fn match_app_id(a: &AppliedId, b: &AppliedId) -> Option<SlotMap> {
         assert_eq!(&a.apply_slotmap(&theta), b);
     }
 
-    Some(theta)
+    theta
 }
 
 // returns the bijective renaming theta, s.t. a.apply_slotmap(theta) = b, if it exists.
-pub fn match_equation(a: &Equation, b: &Equation) -> Option<SlotMap> {
-    let theta_l = match_app_id(&a.l, &b.l)?;
-    let theta_r = match_app_id(&a.r, &b.r)?;
+pub fn assert_match_equation(a: &Equation, b: &Equation) -> SlotMap {
+    let theta_l = match_app_id(&a.l, &b.l);
+    let theta_r = match_app_id(&a.r, &b.r);
 
-    let theta = theta_l.try_union(&theta_r)?;
-    assert(theta.is_bijection())?;
+    let theta = theta_l.try_union(&theta_r).unwrap();
+    assert!(theta.is_bijection());
 
     if CHECKS {
         assert_eq!(&a.apply_slotmap(&theta), b);
     }
 
-    Some(theta)
+    theta
 }
 
-pub fn assert_match_equation(a: &Equation, b: &Equation) {
-    if match_equation(a, b).is_none() {
-        panic!("equation mismatch:\n{a:?}\n  doesn't match\n{b:?}");
-    }
-}
-
-pub fn proves_equation(peq: &ProvenEq, eq: &Equation) -> bool {
+pub fn assert_proves_equation(peq: &ProvenEq, eq: &Equation) {
     let mut e: Equation = (***peq).clone();
 
     for s in e.l.m.keys() {
@@ -294,10 +284,5 @@ pub fn proves_equation(peq: &ProvenEq, eq: &Equation) -> bool {
         }
     }
 
-    match_equation(&e, eq).is_some()
-}
-
-pub fn assert(b: bool) -> Option<()> {
-    if b { Some(()) }
-    else { None }
+    assert_match_equation(&e, eq);
 }
