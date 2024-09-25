@@ -5,7 +5,9 @@ impl<L: Language> EGraph<L> {
     fn unionfind_semify_entry(&self, entry: &mut (AppliedId, ProvenEq)) {
         if entry.0.m.keys().len() > self.slots(entry.0.id).len() {
             entry.0 = self.semify_app_id(entry.0.clone());
-            entry.1 = self.disassociate_proven_eq(entry.1.clone());
+
+            // doing this double-locks the Mutex. It's just an optimization anyways though.
+            // entry.1 = self.disassociate_proven_eq(entry.1.clone());
         }
     }
 
