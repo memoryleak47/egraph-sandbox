@@ -2,14 +2,16 @@ use crate::*;
 
 impl<L: Language> EGraph<L> {
     // We lazily semify the entries, only when we encounter them.
-    fn unionfind_semify_entry(&self, i: Id, entry: &mut (AppliedId, ProvenEq)) {
-        // TODO update both sides of the equation using semify_app_id, if necessary.
-        // This works by transitively chaining the shrink proofs to the entry.
+    fn unionfind_semify_entry(&self, entry: &mut (AppliedId, ProvenEq)) {
+        if entry.0.m.keys().len() > self.slots(entry.0.id).len() {
+            entry.0 = self.semify_app_id(entry.0.clone());
+            entry.1 = self.disassociate_proven_eq(entry.1.clone());
+        }
     }
 
     fn unionfind_get_impl(&self, i: Id, map: &mut [(AppliedId, ProvenEq)]) -> (AppliedId, ProvenEq) {
         let entry = &mut map[i.0];
-        self.unionfind_semify_entry(i, entry);
+        self.unionfind_semify_entry(entry);
 
         let entry = entry.clone();
 
