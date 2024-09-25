@@ -283,7 +283,7 @@ impl<L: Language> EGraph<L> {
                         let l = enode.applied_id_occurences()[i].clone();
                         let r = new_enode.applied_id_occurences()[i].clone();
                         let eq = Equation { l, r };
-                        match_equation(&eq, &prfs[i]).unwrap();
+                        assert!(proves_equation(&prfs[i], &eq));
                     }
                 }
             }
