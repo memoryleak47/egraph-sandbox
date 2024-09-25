@@ -198,7 +198,7 @@ impl<L: Language> EGraph<L> {
 
         let app_id = self.mk_sem_identity_applied_id(c_id);
         let syn_app_id = self.mk_syn_identity_applied_id(c_id);
-        let prf = self.prove_reflexivity(&syn_app_id);
+        let prf = prove_reflexivity(&syn_app_id);
         self.unionfind_set(c_id, syn_app_id, prf);
 
         c_id
