@@ -243,6 +243,41 @@ impl<L: Language> EGraph<L> {
         self.classes.get_mut(&to.id).unwrap().group.add_set(set);
     }
 
+    fn handle_shrink_in_upwards_merge(&mut self, src_id: Id) {
+        let (leader, leader_prf) = self.proven_unionfind_get(src_id);
+        let neg_leader_prf = prove_symmetry(leader_prf.clone());
+
+        let identity = self.mk_syn_identity_applied_id(src_id);
+        let syn_enode = self.get_syn_node(&identity);
+        let (new_node, prfs) = self.proven_find_enode(&syn_enode);
+
+        // the set of slots that still remain non-redundant.
+        let mut fixpoint_set = HashSet::default();
+
+        let mut combined = Vec::new();
+        for prf in prfs {
+            let rev = prove_symmetry(prf.clone());
+            let cycle = prove_transitivity(prf, rev);
+
+            for (x, y) in cycle.l.m.iter() {
+                if cycle.r.m.get(x) == Some(y) {
+                    fixpoint_set.insert(x);
+                }
+            }
+
+            combined.push(cycle);
+        }
+        let l = identity.clone();
+        let r = identity.apply_slotmap_fresh(&SlotMap::identity(&fixpoint_set));
+        let cong = self.prove_congruence(&l, &r, combined);
+        let prf = self.prove_transitivity(neg_leader_prf.clone(), self.prove_transitivity(cong, leader_prf.clone()));
+
+        let leader_inv = leader.m.inverse();
+        let leader_fixpoint_set: HashSet<Slot> = fixpoint_set.iter().map(|x| leader_inv[*x]).collect();
+        let leader_fixpoint_set = &leader_fixpoint_set & &self.slots(leader.id);
+        self.shrink_slots(&leader, &leader_fixpoint_set, prf);
+    }
+
     pub fn semantic_add(&mut self, enode: &L, i_orig: &AppliedId, src_id: AppliedId) {
         let mut enode = self.find_enode(&enode);
         let mut i = self.find_applied_id(i_orig);
@@ -253,18 +288,7 @@ impl<L: Language> EGraph<L> {
         let theta = i_orig.m.compose(&i.m.inverse());
         let src_id = src_id.apply_slotmap_fresh(&theta);
         if !i.slots().is_subset(&enode.slots()) {
-            let cap = &enode.slots() & &i.slots();
-            // TODO find an actual proof for this.
-            let prf = {
-                let i1 = AppliedId::new(i.id, i.m.iter().filter(|(x, _)| cap.contains(x)).collect());
-                let i2 = i1.clone();
-
-                let i1 = self.synify_app_id(i1);
-                let i2 = self.synify_app_id(i2);
-
-                self.prove_explicit(&i1, &i2, Some(String::from("slot upwards merging")))
-            };
-            self.shrink_slots(&i, &cap, prf);
+            self.handle_shrink_in_upwards_merge(src_id.id);
 
             enode = self.find_enode(&enode);
             i = self.find_applied_id(&i);
