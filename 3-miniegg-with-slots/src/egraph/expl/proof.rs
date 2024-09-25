@@ -219,6 +219,24 @@ pub fn match_equation(a: &Equation, b: &Equation) -> Option<SlotMap> {
     Some(theta)
 }
 
+pub fn proves_equation(peq: &ProvenEq, eq: &Equation) -> bool {
+    let mut e: Equation = (***peq).clone();
+
+    for s in e.l.m.keys() {
+        if !eq.l.m.contains_key(s) {
+            e.l.m.remove(s);
+        }
+    }
+
+    for s in e.r.m.keys() {
+        if !eq.r.m.contains_key(s) {
+            e.r.m.remove(s);
+        }
+    }
+
+    match_equation(&e, eq).is_some()
+}
+
 pub fn apply_equation(x: &AppliedId, eq: &Equation) -> Option<AppliedId> {
     let theta = match_app_id(&eq.l, x)?;
     Some(eq.r.apply_slotmap_fresh(&theta))

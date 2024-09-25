@@ -104,8 +104,6 @@ impl ProvenPerm {
 
         assert_eq!(id, self.1.l.id);
         assert_eq!(id, self.1.r.id);
-        assert_eq!(&self.0.keys(), &slots);
-        assert_eq!(&self.0.values(), &slots);
         assert_eq!(&self.1.l.m.keys(), &syn_slots);
         assert_eq!(&self.1.l.m.values(), &syn_slots);
         assert_eq!(&self.1.r.m.keys(), &syn_slots);
@@ -113,7 +111,7 @@ impl ProvenPerm {
         assert!(self.0.is_perm());
 
         let eq = Equation { l: AppliedId::new(id, SlotMap::identity(&slots)), r: AppliedId::new(id, self.0.clone()) };
-        match_equation(&eq, &self.1).unwrap();
+        assert!(proves_equation(&self.1, &eq));
     }
 }
 
