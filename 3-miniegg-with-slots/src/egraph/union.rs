@@ -255,13 +255,13 @@ impl<L: Language> EGraph<L> {
         let mut fixpoint_set = HashSet::default();
 
         let mut combined = Vec::new();
-        for prf in prfs {
+        for (app_id, prf) in new_node.applied_id_occurences().into_iter().zip(prfs.into_iter()) {
             let rev = prove_symmetry(prf.clone());
             let cycle = prove_transitivity(prf, rev);
 
             for (x, y) in cycle.l.m.iter() {
                 if cycle.r.m.get(x) == Some(y) {
-                    fixpoint_set.insert(x);
+                    fixpoint_set.insert(app_id.m[x]);
                 }
             }
 
