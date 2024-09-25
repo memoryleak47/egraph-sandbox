@@ -106,7 +106,8 @@ impl<L: Language> EGraph<L> {
     #[track_caller]
     pub fn check_applied_id(&self, app_id: &AppliedId) {
         app_id.check();
-        assert_eq!(self.classes[&app_id.id].slots, app_id.m.keys());
+        // this check doesn't work anymore, because the user will give us over-specified AppliedIds.
+        // assert_eq!(self.classes[&app_id.id].slots, app_id.m.keys(), "checking AppliedId failed: Wrong key-set, {app_id:?}");
     }
 
     // mk_syn_applied_id & friends.
