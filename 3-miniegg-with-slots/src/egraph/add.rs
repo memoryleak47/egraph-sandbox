@@ -111,6 +111,7 @@ impl<L: Language> EGraph<L> {
 }
 
 impl<L: Language> EGraph<L> {
+    // returns a sem applied id.
     fn mk_singleton_class(&mut self, (sh, bij): (L, SlotMap), syn_enode: L) -> AppliedId {
         let old_slots = bij.values();
 
@@ -119,13 +120,13 @@ impl<L: Language> EGraph<L> {
 
         // allocate new class & slot set.
         let fresh_slots = old_to_fresh.values();
-        let syn_enode_real = syn_enode.apply_slotmap(&old_to_fresh);
+        let syn_enode_real = syn_enode.apply_slotmap_fresh(&old_to_fresh);
         let i = self.alloc_eclass(&fresh_slots, syn_enode_real.clone());
 
         let m = bij.compose(&old_to_fresh);
         let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode_real.slots()));
         self.raw_add_to_class(i, (sh, m), syn_app_id);
-        self.mk_syn_applied_id(i, fresh_to_old)
+        self.mk_sem_applied_id(i, fresh_to_old)
     }
 
     // adds (sh, bij) to the eclass `id`.

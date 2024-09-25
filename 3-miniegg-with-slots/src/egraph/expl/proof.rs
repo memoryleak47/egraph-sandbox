@@ -238,9 +238,10 @@ impl<L: Language> EGraph<L> {
 }
 
 // returns the global renaming theta, s.t. a.apply_slotmap(theta) = b, if it exists.
+#[track_caller]
 pub fn match_app_id(a: &AppliedId, b: &AppliedId) -> SlotMap {
     assert_eq!(a.id, b.id);
-    assert_eq!(a.m.keys(), b.m.keys());
+    assert_eq!(a.m.keys(), b.m.keys(), "match_app_id failed: different set of arguments");
 
     // a.m :: slots(i) -> A
     // b.m :: slots(i) -> B
