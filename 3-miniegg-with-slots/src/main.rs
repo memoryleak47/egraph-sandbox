@@ -3,8 +3,10 @@ use miniegg_with_slots::*;
 
 
 fn main() {
-    let p = "(lam s0 (app (lam s1 (lam s2 s2)) s0))";
-
+    let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
+    equate("(app (var s0) (var s1))", "(app (var s1) (var s0))", eg);
+    eg.dump();
+    explain("(app (app (var s0) (var s1)) sym_x)", "(app (app (var s1) (var s0)) sym_x)", eg);
 }
 
 #[test]
