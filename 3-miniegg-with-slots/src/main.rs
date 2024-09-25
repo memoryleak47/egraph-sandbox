@@ -25,6 +25,38 @@ fn main() {
         eg.explain_equivalence(s1, s2).show_expr(eg);
     };
 
+    equate("(app (var s0) (var s1))", "(app (var s0) sym_x)", eg);
+    equate("(app (var s0) (var s1))", "(app (var s1) (var s0))", eg);
+    eg.dump();
+    explain("(app (var s0) (var s1))", "(app (var s3) (var s4))", eg);
+}
+
+#[test]
+fn main10() {
+    let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
+    let id = |s, eg: &mut EGraph<RiseENode>| -> AppliedId {
+        let re = RecExpr::parse(s).unwrap();
+        eg.add_syn_expr(re.clone())
+    };
+
+    let term = |s, eg: &mut EGraph<RiseENode>| -> RecExpr<RiseENode> {
+        let re = RecExpr::parse(s).unwrap();
+        eg.add_syn_expr(re.clone());
+        re
+    };
+
+    let equate = |s1, s2, eg: &mut EGraph<RiseENode>| {
+        let s1 = id(s1, eg);
+        let s2 = id(s2, eg);
+        eg.union(&s1, &s2);
+    };
+
+    let explain = |s1, s2, eg: &mut EGraph<RiseENode>| {
+        let s1 = term(s1, eg);
+        let s2 = term(s2, eg);
+        eg.explain_equivalence(s1, s2).show_expr(eg);
+    };
+
     equate("(app (var s0) (var s1))", "sym_x", eg);
     eg.dump();
     explain("(app (var s0) (var s1))", "(app (var s1) (var s0))", eg);
