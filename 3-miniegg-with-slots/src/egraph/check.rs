@@ -110,7 +110,7 @@ impl<L: Language> EGraph<L> {
 
         // Check that the Unionfind has valid AppliedIds.
         for (_, app_id) in self.unionfind_iter() {
-            check_internal_applied_id::<L>(self, &self.semify_app_id(app_id));
+            check_internal_applied_id::<L>(self, &app_id);
         }
 
         // Check that all ENodes are valid.
