@@ -35,3 +35,16 @@ pub fn prove_congruence<L: Language>(l: &AppliedId, r: &AppliedId, child_proofs:
     let eq = Equation { l: l.clone(), r: r.clone() };
     CongruenceProof(child_proofs).check(&eq, eg).unwrap()
 }
+
+impl<L: Language> EGraph<L> {
+    pub fn disassociate_proven_eq(&self, peq: ProvenEq) -> ProvenEq {
+        // TODO
+        peq
+    }
+
+    pub fn prove_explicit(&self, l: &AppliedId, r: &AppliedId, j: Option<String>) -> ProvenEq { self.disassociate_proven_eq(prove_explicit(l, r, j)) }
+    pub fn prove_reflexivity(&self, id: &AppliedId) -> ProvenEq { self.disassociate_proven_eq(prove_reflexivity(id)) }
+    pub fn prove_symmetry(&self, x: ProvenEq) -> ProvenEq { self.disassociate_proven_eq(prove_symmetry(x)) }
+    pub fn prove_transitivity(&self, x: ProvenEq, y: ProvenEq) -> ProvenEq { self.disassociate_proven_eq(prove_transitivity(x, y)) }
+    pub fn prove_congruence(&self, l: &AppliedId, r: &AppliedId, child_proofs: Vec<ProvenEq>) -> ProvenEq { self.disassociate_proven_eq(prove_congruence(l, r, child_proofs, self)) }
+}
