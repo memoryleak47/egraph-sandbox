@@ -86,6 +86,7 @@ impl<L: Language> EGraph<L> {
         self.classes[&id].syn_enode.as_ref().unwrap().slots()
     }
 
+    // mk_applied_id & friends.
     #[track_caller]
     pub fn mk_applied_id(&self, i: Id, m: SlotMap) -> AppliedId {
         let app_id = AppliedId::new(i, m);
@@ -106,6 +107,31 @@ impl<L: Language> EGraph<L> {
     pub fn check_applied_id(&self, app_id: &AppliedId) {
         app_id.check();
         assert_eq!(self.classes[&app_id.id].slots, app_id.m.keys());
+    }
+
+    // mk_syn_applied_id & friends.
+    #[track_caller]
+    pub fn mk_syn_applied_id(&self, i: Id, m: SlotMap) -> AppliedId {
+        let app_id = AppliedId::new(i, m);
+
+        if CHECKS {
+            self.check_syn_applied_id(&app_id);
+        }
+
+        app_id
+    }
+
+
+    #[track_caller]
+    pub fn mk_identity_syn_applied_id(&self, i: Id) -> AppliedId {
+        self.mk_syn_applied_id(i, SlotMap::identity(&self.syn_slots(i)))
+    }
+
+
+    #[track_caller]
+    pub fn check_syn_applied_id(&self, app_id: &AppliedId) {
+        app_id.check();
+        assert_eq!(self.syn_slots(app_id.id), app_id.m.keys());
     }
 
     pub fn ids(&self) -> Vec<Id> {
