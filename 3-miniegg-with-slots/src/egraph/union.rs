@@ -30,13 +30,14 @@ impl<L: Language> EGraph<L> {
         let cap = &l.slots() & &r.slots();
 
         if l.slots() != cap {
-            self.shrink_slots(&l, &cap);
+            self.shrink_slots(&l, &cap, proof.clone());
             self.union_internal(&l, &r, proof);
             return true;
         }
 
         if r.slots() != cap {
-            self.shrink_slots(&r, &cap);
+            let proof = self.prove_symmetry(proof);
+            self.shrink_slots(&r, &cap, proof.clone());
             self.union_internal(&l, &r, proof);
             return true;
         }
@@ -83,8 +84,28 @@ impl<L: Language> EGraph<L> {
         }
     }
 
-    fn shrink_slots(&mut self, from: &AppliedId, cap: &HashSet<Slot>) {
-        panic!("For now, we don't support shrinking");
+    fn record_redundancy_witness(&mut self, i: Id, proof: ProvenEq) {
+        if CHECKS { assert!(self.is_alive(i)); }
+
+        let flipped = prove_symmetry(proof.clone());
+        let new_prf = prove_transitivity(proof, flipped);
+
+        if self.classes[&i].redundancy_proof.is_none() {
+            self.classes.get_mut(&i).unwrap().redundancy_proof = Some(self.refl_proof(i));
+        }
+
+        let old_prf = self.classes.get_mut(&i).unwrap().redundancy_proof.as_mut().unwrap();
+        *old_prf = prove_transitivity(new_prf, old_prf.clone());
+    }
+
+    // We expect `from` to be on the lhs of this equation.
+    fn shrink_slots(&mut self, from: &AppliedId, cap: &HashSet<Slot>, proof: ProvenEq) {
+        if CHECKS {
+            assert_eq!(from.id, proof.l.id);
+        }
+
+        self.record_redundancy_witness(from.id, proof);
+
         let (id, cap) = {
             // from.m :: slots(from.id) -> X
             // cap :: set X
@@ -100,6 +121,7 @@ impl<L: Language> EGraph<L> {
 
         // cap :: set slots(id)
 
+        let syn_slots = &self.syn_slots(id);
         let c = self.classes.get_mut(&id).unwrap();
         let grp = &c.group;
 
@@ -119,15 +141,14 @@ impl<L: Language> EGraph<L> {
             out
         };
         let restrict_proven = |proven_perm: ProvenPerm| {
-            proven_perm.check(self);
+            proven_perm.self_check();
             let out = ProvenPerm(restrict(proven_perm.0), proven_perm.1);
-            out.check(self);
+            out.self_check();
             out
         };
         let generators = c.group.generators().into_iter().map(restrict_proven).collect();
-        let syn_slots = &self.syn_slots(id);
         let identity = ProvenPerm::identity(id, &cap, syn_slots);
-        identity.check(self);
+        identity.self_check();
         c.group = Group::new(&identity, generators);
 
         self.convert_eclass(from.id);
@@ -227,7 +248,7 @@ impl<L: Language> EGraph<L> {
         let src_id = src_id.apply_slotmap_fresh(&theta);
         if !i.slots().is_subset(&enode.slots()) {
             let cap = &enode.slots() & &i.slots();
-            self.shrink_slots(&i, &cap);
+            self.shrink_slots(&i, &cap, todo!());
 
             enode = self.find_enode(&enode);
             i = self.find_applied_id(&i);
