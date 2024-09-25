@@ -352,8 +352,7 @@ impl<L: Language> EGraph<L> {
                 if CHECKS { assert!(perm.is_perm()); }
 
                 let l = src_identity.clone();
-                // TODO l is 'syn', perm is 'sem'. Hence this apply_slotmap crashes.
-                let r = l.apply_slotmap(&perm);
+                let r = l.apply_slotmap_fresh(&perm);
 
                 let eq = Equation { l, r };
 
