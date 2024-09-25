@@ -182,7 +182,7 @@ impl<L: Language> EGraph<L> {
     pub fn check_groups(&self) {
         for (i, c) in &self.classes {
             for p in c.group.all_perms() {
-                p.check(self);
+                p.check();
             }
         }
     }
@@ -410,7 +410,7 @@ impl<L: Language> EGraph<L> {
             s_inv(&s);
             for (x, x_prfs) in s {
                 for proven_perm in &grp_perms {
-                    proven_perm.check(self);
+                    proven_perm.check();
                     let x_i = x.applied_id_occurences()[i].clone();
                     let x_prfs_i = x_prfs[i].clone();
                     let (app_id, prf) = self.apply_proven_perm((x_i, x_prfs_i), proven_perm);

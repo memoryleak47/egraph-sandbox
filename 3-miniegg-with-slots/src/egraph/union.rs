@@ -57,7 +57,7 @@ impl<L: Language> EGraph<L> {
             let proven_perm = ProvenPerm(perm, proof);
             assert_eq!(proven_perm.1.l.id, id);
 
-            proven_perm.check(self);
+            proven_perm.check();
             let grp = &mut self.classes.get_mut(&id).unwrap().group;
             if grp.contains(&proven_perm.to_slotmap()) { return false; }
 
@@ -141,14 +141,14 @@ impl<L: Language> EGraph<L> {
             out
         };
         let restrict_proven = |proven_perm: ProvenPerm| {
-            proven_perm.self_check();
+            proven_perm.check();
             let out = ProvenPerm(restrict(proven_perm.0), proven_perm.1);
-            out.self_check();
+            out.check();
             out
         };
         let generators = c.group.generators().into_iter().map(restrict_proven).collect();
         let identity = ProvenPerm::identity(id, &cap, syn_slots);
-        identity.self_check();
+        identity.check();
         c.group = Group::new(&identity, generators);
 
         self.convert_eclass(from.id);
@@ -342,7 +342,7 @@ impl<L: Language> EGraph<L> {
                 let proven_perm = ProvenPerm(perm, prf);
 
                 if CHECKS {
-                    proven_perm.check(self);
+                    proven_perm.check();
                 }
                 let grp = &mut self.classes.get_mut(&i).unwrap().group;
                 grp.add(proven_perm);
