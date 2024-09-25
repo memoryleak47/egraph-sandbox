@@ -14,6 +14,7 @@ impl<L: Language> EGraph<L> {
         // normalize inputs
         let (l, p_l) = self.proven_find_applied_id(&l);
         let (r, p_r) = self.proven_find_applied_id(&r);
+        p_r.check(self);
 
         let a = self.prove_symmetry(p_l);
         let a = self.prove_transitivity(a, proof);

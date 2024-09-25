@@ -55,6 +55,12 @@ impl ProvenEqRaw {
     pub fn equ(&self) -> Equation {
         (**self).clone()
     }
+
+    pub fn check<L: Language>(&self, eg: &EGraph<L>) {
+        let Equation { l, r } = self.equ();
+        eg.check_syn_applied_id(&l);
+        eg.check_syn_applied_id(&r);
+    }
 }
 
 impl PartialEq for ProvenEqRaw {
