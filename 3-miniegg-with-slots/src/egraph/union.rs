@@ -324,24 +324,22 @@ impl<L: Language> EGraph<L> {
 
                 // src_id[...] == src_id[...]
                 let prf = CongruenceProof(combined_prfs).check(&eq, self).unwrap();
-                assert_eq!(prf.l.id, src_id);
-                assert_eq!(prf.r.id, src_id);
+                if CHECKS {
+                    assert_eq!(prf.l.id, src_id);
+                    assert_eq!(prf.r.id, src_id);
+                }
 
                 // i[...] == i[...]
                 let prf = self.prove_transitivity(neg_leader_prf.clone(), self.prove_transitivity(prf, leader_prf.clone()));
                 let perm = leader_bij.compose(&perm.compose(&leader_bij.inverse()));
 
                 let slots = self.slots(i);
-                assert_eq!(prf.l.id, i);
-                assert_eq!(prf.r.id, i);
-                assert_eq!(&prf.l.m.values(), &slots);
-                assert_eq!(&prf.l.m.keys(), &slots);
-                assert_eq!(&prf.r.m.values(), &slots);
-                assert_eq!(&prf.r.m.keys(), &slots);
+                let syn_slots = self.syn_slots(i);
+                if CHECKS {
+                    assert_eq!(prf.l.id, i);
+                    assert_eq!(prf.r.id, i);
+                }
                 let proven_perm = ProvenPerm(perm, prf);
-
-                assert!(proven_perm.0.is_perm());
-                assert_eq!(proven_perm.0.keys(), slots);
 
                 if CHECKS {
                     proven_perm.check(self);
