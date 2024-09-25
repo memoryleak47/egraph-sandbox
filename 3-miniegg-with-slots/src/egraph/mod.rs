@@ -39,7 +39,7 @@ pub struct EClass<L: Language> {
     syn_enode: L,
 
     // is of the form `c[...] = c[...]` where everything is stabilized, except for the redundant slots which are just used on one side.
-    // only exists for the leader of an e-class.
+    // only relevant for the leader of an e-class.
     redundancy_proof: ProvenEq,
 }
 
