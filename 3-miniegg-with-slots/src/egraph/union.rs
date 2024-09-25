@@ -85,8 +85,13 @@ impl<L: Language> EGraph<L> {
         }
     }
 
+    // proof.l should be i.
+    // proof.r should be missing a few slots.
     fn record_redundancy_witness(&mut self, i: Id, proof: ProvenEq) {
-        if CHECKS { assert!(self.is_alive(i)); }
+        if CHECKS {
+            assert!(self.is_alive(i));
+            assert_eq!(proof.l.id, i);
+        }
 
         let flipped = prove_symmetry(proof.clone());
         let new_prf = prove_transitivity(proof, flipped);
@@ -249,7 +254,17 @@ impl<L: Language> EGraph<L> {
         let src_id = src_id.apply_slotmap_fresh(&theta);
         if !i.slots().is_subset(&enode.slots()) {
             let cap = &enode.slots() & &i.slots();
-            self.shrink_slots(&i, &cap, todo!());
+            // TODO find an actual proof for this.
+            let prf = {
+                let i1 = AppliedId::new(i.id, i.m.iter().filter(|(x, _)| cap.contains(x)).collect());
+                let i2 = i1.clone();
+
+                let i1 = self.synify_app_id(i1);
+                let i2 = self.synify_app_id(i2);
+
+                self.prove_explicit(&i1, &i2, Some(String::from("slot upwards merging")))
+            };
+            self.shrink_slots(&i, &cap, prf);
 
             enode = self.find_enode(&enode);
             i = self.find_applied_id(&i);
