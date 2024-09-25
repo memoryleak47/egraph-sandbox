@@ -344,7 +344,7 @@ impl<L: Language> EGraph<L> {
         let v2 = v2.into_iter();
 
         for (l, r) in v1.zip(v2) {
-            out.push(prove_transitivity(l, r));
+            out.push(self.prove_transitivity(l, r));
         }
 
         (t, out)
@@ -354,7 +354,7 @@ impl<L: Language> EGraph<L> {
         let syn_slots = self.syn_slots(i);
         let identity = SlotMap::identity(&syn_slots);
         let app_id = AppliedId::new(i, identity);;
-        prove_reflexivity(&app_id)
+        self.prove_reflexivity(&app_id)
     }
 
     fn apply_proven_perm(&self, (x, x_prf): (AppliedId, ProvenEq), ProvenPerm(y, y_prf): &ProvenPerm) -> (AppliedId, ProvenEq) {
@@ -363,7 +363,7 @@ impl<L: Language> EGraph<L> {
 
         // TODO these seem to be in different order. why is that?
         x = self.mk_applied_id(x.id, y.compose(&x.m));
-        x_prf = prove_transitivity(x_prf, y_prf.clone());
+        x_prf = self.prove_transitivity(x_prf, y_prf.clone());
         (x, x_prf)
     }
 

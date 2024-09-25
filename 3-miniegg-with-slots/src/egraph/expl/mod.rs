@@ -25,8 +25,8 @@ impl<L: Language> EGraph<L> {
         let symmetry_prf = &self.classes[&id].group.proven_contains(&bij).unwrap();
         let (l1, prf1) = self.apply_proven_perm((l1, prf1), symmetry_prf);
 
-        let prf2 = prove_symmetry(prf2);
-        let p = prove_transitivity(prf1, prf2);
+        let prf2 = self.prove_symmetry(prf2);
+        let p = self.prove_transitivity(prf1, prf2);
 
         if CHECKS {
             let eq1 = Equation { l: i1, r: i2 };

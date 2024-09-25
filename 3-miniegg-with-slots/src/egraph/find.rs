@@ -22,7 +22,7 @@ impl<L: Language> EGraph<L> {
         let entry_to_leader = self.unionfind_get_impl(entry.0.id, map);
         let new = (
             entry_to_leader.0.apply_slotmap(&entry.0.m),
-            prove_transitivity(entry.1, entry_to_leader.1),
+            self.prove_transitivity(entry.1, entry_to_leader.1),
         );
 
         map[i.0] = new.clone();

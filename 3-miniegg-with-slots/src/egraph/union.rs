@@ -4,7 +4,7 @@ impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
-        let proof = prove_explicit(l, r, None);
+        let proof = self.prove_explicit(l, r, None);
         let out = self.union_internal(l, r, proof);
 
         out
@@ -15,9 +15,9 @@ impl<L: Language> EGraph<L> {
         let (l, p_l) = self.proven_find_applied_id(&l);
         let (r, p_r) = self.proven_find_applied_id(&r);
 
-        let a = prove_symmetry(p_l);
-        let a = prove_transitivity(a, proof);
-        let a = prove_transitivity(a, p_r);
+        let a = self.prove_symmetry(p_l);
+        let a = self.prove_transitivity(a, proof);
+        let a = self.prove_transitivity(a, p_r);
         let proof = a;
         if CHECKS {
             assert_eq!(proof.l.id, l.id);
@@ -76,7 +76,7 @@ impl<L: Language> EGraph<L> {
             if size(l.id) < size(r.id) {
                 self.move_to(&l, &r, proof)
             } else {
-                let proof = prove_symmetry(proof);
+                let proof = self.prove_symmetry(proof);
                 self.move_to(&r, &l, proof)
             }
             true
@@ -202,10 +202,10 @@ impl<L: Language> EGraph<L> {
             perm
         };
         let (_, prf) = self.proven_find_applied_id(&from);
-        let prf_rev = prove_symmetry(prf.clone());
+        let prf_rev = self.prove_symmetry(prf.clone());
         let change_proven_permutation_from_from_to_to = |proven_perm: ProvenPerm| {
             let new_perm = change_permutation_from_from_to_to(proven_perm.0);
-            let new_proof = prove_transitivity(prf_rev.clone(), prove_transitivity(proven_perm.1, prf.clone()));
+            let new_proof = self.prove_transitivity(prf_rev.clone(), self.prove_transitivity(proven_perm.1, prf.clone()));
             ProvenPerm(new_perm, new_proof)
         };
 
@@ -259,7 +259,7 @@ impl<L: Language> EGraph<L> {
     // finds self-symmetries caused by the e-node `src_id`.
     fn determine_self_symmetries(&mut self, src_id: Id) {
         let (leader, leader_prf) = self.proven_unionfind_get(src_id);
-        let neg_leader_prf = prove_symmetry(leader_prf.clone());
+        let neg_leader_prf = self.prove_symmetry(leader_prf.clone());
         let i = leader.id;
         let leader_bij = leader.m;
 
@@ -296,8 +296,8 @@ impl<L: Language> EGraph<L> {
 
                 let mut combined_prfs = Vec::new();
                 for (old_to_new_ids, perm_prf) in prfs.iter().zip(prfs2.iter()) {
-                    let new_to_old_ids = prove_symmetry(old_to_new_ids.clone());
-                    let combined = prove_transitivity(prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids);
+                    let new_to_old_ids = self.prove_symmetry(old_to_new_ids.clone());
+                    let combined = self.prove_transitivity(self.prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids);
                     combined_prfs.push(combined);
                 }
 
@@ -307,7 +307,7 @@ impl<L: Language> EGraph<L> {
                 assert_eq!(prf.r.id, src_id);
 
                 // i[...] == i[...]
-                let prf = prove_transitivity(neg_leader_prf.clone(), prove_transitivity(prf, leader_prf.clone()));
+                let prf = self.prove_transitivity(neg_leader_prf.clone(), self.prove_transitivity(prf, leader_prf.clone()));
                 let perm = leader_bij.compose(&perm.compose(&leader_bij.inverse()));
 
                 let slots = self.slots(i);
@@ -343,12 +343,12 @@ impl<L: Language> EGraph<L> {
 
         let mut vec = Vec::new();
         for (l, r) in vec_p1.into_iter().zip(vec_p2.into_iter()) {
-            let r_inv = prove_symmetry(r);
-            let l_to_r = prove_transitivity(l, r_inv);
+            let r_inv = self.prove_symmetry(r);
+            let l_to_r = self.prove_transitivity(l, r_inv);
             vec.push(l_to_r);
         }
 
-        let proven_eq = prove_congruence(&a, &c, vec, self);
+        let proven_eq = self.prove_congruence(&a, &c, vec);
         self.union_internal(&a, &c, proven_eq);
     }
 }
