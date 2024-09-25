@@ -51,6 +51,10 @@ impl ProvenEqRaw {
             proof: Proof::Explicit(ExplicitProof(None)),
         })
     }
+
+    pub fn eq(&self) -> Equation {
+        (**self).clone()
+    }
 }
 
 impl PartialEq for ProvenEqRaw {
