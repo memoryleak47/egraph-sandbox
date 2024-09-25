@@ -219,6 +219,12 @@ pub fn match_equation(a: &Equation, b: &Equation) -> Option<SlotMap> {
     Some(theta)
 }
 
+pub fn assert_match_equation(a: &Equation, b: &Equation) {
+    if match_equation(a, b).is_none() {
+        panic!("equation mismatch:\n{a:?}\n  doesn't match\n{b:?}");
+    }
+}
+
 pub fn proves_equation(peq: &ProvenEq, eq: &Equation) -> bool {
     let mut e: Equation = (***peq).clone();
 

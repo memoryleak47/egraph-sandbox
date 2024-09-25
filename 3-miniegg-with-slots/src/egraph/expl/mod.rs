@@ -30,7 +30,7 @@ impl<L: Language> EGraph<L> {
 
         if CHECKS {
             let eq1 = Equation { l: i1, r: i2 };
-            match_equation(&eq1, &p).unwrap();
+            assert_match_equation(&eq1, &p);
         }
         p
     }
