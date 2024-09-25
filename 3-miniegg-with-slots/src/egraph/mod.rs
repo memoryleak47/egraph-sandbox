@@ -40,7 +40,7 @@ pub struct EClass<L: Language> {
 
     // is of the form `c[...] = c[...]` where everything is stabilized, except for the redundant slots which are just used on one side.
     // only exists for the leader of an e-class.
-    redundancy_proof: Option<ProvenEq>,
+    redundancy_proof: ProvenEq,
 }
 
 // invariants:

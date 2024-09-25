@@ -90,11 +90,7 @@ impl<L: Language> EGraph<L> {
         let flipped = prove_symmetry(proof.clone());
         let new_prf = prove_transitivity(proof, flipped);
 
-        if self.classes[&i].redundancy_proof.is_none() {
-            self.classes.get_mut(&i).unwrap().redundancy_proof = Some(self.refl_proof(i));
-        }
-
-        let old_prf = self.classes.get_mut(&i).unwrap().redundancy_proof.as_mut().unwrap();
+        let old_prf = &mut self.classes.get_mut(&i).unwrap().redundancy_proof;
         *old_prf = prove_transitivity(new_prf, old_prf.clone());
     }
 
