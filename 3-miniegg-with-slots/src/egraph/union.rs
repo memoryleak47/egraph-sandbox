@@ -331,7 +331,7 @@ impl<L: Language> EGraph<L> {
 
                 // i[...] == i[...]
                 let prf = self.prove_transitivity(neg_leader_prf.clone(), self.prove_transitivity(prf, leader_prf.clone()));
-                let perm = leader_bij.compose(&perm.compose(&leader_bij.inverse()));
+                let perm = leader_bij.compose_partial(&perm.compose_partial(&leader_bij.inverse()));
 
                 let slots = self.slots(i);
                 let syn_slots = self.syn_slots(i);
