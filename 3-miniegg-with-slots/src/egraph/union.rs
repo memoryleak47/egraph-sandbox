@@ -360,21 +360,45 @@ impl<L: Language> EGraph<L> {
                 // -> i == i * bij^-1 * bij2
 
                 let perm = bij.inverse().compose(&bij2);
+
+                // no need to add the identity permutation.
+                if perm.iter().all(|(x, y)| x == y) { continue; }
+
                 if CHECKS { assert!(perm.is_perm()); }
 
+                // We are using the extended_perm, in order to not introduce unnecessary redundant slots.
+                // Is there a better way to do this?
+                let extended_perm = src_identity.m.iter().map(|(x, y)| (x, perm.get(x).unwrap_or(y))).collect();
+
                 let l = src_identity.clone();
-                let r = l.apply_slotmap_fresh(&perm);
+                let r = l.apply_slotmap(&extended_perm);
 
                 let eq = Equation { l, r };
 
                 let mut combined_prfs = Vec::new();
                 for (old_to_new_ids, perm_prf) in prfs.iter().zip(prfs2.iter()) {
                     let new_to_old_ids = self.prove_symmetry(old_to_new_ids.clone());
-                    let combined = self.prove_transitivity(self.prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids);
+
+                    let raw = self.prove_transitivity(self.prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids.clone());
+
+                    // We describe an equivalent equation to `raw`, but without witnessing the redundant slots.
+                    // This somehow bodes better with alpha-normalized lambdas it seems.
+                    let mut eq = raw.equ();
+                    for x in eq.l.m.keys() {
+                        // choose redundant slots as the identity.
+                        if !self.slots(eq.l.id).contains(&x) {
+                            let s = Slot::fresh();
+                            eq.l.m.insert(x, s);
+                            eq.r.m.insert(x, s);
+                        }
+                    }
+
+                    let combined = TransitivityProof(self.prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids.clone()).check(&eq);
                     combined_prfs.push(combined);
                 }
 
                 // src_id[...] == src_id[...]
+
                 let prf = CongruenceProof(combined_prfs).check(&eq, self);
                 if CHECKS {
                     assert_eq!(prf.l.id, src_id);
