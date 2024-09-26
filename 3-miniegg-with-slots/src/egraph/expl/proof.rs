@@ -270,7 +270,7 @@ pub fn assert_match_equation(a: &Equation, b: &Equation) -> SlotMap {
     let theta_l = match_app_id(&a.l, &b.l);
     let theta_r = match_app_id(&a.r, &b.r);
 
-    let theta = theta_l.try_union(&theta_r).unwrap();
+    let theta = theta_l.try_union(&theta_r).unwrap_or_else(|| panic!("trying to union {theta_l:?} with {theta_r:?} while trying to match '{a:?}' against '{b:?}'"));
     assert!(theta.is_bijection());
 
     if CHECKS {
