@@ -246,10 +246,13 @@ impl<L: Language> EGraph<L> {
     fn handle_shrink_in_upwards_merge(&mut self, src_id: Id) {
         let (leader, leader_prf) = self.proven_unionfind_get(src_id);
         let neg_leader_prf = prove_symmetry(leader_prf.clone());
+        let src_syn_slots = self.syn_slots(src_id);
 
         let identity = self.mk_syn_identity_applied_id(src_id);
         let syn_enode = self.get_syn_node(&identity);
+        assert!(syn_enode.slots().is_subset(&src_syn_slots));
         let (new_node, prfs) = self.proven_find_enode(&syn_enode);
+        assert!(new_node.slots().is_subset(&src_syn_slots));
 
         // the set of slots that still remain non-redundant.
         let mut fixpoint_set = HashSet::default();
@@ -261,7 +264,10 @@ impl<L: Language> EGraph<L> {
 
             for (x, y) in cycle.l.m.iter() {
                 if cycle.r.m.get(x) == Some(y) {
-                    fixpoint_set.insert(app_id.m[x]);
+                    let fixed = app_id.m[x];
+                    if src_syn_slots.contains(&fixed) {
+                        fixpoint_set.insert(fixed);
+                    }
                 }
             }
 
@@ -273,6 +279,11 @@ impl<L: Language> EGraph<L> {
         let prf = self.prove_transitivity(neg_leader_prf.clone(), self.prove_transitivity(cong, leader_prf.clone()));
 
         let leader_inv = leader.m.inverse();
+        if CHECKS {
+            let ty = self.syn_slots(src_id);
+            assert!(fixpoint_set.is_subset(&ty));
+            assert!(leader_inv.keys().is_subset(&ty));
+        }
         let leader_fixpoint_set: HashSet<Slot> = fixpoint_set.iter().map(|x| leader_inv[*x]).collect();
         let leader_fixpoint_set = &leader_fixpoint_set & &self.slots(leader.id);
         self.shrink_slots(&leader, &leader_fixpoint_set, prf);
