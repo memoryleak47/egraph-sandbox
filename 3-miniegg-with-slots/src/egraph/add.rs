@@ -28,7 +28,7 @@ impl<L: Language> EGraph<L> {
         let c = self.alloc_eclass(&old_to_fresh.values(), enode.clone());
 
         let c_a = self.mk_syn_identity_applied_id(c);
-        self.handle_congruence(&c_a);
+        self.handle_congruence(c_a.id);
 
         c_a
     }

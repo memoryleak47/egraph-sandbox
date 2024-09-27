@@ -312,7 +312,7 @@ impl<L: Language> EGraph<L> {
 
         // upwards merging found a match!
         if self.lookup_internal(&t).is_some() {
-            self.handle_congruence(&src_id);
+            self.handle_congruence(src_id.id);
             return;
         }
 
@@ -412,7 +412,8 @@ impl<L: Language> EGraph<L> {
         }
     }
 
-    pub(in crate::egraph) fn handle_congruence(&mut self, a: &AppliedId) {
+    pub(in crate::egraph) fn handle_congruence(&mut self, a: Id) {
+        let a = &self.mk_syn_identity_applied_id(a);
         let a_node = self.get_syn_node(a);
         let (t, vec_p1) = self.proven_shape(&a_node);
 
