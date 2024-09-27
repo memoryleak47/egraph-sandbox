@@ -54,14 +54,47 @@ pub fn prove_congruence<L: Language>(l: &AppliedId, r: &AppliedId, child_proofs:
     CongruenceProof(new_child_proofs).check(&eq, eg)
 }
 
-impl<L: Language> EGraph<L> {
-    fn associate_necessaries(&self, goal: &Equation, peq: ProvenEq) -> ProvenEq {
-        // TODO don't do if unnecessary.
 
-        // TODO try the other redundancy proof side.
-        let red = self.get_redundancy_proof(peq.l.id);
-        let red2 = self.get_redundancy_proof(peq.r.id);
-        TransitivityProof(red, peq).check(goal)
+impl<L: Language> EGraph<L> {
+    fn semify_equation(&self, eq: &Equation) -> Equation {
+        Equation {
+            l: self.semify_app_id(eq.l.clone()),
+            r: self.semify_app_id(eq.r.clone()),
+        }
+    }
+
+    // peq seems to imply `goal` if we remove all the redundant slots.
+    // now we want a proof that even makes the redundant slots work out.
+    // We assume that `peq` is already maximally dis-associated. Hence we only need to re-associate some redundant slots to reach the goal.
+    fn associate_necessaries(&self, goal: &Equation, peq: ProvenEq) -> ProvenEq {
+        if CHECKS {
+            assert_match_equation(&self.semify_equation(goal), &self.semify_equation(&peq));
+        }
+        let l_red = self.get_redundancy_proof(peq.l.id);
+
+        // goal.l.m :: slots(goal.l.id) -> X
+        // goal.r.m :: slots(goal.r.id) -> X
+        // goal_associations :: slots(goal.l.id) -> slots(goal.r.id)
+        let goal_associations = goal.l.m.compose_partial(&goal.r.m.inverse());
+
+        let mut current = peq;
+        let current_associations = current.l.m.compose_partial(&current.r.m.inverse());
+        let open_association_keys = &goal_associations.keys() - &current_associations.keys();
+
+        let l_red_slots = &self.syn_slots(current.l.id) - &self.slots(current.l.id);
+        let intersection = &open_association_keys & &l_red_slots;
+        if intersection.len() > 0 {
+            let mut subgoal = current.equ();
+            for x in intersection {
+                let f = Slot::fresh();
+                subgoal.l.m.insert(x, f);
+                subgoal.r.m.insert(goal_associations[x], f);
+            }
+            current = TransitivityProof(l_red, current).check(&subgoal);
+        }
+
+        let r_red = self.get_redundancy_proof(current.r.id);
+        TransitivityProof(current, r_red).check(goal)
     }
 
     fn disassociation_necessary(&self, peq: &ProvenEq) -> bool {
