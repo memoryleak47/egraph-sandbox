@@ -11,6 +11,10 @@ impl<L: Language> EGraph<L> {
     }
 
     pub(in crate::egraph) fn union_internal(&mut self, l: &AppliedId, r: &AppliedId, proof: ProvenEq) -> bool {
+        if CHECKS {
+            assert_proves_equation(&proof, &Equation { l: l.clone(), r: r.clone() });
+        }
+
         // normalize inputs
         let (l, p_l) = self.proven_find_applied_id(&l);
         let (r, p_r) = self.proven_find_applied_id(&r);
