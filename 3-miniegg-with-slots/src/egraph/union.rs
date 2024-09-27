@@ -370,12 +370,8 @@ impl<L: Language> EGraph<L> {
 
                 if CHECKS { assert!(perm.is_perm()); }
 
-                // We are using the extended_perm, in order to not introduce unnecessary redundant slots.
-                // Is there a better way to do this?
-                let extended_perm = src_identity.m.iter().map(|(x, y)| (x, perm.get(x).unwrap_or(y))).collect();
-
                 let l = src_identity.clone();
-                let r = l.apply_slotmap(&extended_perm);
+                let r = l.apply_slotmap_fresh(&perm);
 
                 let eq = Equation { l, r };
 
@@ -383,20 +379,7 @@ impl<L: Language> EGraph<L> {
                 for (old_to_new_ids, perm_prf) in prfs.iter().zip(prfs2.iter()) {
                     let new_to_old_ids = self.prove_symmetry(old_to_new_ids.clone());
 
-                    let raw = self.prove_transitivity(self.prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids.clone());
-
-                    // We describe an equivalent equation to `raw`, but without witnessing the redundant slots.
-                    // This somehow bodes better with alpha-normalized lambdas it seems.
-                    let mut eq = raw.equ();
-                    for x in eq.l.m.keys() {
-                        // choose redundant slots as the identity.
-                        if !self.slots(eq.l.id).contains(&x) {
-                            let s = Slot::fresh();
-                            eq.l.m.insert(x, s);
-                            eq.r.m.insert(x, s);
-                        }
-                    }
-
+                    let eq = self.prove_transitivity(self.prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids.clone());
                     let combined = TransitivityProof(self.prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids.clone()).check(&eq);
                     combined_prfs.push(combined);
                 }

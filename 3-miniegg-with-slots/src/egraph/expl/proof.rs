@@ -161,7 +161,7 @@ impl TransitivityProof {
     }
 }
 
-fn alpha_normalize<L: Language>(n: &L) -> L {
+pub fn alpha_normalize<L: Language>(n: &L) -> L {
     let (sh, bij) = n.weak_shape();
     if CHECKS {
         let all_slots: HashSet<_> = sh.all_slot_occurences().into_iter().collect();

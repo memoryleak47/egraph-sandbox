@@ -32,11 +32,38 @@ pub fn prove_transitivity(x: ProvenEq, y: ProvenEq) -> ProvenEq {
 
 #[track_caller]
 pub fn prove_congruence<L: Language>(l: &AppliedId, r: &AppliedId, child_proofs: Vec<ProvenEq>, eg: &EGraph<L>) -> ProvenEq {
+    // because all our proofs witness redundancy per default, we need to sometimes get rid of these redundancies in child-proofs
+    // eg. when proving reflexivity e-nodes like a[x,y] + b[y,z] = a[x,y] + b[y,z].
+    // and we only have equations like a[x,y] = a[x',y'] witnessing redundancies.
+
+    let l_syn_node = alpha_normalize(&eg.get_syn_node(l));
+    let r_syn_node = alpha_normalize(&eg.get_syn_node(r));
+
+    let l_ids = l_syn_node.applied_id_occurences().into_iter();
+    let r_ids = r_syn_node.applied_id_occurences().into_iter();
+    let child_proofs = child_proofs.into_iter();
+
+    let mut new_child_proofs = Vec::new();
+    for ((li, ri), prf) in l_ids.zip(r_ids).zip(child_proofs) {
+        let goal = Equation { l: li, r: ri };
+        let new_proof = eg.associate_necessaries(&goal, prf);
+        new_child_proofs.push(new_proof);
+    }
+
     let eq = Equation { l: l.clone(), r: r.clone() };
-    CongruenceProof(child_proofs).check(&eq, eg)
+    CongruenceProof(new_child_proofs).check(&eq, eg)
 }
 
 impl<L: Language> EGraph<L> {
+    fn associate_necessaries(&self, goal: &Equation, peq: ProvenEq) -> ProvenEq {
+        // TODO don't do if unnecessary.
+
+        // TODO try the other redundancy proof side.
+        let red = self.get_redundancy_proof(peq.l.id);
+        let red2 = self.get_redundancy_proof(peq.r.id);
+        TransitivityProof(red, peq).check(goal)
+    }
+
     fn disassociation_necessary(&self, peq: &ProvenEq) -> bool {
         let l_rev = peq.l.m.inverse();
         let r_rev = peq.r.m.inverse();
