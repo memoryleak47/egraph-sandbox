@@ -41,8 +41,8 @@ impl<L: Language> EGraph<L> {
         }
 
         if r.slots() != cap {
-            let proof = self.prove_symmetry(proof);
-            self.shrink_slots(&r, &cap, proof.clone());
+            let flipped_proof = self.prove_symmetry(proof.clone());
+            self.shrink_slots(&r, &cap, flipped_proof);
             self.union_internal(&l, &r, proof);
             return true;
         }
