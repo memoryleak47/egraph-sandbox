@@ -4,7 +4,10 @@ impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
-        let proof = self.prove_explicit(l, r, None);
+        let syn_l = self.synify_app_id(l.clone());
+        let syn_r = self.synify_app_id(r.clone());
+
+        let proof = self.prove_explicit(&syn_l, &syn_r, None);
         let out = self.union_internal(l, r, proof);
 
         out
