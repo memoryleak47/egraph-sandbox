@@ -31,6 +31,9 @@ pub use i_let::*;
 mod i_rise;
 pub use i_rise::*;
 
+mod i_sdql;
+pub use i_sdql::*;
+
 mod tst;
 pub use tst::*;
 
