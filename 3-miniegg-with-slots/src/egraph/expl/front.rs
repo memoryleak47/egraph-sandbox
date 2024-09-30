@@ -131,7 +131,12 @@ impl<L: Language> EGraph<L> {
             peq
         }
     }
+}
 
+// This API should be ignoring the values of redundant slots.
+// This means that whether you pre-randomize all the Slots mapped to redundant Slots in both goal&input-proofs before passing them to prove_X should not affect the outcome.
+// Further it should always produce maximally disassociated output.
+impl<L: Language> EGraph<L> {
     #[track_caller]
     pub fn prove_explicit(&self, l: &AppliedId, r: &AppliedId, j: Option<String>) -> ProvenEq {
         self.check_syn_applied_id(l);

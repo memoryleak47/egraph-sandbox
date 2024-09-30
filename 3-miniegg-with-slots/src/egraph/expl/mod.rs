@@ -3,8 +3,8 @@ use crate::*;
 mod proof;
 pub use proof::*;
 
-mod step;
-pub use step::*;
+mod front;
+pub use front::*;
 
 impl<L: Language> EGraph<L> {
     pub fn explain_equivalence(&mut self, t1: RecExpr<L>, t2: RecExpr<L>) -> ProvenEq {
