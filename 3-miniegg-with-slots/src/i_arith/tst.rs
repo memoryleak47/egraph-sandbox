@@ -9,6 +9,7 @@ fn assert_reaches(start: RecExpr<ArithENode>, goal: RecExpr<ArithENode>, steps: 
         if let Some(i2) = lookup_rec_expr(&goal, &eg) {
             let i1 = lookup_rec_expr(&start, &eg).unwrap();
             if eg.eq(&i1, &i2) {
+                eg.explain_equivalence(start, goal).show();
                 return;
             }
         }
@@ -150,6 +151,7 @@ fn arith_test6() { // z*(x+y) = z*(y+x)
             if let Some(i2) = lookup_rec_expr(&goal, &eg) {
                 let i1 = lookup_rec_expr(&start, &eg).unwrap();
                 if eg.eq(&i1, &i2) {
+                    eg.explain_equivalence(start, goal).show();
                     return;
                 }
             }
