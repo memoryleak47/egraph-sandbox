@@ -146,6 +146,8 @@ fn binomial_re2() -> RecExpr<RiseENode> {
     pattern_to_re(&out)
 }
 
+#[test]
+#[ignore]
 pub fn test_binomial() {
     assert_reaches(binomial_re1(), binomial_re2(), 40);
 }
