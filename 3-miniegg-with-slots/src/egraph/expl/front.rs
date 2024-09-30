@@ -164,6 +164,32 @@ impl<L: Language> EGraph<L> {
     pub fn prove_congruence(&self, l: &AppliedId, r: &AppliedId, child_proofs: Vec<ProvenEq>) -> ProvenEq {
         self.check_syn_applied_id(l);
         self.check_syn_applied_id(r);
+
+        // if this check "passes", the congruence is supposed to work!
+        if CHECKS {
+            self.assert_sem_congruence(l, r, &child_proofs)
+        }
+
         self.disassociate_proven_eq(prove_congruence(l, r, child_proofs, self))
+    }
+
+    fn assert_sem_congruence(&self, l: &AppliedId, r: &AppliedId, child_proofs: &[ProvenEq]) {
+        // check that the congruence makes sense in "sem".
+        let l_node = alpha_normalize(&self.semify_enode(self.get_syn_node(l)));
+        let r_node = alpha_normalize(&self.semify_enode(self.get_syn_node(r)));
+
+        let null_l = nullify_app_ids(&l_node);
+        let null_r = nullify_app_ids(&r_node);
+        assert_eq!(null_l, null_r);
+
+        let n = l_node.applied_id_occurences().len();
+        for i in 0..n {
+            let lhs = &child_proofs[i];
+            let rhs = &Equation {
+                l: l_node.applied_id_occurences()[i].clone(),
+                r: r_node.applied_id_occurences()[i].clone(),
+            };
+            assert_match_equation(lhs, rhs);
+        }
     }
 }
