@@ -30,31 +30,6 @@ pub fn prove_transitivity(x: ProvenEq, y: ProvenEq) -> ProvenEq {
     TransitivityProof(x.clone(), y.clone()).check(&eq)
 }
 
-#[track_caller]
-pub fn prove_congruence<L: Language>(l: &AppliedId, r: &AppliedId, child_proofs: Vec<ProvenEq>, eg: &EGraph<L>) -> ProvenEq {
-    // because all our proofs witness redundancy per default, we need to sometimes get rid of these redundancies in child-proofs
-    // eg. when proving reflexivity e-nodes like a[x,y] + b[y,z] = a[x,y] + b[y,z].
-    // and we only have equations like a[x,y] = a[x',y'] witnessing redundancies.
-
-    let l_syn_node = alpha_normalize(&eg.get_syn_node(l));
-    let r_syn_node = alpha_normalize(&eg.get_syn_node(r));
-
-    let l_ids = l_syn_node.applied_id_occurences().into_iter();
-    let r_ids = r_syn_node.applied_id_occurences().into_iter();
-    let child_proofs = child_proofs.into_iter();
-
-    let mut new_child_proofs = Vec::new();
-    for ((li, ri), prf) in l_ids.zip(r_ids).zip(child_proofs) {
-        let goal = Equation { l: li, r: ri };
-        let new_proof = eg.associate_necessaries(&goal, prf);
-        new_child_proofs.push(new_proof);
-    }
-
-    let eq = Equation { l: l.clone(), r: r.clone() };
-    CongruenceProof(new_child_proofs).check(&eq, eg)
-}
-
-
 impl<L: Language> EGraph<L> {
     fn semify_equation(&self, eq: &Equation) -> Equation {
         Equation {
@@ -165,12 +140,14 @@ impl<L: Language> EGraph<L> {
         self.check_syn_applied_id(l);
         self.check_syn_applied_id(r);
 
-        // if this check "passes", the congruence is supposed to work!
-        if CHECKS {
-            self.assert_sem_congruence(l, r, &child_proofs)
-        }
+        let out = self.congruence_internal(l.id, r.id, &child_proofs);
+        let eq = Equation {
+            l: self.synify_app_id(self.semify_app_id(l.clone())),
+            r: r.clone(),
+        };
 
-        self.disassociate_proven_eq(prove_congruence(l, r, child_proofs, self))
+        assert_match_equation(&eq, &out);
+        out
     }
 
     fn assert_sem_congruence(&self, l: &AppliedId, r: &AppliedId, child_proofs: &[ProvenEq]) {
@@ -192,4 +169,71 @@ impl<L: Language> EGraph<L> {
             assert_match_equation(lhs, rhs);
         }
     }
+
+    fn congruence_internal(&self, l: Id, r: Id, child_proofs: &[ProvenEq]) -> ProvenEq {
+        // pretty sure this is unnecessary:
+        let child_proofs: Vec<_> = child_proofs.iter().map(|x| self.disassociate_proven_eq(x.clone())).collect();
+
+        let l_id = self.mk_syn_identity_applied_id(l);
+        let r_id = self.mk_syn_identity_applied_id(r);
+        let l_node = self.get_syn_node(&l_id);
+        let r_node = self.get_syn_node(&r_id);
+
+        let mut map = SlotMap::new();
+        for (l, r) in l_node.private_slot_occurences().iter().zip(r_node.private_slot_occurences().iter()) {
+            try_insert(*l, *r, &mut map);
+        }
+
+        let n = l_node.applied_id_occurences().len();
+        for i in 0..n {
+            let eq = Equation {
+                l: l_node.applied_id_occurences()[i].clone(),
+                r: r_node.applied_id_occurences()[i].clone(),
+            };
+            // eq.l.m :: syn_slots(eq.l.id) -> syn_slots(l_id)
+            // eq.r.m :: syn_slots(eq.r.id) -> syn_slots(r_id)
+
+            let child_eq = child_proofs[i].equ();
+            // child_eq.l.m :: syn_slots(eq.l.id) -> X
+            // child_eq.r.m :: syn_slots(eq.r.id) -> X
+
+            for (k, v) in child_eq.l.m.compose_partial(&child_eq.r.m.inverse()).iter() {
+                let Some(k) = eq.l.m.get(k) else { continue };
+                let Some(v) = eq.r.m.get(v) else { continue };
+                try_insert(k, v, &mut map);
+            }
+        }
+
+        // map = map.iter().filter(|(x, y)| l_id.slots().contains(&x) && r_id.slots().contains(&y)).collect();
+        // assert!(map.keys().is_subset(&l_id.slots()));
+        // assert!(map.values().is_subset(&r_id.slots()));
+
+        // we want to prove l2_id = r_id.
+        let l2_id = l_id.apply_slotmap_fresh(&map);
+        let l2_node = self.get_syn_node(&l2_id);
+
+        let mut final_child_proofs = Vec::new();
+        for i in 0..n {
+            let li = l2_node.applied_id_occurences()[i].clone();
+            let ri = r_node.applied_id_occurences()[i].clone();
+
+            let goal = Equation { l: li, r: ri };
+            let old_prf = child_proofs[i].clone();
+            let new_proof = self.associate_necessaries(&goal, old_prf);
+            final_child_proofs.push(new_proof);
+        }
+
+        let eq = Equation { l: l2_id.clone(), r: r_id.clone() };
+        let cong = CongruenceProof(final_child_proofs).check(&eq, self);
+
+        self.disassociate_proven_eq(cong)
+    }
+}
+
+fn try_insert(k: Slot, v: Slot, map: &mut SlotMap) {
+    if map.get(k) == Some(v) { return; }
+
+    if map.get(k).is_some() { panic!(); }
+
+    map.insert(k, v);
 }
