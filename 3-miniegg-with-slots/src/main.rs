@@ -125,7 +125,7 @@ fn main3() {
     eg.dump();
     dbg!(&x1x3);
     dbg!(&x2x3);
-    eg.explain_equivalence(x1x3, x2x3).show();
+    eg.explain_equivalence(x1x3, x2x3).show_expr(&eg);
 }
 
 #[test]
@@ -143,7 +143,7 @@ fn main2() {
     eg.union(&y1, &y2);
     eg.union(&y3, &y4);
     eg.union(&y2, &y3);
-    eg.explain_equivalence(x1, x4).show();
+    eg.explain_equivalence(x1, x4).show_expr(&eg);
 }
 
 

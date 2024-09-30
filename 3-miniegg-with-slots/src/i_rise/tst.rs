@@ -12,7 +12,7 @@ fn assert_reaches(start: RecExpr<RiseENode>, goal: RecExpr<RiseENode>, steps: us
         if let Some(i2) = lookup_rec_expr(&goal, &eg) {
             if eg.eq(&i1, &i2) {
                 dbg!(eg.total_number_of_nodes());
-                eg.explain_equivalence(start, goal).show();
+                eg.explain_equivalence(start, goal).show_expr(&eg);
                 return;
             }
         }

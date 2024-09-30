@@ -90,7 +90,7 @@ impl Realization for LambdaRealSmall {
     fn explain_equivalence(&mut self, ast1: Ast, ast2: Ast) {
         let re1 = RecExpr::<ENode>::parse2(&ast1.to_string());
         let re2 = RecExpr::<ENode>::parse2(&ast2.to_string());
-        self.0.explain_equivalence(re1, re2).show();
+        self.0.explain_equivalence(re1, re2).show_expr(&self.0);
     }
 }
 
