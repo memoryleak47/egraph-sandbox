@@ -184,7 +184,7 @@ impl<L: Language> EGraph<L> {
 
         let n = l_node.applied_id_occurences().len();
         for i in 0..n {
-            let lhs = &child_proofs[i];
+            let lhs = &self.semify_equation(&child_proofs[i]);
             let rhs = &Equation {
                 l: l_node.applied_id_occurences()[i].clone(),
                 r: r_node.applied_id_occurences()[i].clone(),
