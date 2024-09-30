@@ -170,14 +170,39 @@ impl<L: Language> EGraph<L> {
         }
     }
 
+    fn lift_sem_congruence(&self, l: AppliedId, r: AppliedId, child_proofs: &[ProvenEq]) -> ProvenEq {
+        self.assert_sem_congruence(&l, &r, &child_proofs);
+
+        let l_node = alpha_normalize(&self.get_syn_node(&l));
+        let r_node = alpha_normalize(&self.get_syn_node(&r));
+
+        let n = child_proofs.len();
+
+        let mut final_child_proofs = Vec::new();
+        for i in 0..n {
+            let li = l_node.applied_id_occurences()[i].clone();
+            let ri = r_node.applied_id_occurences()[i].clone();
+
+            let goal = Equation { l: li, r: ri };
+            let old_prf = child_proofs[i].clone();
+            let new_proof = self.associate_necessaries(&goal, old_prf);
+            final_child_proofs.push(new_proof);
+        }
+
+        let eq = Equation { l: l.clone(), r: r.clone() };
+        let cong = CongruenceProof(final_child_proofs).check(&eq, self);
+
+        self.disassociate_proven_eq(cong)
+    }
+
     fn congruence_internal(&self, l: Id, r: Id, child_proofs: &[ProvenEq]) -> ProvenEq {
         // pretty sure this is unnecessary:
         let child_proofs: Vec<_> = child_proofs.iter().map(|x| self.disassociate_proven_eq(x.clone())).collect();
 
         let l_id = self.mk_syn_identity_applied_id(l);
         let r_id = self.mk_syn_identity_applied_id(r);
-        let l_node = self.get_syn_node(&l_id);
-        let r_node = self.get_syn_node(&r_id);
+        let l_node = alpha_normalize(&self.get_syn_node(&l_id));
+        let r_node = alpha_normalize(&self.get_syn_node(&r_id));
 
         let mut map = SlotMap::new();
         for (l, r) in l_node.private_slot_occurences().iter().zip(r_node.private_slot_occurences().iter()) {
@@ -212,21 +237,7 @@ impl<L: Language> EGraph<L> {
         let l2_id = l_id.apply_slotmap_fresh(&map);
         let l2_node = self.get_syn_node(&l2_id);
 
-        let mut final_child_proofs = Vec::new();
-        for i in 0..n {
-            let li = l2_node.applied_id_occurences()[i].clone();
-            let ri = r_node.applied_id_occurences()[i].clone();
-
-            let goal = Equation { l: li, r: ri };
-            let old_prf = child_proofs[i].clone();
-            let new_proof = self.associate_necessaries(&goal, old_prf);
-            final_child_proofs.push(new_proof);
-        }
-
-        let eq = Equation { l: l2_id.clone(), r: r_id.clone() };
-        let cong = CongruenceProof(final_child_proofs).check(&eq, self);
-
-        self.disassociate_proven_eq(cong)
+        self.lift_sem_congruence(l2_id, r_id, &child_proofs)
     }
 }
 
