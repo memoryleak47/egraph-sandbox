@@ -62,8 +62,23 @@ impl Language for ENode {
         }
     }
 
-    fn to_op(&self) -> (String, Vec<Child>) { todo!() }
-    fn from_op(_op: &str, _children: Vec<Child>) -> Option<Self> { todo!() }
+    fn to_op(&self) -> (String, Vec<Child>) {
+        match self.clone() {
+            ENode::Lam(s, a) => (String::from("lam"), vec![Child::Slot(s), Child::AppliedId(a)]),
+            ENode::App(l, r) => (String::from("app"), vec![Child::AppliedId(l), Child::AppliedId(r)]),
+            ENode::Var(s) => (String::from("var"), vec![Child::Slot(s)]),
+        }
+    }
+
+    fn from_op(op: &str, children: Vec<Child>) -> Option<Self> {
+        match (op, &*children) {
+            ("lam", [Child::Slot(s), Child::AppliedId(a)]) => Some(ENode::Lam(*s, a.clone())),
+            ("app", [Child::AppliedId(l), Child::AppliedId(r)]) => Some(ENode::App(l.clone(), r.clone())),
+            ("var", [Child::Slot(s)]) => Some(ENode::Var(*s)),
+            _ => None,
+        }
+    }
+
 }
 
 use std::fmt::*;

@@ -109,8 +109,39 @@ impl Language for ArithENode {
         }
     }
 
-    fn to_op(&self) -> (String, Vec<Child>) { todo!() }
-    fn from_op(op: &str, children: Vec<Child>) -> Option<Self> { todo!() }
+    fn to_op(&self) -> (String, Vec<Child>) {
+        match self.clone() {
+            ArithENode::Lam(s, a) => (String::from("lam"), vec![Child::Slot(s), Child::AppliedId(a)]),
+            ArithENode::App(l, r) => (String::from("app"), vec![Child::AppliedId(l), Child::AppliedId(r)]),
+            ArithENode::Var(s) => (String::from("var"), vec![Child::Slot(s)]),
+            ArithENode::Let(s, t, b) => (String::from("let"), vec![Child::Slot(s), Child::AppliedId(t), Child::AppliedId(b)]),
+            ArithENode::Number(n) => (format!("num_{}", n), vec![]),
+            ArithENode::Symbol(s) => (format!("sym_{}", s), vec![]),
+            ArithENode::Add(l, r) => (String::from("add"), vec![Child::AppliedId(l), Child::AppliedId(r)]),
+            ArithENode::Mul(l, r) => (String::from("mul"), vec![Child::AppliedId(l), Child::AppliedId(r)]),
+        }
+    }
+
+    fn from_op(op: &str, children: Vec<Child>) -> Option<Self> {
+        match (op, &*children) {
+            ("lam", [Child::Slot(s), Child::AppliedId(a)]) => Some(ArithENode::Lam(*s, a.clone())),
+            ("app", [Child::AppliedId(l), Child::AppliedId(r)]) => Some(ArithENode::App(l.clone(), r.clone())),
+            ("var", [Child::Slot(s)]) => Some(ArithENode::Var(*s)),
+            ("let", [Child::Slot(s), Child::AppliedId(t), Child::AppliedId(b)]) => Some(ArithENode::Let(*s, t.clone(), b.clone())),
+            ("add", [Child::AppliedId(l), Child::AppliedId(r)]) => Some(ArithENode::Add(l.clone(), r.clone())),
+            ("mul", [Child::AppliedId(l), Child::AppliedId(r)]) => Some(ArithENode::Mul(l.clone(), r.clone())),
+            (op, []) if op.starts_with("num_") => {
+                let u: u32 = op[4..].parse().ok()?;
+                Some(ArithENode::Number(u))
+            },
+            (op, []) if op.starts_with("sym_") => {
+                let s: Symbol = op[4..].parse().ok()?;
+                Some(ArithENode::Symbol(s))
+            },
+            _ => None,
+        }
+    }
+
 }
 
 

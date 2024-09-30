@@ -45,9 +45,6 @@ pub use i_array::*;
 mod i_arith;
 pub use i_arith::*;
 
-mod i_spores;
-pub use i_spores::*;
-
 mod i_symbol;
 pub use i_symbol::*;
 
