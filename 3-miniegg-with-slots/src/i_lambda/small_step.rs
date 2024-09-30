@@ -86,6 +86,12 @@ impl Realization for LambdaRealSmall {
 
     fn enode_count(&self) -> usize { self.0.total_number_of_nodes() }
     fn eclass_count(&self) -> usize { self.0.ids().len() } 
+
+    fn explain_equivalence(&mut self, ast1: Ast, ast2: Ast) {
+        let re1 = RecExpr::<ENode>::parse2(&ast1.to_string());
+        let re2 = RecExpr::<ENode>::parse2(&ast2.to_string());
+        self.0.explain_equivalence(re1, re2).show();
+    }
 }
 
 lamcalc::unpack_tests!(LambdaRealSmall);

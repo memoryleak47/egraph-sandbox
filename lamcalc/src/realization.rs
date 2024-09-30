@@ -13,11 +13,13 @@ pub trait Realization: Sized {
     fn step(&mut self);
     fn enode_count(&self) -> usize;
     fn eclass_count(&self) -> usize;
+    fn explain_equivalence(&mut self, ast: Ast, ast2: Ast);
 }
 
 // stops when the desired output has been reached.
 pub fn simplify_to_nf<R: Realization>(s: &str) -> String {
-    let mut ast = Ast::parse(s);
+    let orig_ast = Ast::parse(s);
+    let mut ast = orig_ast.clone();
     let mut eg = R::new();
     let i = eg.add_ast(&ast);
     for _ in 0..NO_ITERS {
@@ -25,6 +27,7 @@ pub fn simplify_to_nf<R: Realization>(s: &str) -> String {
 
         ast = eg.extract_ast(i.clone());
         if ast.step().is_none() {
+            eg.explain_equivalence(orig_ast, ast.clone());
             return ast.to_string();
         };
 
@@ -47,6 +50,9 @@ pub fn simplify<R: Realization>(s: &str) -> String {
         }
     }
     let out = eg.extract_ast(i.clone());
+
+    eg.explain_equivalence(ast.clone(), out.clone());
+
     let out = out.to_string();
 
     out
@@ -80,6 +86,7 @@ pub fn check_eq<R: Realization>(s1: &str, s2: &str) {
     let i2 = eg.add_ast(&s2);
     for _ in 0..NO_ITERS {
         if eg.find(i1.clone()) == eg.find(i2.clone()) {
+            eg.explain_equivalence(s1.clone(), s2.clone());
             return;
         }
 
