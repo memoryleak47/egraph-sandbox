@@ -76,6 +76,7 @@ impl<L: Language> EGraph<L> {
             return x;
         }
 
+        // TODO this code is kinda exactly what add_syn is supposed to do anyways. There's probably a way to write this more concisely.
         let enode = t.0.refresh_private().apply_slotmap(&t.1);
         let enode = self.synify_enode(enode);
 
