@@ -77,6 +77,7 @@ impl<L: Language> EGraph<L> {
         }
 
         // TODO this code is kinda exactly what add_syn is supposed to do anyways. There's probably a way to write this more concisely.
+        // We convert the enode to "syn" so that semantic_add will compute the necessary redundancy proofs.
         let enode = t.0.refresh_private().apply_slotmap(&t.1);
         let enode = self.synify_enode(enode);
 

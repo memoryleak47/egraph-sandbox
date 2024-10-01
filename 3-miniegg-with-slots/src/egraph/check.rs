@@ -129,7 +129,13 @@ impl<L: Language> EGraph<L> {
                 let real = sh.apply_slotmap(bij);
                 assert!(real.slots().is_superset(&c.slots));
 
-                assert_eq!((sh.clone(), bij.clone()), self.shape(&real));
+                let (computed_sh, computed_bij) = self.shape(&real);
+                assert_eq!(&computed_sh, sh);
+
+                // computed_bij :: shape-slots -> slots(i)
+                // bij :: shape-slots -> slots(i)
+                let perm = computed_bij.inverse().compose_partial(&bij);
+                assert!(c.group.contains(&perm));
 
                 for x in real.applied_id_occurences() {
                     check_internal_applied_id::<L>(self, &x);
