@@ -276,9 +276,7 @@ impl<L: Language> EGraph<L> {
 
             combined.push(cycle);
         }
-        let l = identity.clone();
-        let r = identity.apply_slotmap_fresh(&SlotMap::identity(&fixpoint_set));
-        let cong = self.prove_congruence(l.id, r.id, &combined);
+        let cong = self.prove_congruence(src_id, src_id, &combined);
         let prf = self.prove_transitivity(neg_leader_prf.clone(), self.prove_transitivity(cong, leader_prf.clone()));
 
         let leader_inv = leader.m.inverse();
@@ -369,11 +367,6 @@ impl<L: Language> EGraph<L> {
 
                 if CHECKS { assert!(perm.is_perm()); }
 
-                let l = src_identity.clone();
-                let r = l.apply_slotmap_fresh(&perm);
-
-                let eq = Equation { l, r };
-
                 let mut combined_prfs = Vec::new();
                 for (old_to_new_ids, perm_prf) in prfs.iter().zip(prfs2.iter()) {
                     let new_to_old_ids = self.prove_symmetry(old_to_new_ids.clone());
@@ -419,7 +412,7 @@ impl<L: Language> EGraph<L> {
 
         let b = self.lookup_internal(&t).expect("handle_congruence should only be called on hashcons collision!");
         let (bij, /*src id*/ c) = self.classes[&b.id].nodes[&t.0].clone();
-        let c = c.apply_slotmap_fresh(&b.m);
+        let c = c.apply_slotmap_fresh(&b.m); // TODO why on earth does it fail if I remove this? This should do literally nothing.
         let c_node = self.get_syn_node(&c);
         let (t2, vec_p2) = self.proven_shape(&c_node);
         if CHECKS {
