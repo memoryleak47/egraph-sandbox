@@ -61,6 +61,20 @@ impl<L: Language> EGraph<L> {
             usages.insert(*i, HashSet::default());
         }
 
+        // redundancy-check for leaders.
+        // TODO add a similar check for followers, using unionfind_get.
+        for (i, c) in &self.classes {
+            if !self.is_alive(*i) { continue; }
+
+            let eq = c.redundancy_proof.equ();
+            // eq.l.m :: slots(i) -> X
+            // eq.r.m :: slots(i) -> X
+            let tmp = eq.l.m.compose_partial(&eq.r.m.inverse());
+            assert!(tmp.is_perm());
+            assert_eq!(c.slots, tmp.keys());
+            assert_eq!(c.slots, tmp.values());
+        }
+
         for (i, c) in &self.classes {
             for sh in c.nodes.keys() {
                 assert!(!hashcons.contains_key(sh));
