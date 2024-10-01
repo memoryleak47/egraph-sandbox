@@ -79,7 +79,8 @@ impl<L: Language> EGraph<L> {
         let enode = t.0.refresh_private().apply_slotmap(&t.1);
         let enode = self.synify_enode(enode);
 
-        self.mk_singleton_class(t, enode)
+        let syn = self.mk_singleton_class(enode);
+        self.semify_app_id(syn)
     }
 
     pub fn lookup(&self, n: &L) -> Option<AppliedId> {
@@ -117,25 +118,23 @@ impl<L: Language> EGraph<L> {
 }
 
 impl<L: Language> EGraph<L> {
-    // returns a sem applied id.
-    fn mk_singleton_class(&mut self, (sh, bij): (L, SlotMap), syn_enode: L) -> AppliedId {
-        let old_slots = bij.values();
+    // returns a syn applied id.
+    fn mk_singleton_class(&mut self, syn_enode: L) -> AppliedId {
+        let old_slots = syn_enode.slots();
 
         let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
         let old_to_fresh = fresh_to_old.inverse();
 
         // allocate new class & slot set.
         let fresh_slots = old_to_fresh.values();
-        let syn_enode_real = syn_enode.apply_slotmap_fresh(&old_to_fresh);
-        let i = self.alloc_eclass(&fresh_slots, syn_enode_real.clone());
+        let syn_enode_fresh = syn_enode.apply_slotmap_fresh(&old_to_fresh);
+        let i = self.alloc_eclass(&fresh_slots, syn_enode_fresh.clone());
 
-        let m = bij.compose(&old_to_fresh);
-        let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode_real.slots()));
-        let sem_app_id = AppliedId::new(i, SlotMap::identity(&fresh_slots));
+        let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode_fresh.slots()));
 
         // we use semantic_add so that the redundancy, symmetry and congruence checks run on it.
-        self.semantic_add(&sh.apply_slotmap_fresh(&m), &sem_app_id, syn_app_id);
-        self.mk_sem_applied_id(i, fresh_to_old)
+        self.semantic_add(&syn_enode_fresh, &syn_app_id, syn_app_id.clone());
+        self.mk_syn_applied_id(i, fresh_to_old)
     }
 
     // adds (sh, bij) to the eclass `id`.
