@@ -70,8 +70,7 @@ impl<L: Language> EGraph<L> {
 
             grp.add(proven_perm);
 
-            self.convert_eclass(id);
-
+            self.touched_class(id);
 
             true
         } else {
@@ -163,7 +162,7 @@ impl<L: Language> EGraph<L> {
         let c = self.classes.get_mut(&id).unwrap();
         c.group = Group::new(&identity, generators);
 
-        self.convert_eclass(from.id);
+        self.touched_class(from.id);
     }
 
     // moves everything from `from` to `to`.
@@ -175,64 +174,22 @@ impl<L: Language> EGraph<L> {
         let map = to.m.compose_partial(&from.m.inverse());
         let app_id = self.mk_sem_applied_id(to.id, map);
         self.unionfind_set(from.id, app_id, proof);
-        self.convert_eclass(from.id);
-    }
 
-    pub fn rebuild(&mut self) {
-        if CHECKS { self.check(); }
-        while let Some(sh) = self.pending.iter().cloned().next() {
-            self.pending.remove(&sh);
-            self.handle_pending(sh);
+        // who updates the usages? raw_add_to_class & raw_remove_from_class do that.
 
-            if CHECKS { self.check(); }
-        }
-    }
-
-    fn handle_pending(&mut self, sh: L) {
-        let i = self.hashcons[&sh];
-        let (bij, src_id) = self.classes[&i].nodes[&sh].clone();
-        let node = sh.apply_slotmap(&bij);
-        self.raw_remove_from_class(i, (sh.clone(), bij));
-        let app_i = self.mk_sem_identity_applied_id(i);
-        self.semantic_add(&node, &app_i, src_id);
-    }
-
-    // Remove everything that references this e-class, and then re-add it using "semantic_add".
-    // Is typically called on e-classes that point to another e-class in the unionfind.
-    fn convert_eclass(&mut self, from: Id) {
-        let mut adds: Vec<(L, AppliedId, AppliedId)> = Vec::new();
-
-        // - remove all of its e-nodes
-        let from_nodes = self.classes.get(&from).unwrap().nodes.clone();
-        let from_id = self.mk_sem_identity_applied_id(from);
+        let from_nodes = self.classes.get(&from.id).unwrap().nodes.clone();
+        let from_id = self.mk_sem_identity_applied_id(from.id);
         for (sh, (bij, src_id)) in from_nodes {
             let enode = sh.apply_slotmap(&bij);
-            self.raw_remove_from_class(from, (sh, bij));
-            adds.push((enode, from_id.clone(), src_id));
+            self.raw_remove_from_class(from.id, (sh.clone(), bij.clone()));
+            self.raw_add_to_class(to.id, (sh.clone(), bij), src_id);
+            self.pending.insert(sh);
         }
-
-        // - remove all of its usages
-        let from_usages = self.classes.get(&from).unwrap().usages.clone();
-        for sh in from_usages {
-            let k = self.hashcons[&sh];
-            let (bij, src_id) = self.classes[&k].nodes[&sh].clone();
-            let enode = sh.apply_slotmap(&bij);
-            self.raw_remove_from_class(k, (sh, bij));
-            let applied_k = self.mk_sem_identity_applied_id(k);
-            adds.push((enode, applied_k, src_id));
-        }
-
-        // re-add everything.
-        for (enode, j, src_id) in adds {
-            self.semantic_add(&enode, &j, src_id);
-        }
-
 
         // re-add the group equations as well.
 
         // This basically calls self.union(from, from * perm) for each perm generator in the group of from.
-        let from = self.mk_sem_identity_applied_id(from);
-        let to = self.find_applied_id(&from);
+        let from = self.mk_sem_identity_applied_id(from.id);
         // from.m :: slots(from.id) -> C
         // to.m :: slots(to.id) -> C
 
@@ -266,6 +223,31 @@ impl<L: Language> EGraph<L> {
             .map(change_proven_permutation_from_from_to_to)
             .collect();
         self.classes.get_mut(&to.id).unwrap().group.add_set(set);
+
+        // touched because the group might have grown.
+        self.touched_class(to.id);
+
+        // touched because the class is now dead and no e-nodes should point to it.
+        self.touched_class(from.id);
+    }
+
+    pub fn rebuild(&mut self) {
+        if CHECKS { self.check(); }
+        while let Some(sh) = self.pending.iter().cloned().next() {
+            self.pending.remove(&sh);
+            self.handle_pending(sh);
+
+            if CHECKS { self.check(); }
+        }
+    }
+
+    fn handle_pending(&mut self, sh: L) {
+        let i = self.hashcons[&sh];
+        let (bij, src_id) = self.classes[&i].nodes[&sh].clone();
+        let node = sh.apply_slotmap(&bij);
+        self.raw_remove_from_class(i, (sh.clone(), bij));
+        let app_i = self.mk_sem_identity_applied_id(i);
+        self.semantic_add(&node, &app_i, src_id);
     }
 
     fn handle_shrink_in_upwards_merge(&mut self, src_id: Id) {
@@ -454,4 +436,12 @@ impl<L: Language> EGraph<L> {
         let r = eq.r;
         self.union_internal(&l, &r, proven_eq);
     }
+
+    // upon touching an e-class, you need to update all usages of it.
+    fn touched_class(&mut self, i: Id) {
+        for sh in &self.classes[&i].usages {
+            self.pending.insert(sh.clone());
+        }
+    }
+
 }
