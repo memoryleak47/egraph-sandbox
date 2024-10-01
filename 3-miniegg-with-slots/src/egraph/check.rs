@@ -109,7 +109,9 @@ impl<L: Language> EGraph<L> {
                 assert_eq!(self.unionfind_get(i), self.mk_sem_identity_applied_id(i));
             } else {
                 assert!(self.classes[&i].nodes.is_empty());
-                assert!(self.classes[&i].usages.is_empty());
+                for sh in &self.classes[&i].usages {
+                    assert!(self.pending.contains(&sh));
+                }
             }
         }
 
