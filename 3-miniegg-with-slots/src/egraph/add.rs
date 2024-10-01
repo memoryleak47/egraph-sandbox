@@ -125,7 +125,10 @@ impl<L: Language> EGraph<L> {
 
         let m = bij.compose(&old_to_fresh);
         let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode_real.slots()));
-        self.raw_add_to_class(i, (sh, m), syn_app_id);
+        let sem_app_id = AppliedId::new(i, SlotMap::identity(&fresh_slots));
+
+        // we use semantic_add so that the redundancy, symmetry and congruence checks run on it.
+        self.semantic_add(&sh.apply_slotmap_fresh(&m), &sem_app_id, syn_app_id);
         self.mk_sem_applied_id(i, fresh_to_old)
     }
 

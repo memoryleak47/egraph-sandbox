@@ -13,7 +13,6 @@ fn main() {
 #[test]
 fn main14() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    term("(app (app (var s0) (var s1)) sym_x)", eg); // this is only necessary, due to a bug. newly added e-nodes aren't upwards merged upon yet.
     equate("(app (var s0) (var s1))", "(app (var s1) (var s2))", eg);
     eg.dump();
     eg.check();
@@ -23,7 +22,6 @@ fn main14() {
 #[test]
 fn main13() {
     let eg: &mut EGraph<RiseENode> = &mut EGraph::new();
-    term("(app (app (var s0) (var s1)) sym_x)", eg); // this is only necessary, due to a bug. newly added e-nodes aren't upwards merged upon yet.
     equate("(app (var s0) (var s1))", "(app (var s1) (var s0))", eg);
     eg.dump();
     explain("(app (app (var s0) (var s1)) sym_x)", "(app (app (var s1) (var s0)) sym_x)", eg);
