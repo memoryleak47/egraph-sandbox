@@ -278,7 +278,7 @@ impl<L: Language> EGraph<L> {
         }
         let l = identity.clone();
         let r = identity.apply_slotmap_fresh(&SlotMap::identity(&fixpoint_set));
-        let cong = self.prove_congruence(&l, &r, combined);
+        let cong = self.prove_congruence(l.id, r.id, &combined);
         let prf = self.prove_transitivity(neg_leader_prf.clone(), self.prove_transitivity(cong, leader_prf.clone()));
 
         let leader_inv = leader.m.inverse();
@@ -385,7 +385,7 @@ impl<L: Language> EGraph<L> {
 
                 // src_id[...] == src_id[...]
 
-                let prf = CongruenceProof(combined_prfs).check(&eq, self);
+                let prf = self.prove_congruence(src_id, src_id, &combined_prfs);
                 if CHECKS {
                     assert_eq!(prf.l.id, src_id);
                     assert_eq!(prf.r.id, src_id);
@@ -433,7 +433,10 @@ impl<L: Language> EGraph<L> {
             vec.push(l_to_r);
         }
 
-        let proven_eq = self.prove_congruence(&a, &c, vec);
-        self.union_internal(&a, &c, proven_eq);
+        let proven_eq = self.prove_congruence(a.id, c.id, &vec);
+        let eq = proven_eq.equ();
+        let l = eq.l;
+        let r = eq.r;
+        self.union_internal(&l, &r, proven_eq);
     }
 }

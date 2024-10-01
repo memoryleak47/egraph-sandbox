@@ -135,21 +135,6 @@ impl<L: Language> EGraph<L> {
         self.disassociate_proven_eq(prove_transitivity(x, y))
     }
 
-    #[track_caller]
-    pub fn prove_congruence(&self, l: &AppliedId, r: &AppliedId, child_proofs: Vec<ProvenEq>) -> ProvenEq {
-        self.check_syn_applied_id(l);
-        self.check_syn_applied_id(r);
-
-        let out = self.congruence_internal(l.id, r.id, &child_proofs);
-        let eq = Equation {
-            l: self.synify_app_id(self.semify_app_id(l.clone())),
-            r: r.clone(),
-        };
-
-        assert_match_equation(&eq, &out);
-        out
-    }
-
     fn assert_sem_congruence(&self, l: &AppliedId, r: &AppliedId, child_proofs: &[ProvenEq]) {
         // check that the congruence makes sense in "sem".
         let l_node = alpha_normalize(&self.semify_enode(self.get_syn_node(l)));
@@ -195,7 +180,7 @@ impl<L: Language> EGraph<L> {
         self.disassociate_proven_eq(cong)
     }
 
-    fn congruence_internal(&self, l: Id, r: Id, child_proofs: &[ProvenEq]) -> ProvenEq {
+    pub fn prove_congruence(&self, l: Id, r: Id, child_proofs: &[ProvenEq]) -> ProvenEq {
         // pretty sure this is unnecessary:
         let child_proofs: Vec<_> = child_proofs.iter().map(|x| self.disassociate_proven_eq(x.clone())).collect();
 
