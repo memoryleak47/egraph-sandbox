@@ -10,6 +10,9 @@ impl<L: Language> EGraph<L> {
         let proof = self.prove_explicit(&syn_l, &syn_r, None);
         let out = self.union_internal(l, r, proof);
 
+        // for now we don't have deferred rebuilding.
+        self.rebuild();
+
         out
     }
 
@@ -186,7 +189,12 @@ impl<L: Language> EGraph<L> {
     }
 
     fn handle_pending(&mut self, sh: L) {
-        // TODO
+        let i = self.hashcons[&sh];
+        let (bij, src_id) = self.classes[&i].nodes[&sh].clone();
+        let node = sh.apply_slotmap(&bij);
+        self.raw_remove_from_class(i, (sh.clone(), bij));
+        let app_i = self.mk_sem_identity_applied_id(i);
+        self.semantic_add(&node, &app_i, src_id);
     }
 
     // Remove everything that references this e-class, and then re-add it using "semantic_add".
