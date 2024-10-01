@@ -421,7 +421,10 @@ impl<L: Language> EGraph<L> {
         let (bij, /*src id*/ c) = self.classes[&b.id].nodes[&t.0].clone();
         let c = c.apply_slotmap_fresh(&b.m);
         let c_node = self.get_syn_node(&c);
-        let (_, vec_p2) = self.proven_shape(&c_node);
+        let (t2, vec_p2) = self.proven_shape(&c_node);
+        if CHECKS {
+            assert_eq!(&t.0, &t2.0);
+        }
 
         let mut vec = Vec::new();
         for (l, r) in vec_p1.into_iter().zip(vec_p2.into_iter()) {
