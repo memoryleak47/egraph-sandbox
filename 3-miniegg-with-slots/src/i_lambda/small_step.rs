@@ -94,5 +94,4 @@ impl Realization for LambdaRealSmall {
     }
 }
 
-// TODO re-enable. There were problems particularly with this implementation.
-// lamcalc::unpack_tests!(LambdaRealSmall);
+lamcalc::unpack_tests!(LambdaRealSmall);

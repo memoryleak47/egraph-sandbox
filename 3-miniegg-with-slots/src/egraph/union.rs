@@ -175,6 +175,20 @@ impl<L: Language> EGraph<L> {
         self.convert_eclass(from.id);
     }
 
+    fn rebuild(&mut self) {
+        if CHECKS { self.check(); }
+        while let Some(sh) = self.pending.iter().cloned().next() {
+            self.pending.remove(&sh);
+            self.handle_pending(sh);
+
+            if CHECKS { self.check(); }
+        }
+    }
+
+    fn handle_pending(&mut self, sh: L) {
+        // TODO
+    }
+
     // Remove everything that references this e-class, and then re-add it using "semantic_add".
     // Is typically called on e-classes that point to another e-class in the unionfind.
     fn convert_eclass(&mut self, from: Id) {

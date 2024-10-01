@@ -69,6 +69,9 @@ pub struct EGraph<L: Language> {
 
     // For each (syn_slotset applied) non-normalized (i.e. "syntactic") weak shape, find the e-class who has this as syn_enode.
     syn_hashcons: HashMap<L, AppliedId>,
+
+    // E-Nodes that need to be re-processed, stored as shapes.
+    pending: HashSet<L>,
 }
 
 impl<L: Language> EGraph<L> {
@@ -78,6 +81,7 @@ impl<L: Language> EGraph<L> {
             classes: Default::default(),
             hashcons: Default::default(),
             syn_hashcons: Default::default(),
+            pending: Default::default(),
         }
     }
 
