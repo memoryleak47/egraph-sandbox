@@ -4,6 +4,7 @@ impl<L: Language> EGraph<L> {
     // creates a new eclass with slots "l.slots() cap r.slots()".
     // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
+
         let syn_l = self.synify_app_id(l.clone());
         let syn_r = self.synify_app_id(r.clone());
 
@@ -86,6 +87,7 @@ impl<L: Language> EGraph<L> {
                 let proof = self.prove_symmetry(proof);
                 self.move_to(&r, &l, proof)
             }
+
             true
         }
     }
@@ -172,7 +174,7 @@ impl<L: Language> EGraph<L> {
             assert_eq!(to.id, proof.r.id);
         }
         let map = to.m.compose_partial(&from.m.inverse());
-        let app_id = self.mk_sem_applied_id(to.id, map);
+        let app_id = self.mk_sem_applied_id(to.id, map.clone());
         self.unionfind_set(from.id, app_id, proof);
 
         // who updates the usages? raw_add_to_class & raw_remove_from_class do that.
@@ -182,7 +184,8 @@ impl<L: Language> EGraph<L> {
         for (sh, (bij, src_id)) in from_nodes {
             let enode = sh.apply_slotmap(&bij);
             self.raw_remove_from_class(from.id, (sh.clone(), bij.clone()));
-            self.raw_add_to_class(to.id, (sh.clone(), bij), src_id);
+            let new_bij = bij.compose(&map.inverse());
+            self.raw_add_to_class(to.id, (sh.clone(), new_bij), src_id);
             self.pending.insert(sh);
         }
 
