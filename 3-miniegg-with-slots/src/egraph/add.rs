@@ -18,18 +18,24 @@ impl<L: Language> EGraph<L> {
         self.add(enode.clone());
 
         if let Some(x) = self.lookup_syn(&enode) {
+            if CHECKS {
+                assert_eq!(enode.slots(), x.slots());
+            }
             return x;
         }
 
         let old_slots = enode.slots();
         let fresh_to_old = Bijection::bijection_from_fresh_to(&old_slots);
         let old_to_fresh = fresh_to_old.inverse();
-        let enode = enode.apply_slotmap(&old_to_fresh);
-        let c = self.alloc_eclass(&old_to_fresh.values(), enode.clone());
+        let new_enode = enode.apply_slotmap(&old_to_fresh);
+        let c = self.alloc_eclass(&old_to_fresh.values(), new_enode.clone());
 
-        let c_a = self.mk_syn_identity_applied_id(c);
+        let c_a = self.mk_syn_applied_id(c, fresh_to_old.clone());
         self.handle_congruence(c_a.id);
 
+        if CHECKS {
+            assert_eq!(enode.slots(), c_a.slots());
+        }
         c_a
     }
 
