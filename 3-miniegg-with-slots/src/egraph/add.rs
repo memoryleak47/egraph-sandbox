@@ -135,7 +135,11 @@ impl<L: Language> EGraph<L> {
         let syn_app_id = AppliedId::new(i, SlotMap::identity(&syn_enode_fresh.slots()));
 
         // we use semantic_add so that the redundancy, symmetry and congruence checks run on it.
-        self.semantic_add(&syn_enode_fresh, &syn_app_id, syn_app_id.clone());
+        let t = syn_enode_fresh.weak_shape();
+        self.raw_add_to_class(i, t.clone(), syn_app_id.clone());
+        self.pending.insert(t.0);
+        self.rebuild();
+
         self.mk_syn_applied_id(i, fresh_to_old)
     }
 

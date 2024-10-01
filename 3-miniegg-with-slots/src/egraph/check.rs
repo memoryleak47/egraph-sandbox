@@ -129,6 +129,8 @@ impl<L: Language> EGraph<L> {
                 let real = sh.apply_slotmap(bij);
                 assert!(real.slots().is_superset(&c.slots));
 
+                if self.pending.contains(&sh) { continue; }
+
                 let (computed_sh, computed_bij) = self.shape(&real);
                 assert_eq!(&computed_sh, sh);
 

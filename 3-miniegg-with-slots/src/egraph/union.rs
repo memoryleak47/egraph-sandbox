@@ -178,7 +178,7 @@ impl<L: Language> EGraph<L> {
         self.convert_eclass(from.id);
     }
 
-    fn rebuild(&mut self) {
+    pub fn rebuild(&mut self) {
         if CHECKS { self.check(); }
         while let Some(sh) = self.pending.iter().cloned().next() {
             self.pending.remove(&sh);
