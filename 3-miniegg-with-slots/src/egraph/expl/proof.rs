@@ -79,25 +79,25 @@ impl Hash for ProvenEqRaw {
 
 
 impl ExplicitProof {
-    pub fn check(&self, eq: &Equation) -> ProvenEq {
+    pub fn check(&self, eq: &Equation, reg: &ProofRegistry) -> ProvenEq {
         let eq = eq.clone();
         let proof = Proof::Explicit(self.clone());
-        Arc::new(ProvenEqRaw { eq, proof })
+        reg.insert(Arc::new(ProvenEqRaw { eq, proof }))
     }
 }
 
 impl ReflexivityProof {
-    pub fn check(&self, eq: &Equation) -> ProvenEq {
+    pub fn check(&self, eq: &Equation, reg: &ProofRegistry) -> ProvenEq {
         assert_eq!(eq.l, eq.r);
 
         let eq = eq.clone();
         let proof = Proof::Reflexivity(self.clone());
-        Arc::new(ProvenEqRaw { eq, proof })
+        reg.insert(Arc::new(ProvenEqRaw { eq, proof }))
     }
 }
 
 impl SymmetryProof {
-    pub fn check(&self, eq: &Equation) -> ProvenEq {
+    pub fn check(&self, eq: &Equation, reg: &ProofRegistry) -> ProvenEq {
         let SymmetryProof(x) = self;
 
         let flipped = Equation { l: x.r.clone(), r: x.l.clone() };
@@ -105,12 +105,12 @@ impl SymmetryProof {
 
         let eq = eq.clone();
         let proof = Proof::Symmetry(self.clone());
-        Arc::new(ProvenEqRaw { eq, proof })
+        reg.insert(Arc::new(ProvenEqRaw { eq, proof }))
     }
 }
 
 impl TransitivityProof {
-    pub fn check(&self, eq: &Equation) -> ProvenEq {
+    pub fn check(&self, eq: &Equation, reg: &ProofRegistry) -> ProvenEq {
         let TransitivityProof(eq1, eq2) = self;
 
         let mut theta1 = {
@@ -157,7 +157,7 @@ impl TransitivityProof {
 
         let eq = eq.clone();
         let proof = Proof::Transitivity(self.clone());
-        Arc::new(ProvenEqRaw { eq, proof })
+        reg.insert(Arc::new(ProvenEqRaw { eq, proof }))
     }
 }
 
@@ -199,7 +199,7 @@ impl CongruenceProof {
 
         let eq = eq.clone();
         let proof = Proof::Congruence(self.clone());
-        Arc::new(ProvenEqRaw { eq, proof })
+        eg.proof_registry.insert(Arc::new(ProvenEqRaw { eq, proof }))
     }
 }
 

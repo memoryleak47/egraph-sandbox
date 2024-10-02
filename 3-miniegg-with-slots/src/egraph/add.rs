@@ -184,10 +184,10 @@ impl<L: Language> EGraph<L> {
         let c_id = Id(self.unionfind_len()); // Pick the next unused Id.
 
         let syn_slots = syn_enode.slots();
-        let proven_perm = ProvenPerm::identity(c_id, &slots, &syn_slots);
+        let proven_perm = ProvenPerm::identity(c_id, &slots, &syn_slots, self.proof_registry.clone());
 
         let app_id = AppliedId::new(c_id, SlotMap::identity(&syn_slots));
-        let redundancy_proof = prove_reflexivity(&app_id);
+        let redundancy_proof = prove_reflexivity(&app_id, &self.proof_registry);
 
         let c = EClass {
             nodes: HashMap::default(),
@@ -212,7 +212,7 @@ impl<L: Language> EGraph<L> {
 
         let app_id = self.mk_sem_identity_applied_id(c_id);
         let syn_app_id = self.mk_syn_identity_applied_id(c_id);
-        let prf = prove_reflexivity(&syn_app_id);
+        let prf = prove_reflexivity(&syn_app_id, &self.proof_registry);
         self.unionfind_set(c_id, syn_app_id, prf);
 
         c_id

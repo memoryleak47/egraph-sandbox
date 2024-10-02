@@ -62,7 +62,7 @@ impl<L: Language> EGraph<L> {
                 assert_eq!(&perm.keys(), &self.classes[&id].slots);
             }
 
-            let proven_perm = ProvenPerm(perm, proof);
+            let proven_perm = ProvenPerm(perm, proof, self.proof_registry.clone());
             assert_eq!(proven_perm.1.l.id, id);
 
             proven_perm.check();
@@ -100,11 +100,11 @@ impl<L: Language> EGraph<L> {
             assert_eq!(proof.l.id, i);
         }
 
-        let flipped = prove_symmetry(proof.clone());
-        let new_prf = prove_transitivity(proof, flipped);
+        let flipped = prove_symmetry(proof.clone(), &self.proof_registry);
+        let new_prf = prove_transitivity(proof, flipped, &self.proof_registry);
 
         let old_prf = &mut self.classes.get_mut(&i).unwrap().redundancy_proof;
-        *old_prf = prove_transitivity(new_prf, old_prf.clone());
+        *old_prf = prove_transitivity(new_prf, old_prf.clone(), &self.proof_registry);
     }
 
     // We expect `from` to be on the lhs of this equation.
@@ -153,13 +153,13 @@ impl<L: Language> EGraph<L> {
                 .filter(|(x, _)| cap.contains(x))
                 .collect();
             let prf = self.disassociate_proven_eq(proven_perm.1);
-            let out = ProvenPerm(perm, prf);
+            let out = ProvenPerm(perm, prf, self.proof_registry.clone());
             out.check();
             out
         };
 
         let generators = generators.into_iter().map(restrict_proven).collect();
-        let identity = ProvenPerm::identity(id, &cap, syn_slots);
+        let identity = ProvenPerm::identity(id, &cap, syn_slots, self.proof_registry.clone());
         identity.check();
         let c = self.classes.get_mut(&id).unwrap();
         c.group = Group::new(&identity, generators);
@@ -232,7 +232,7 @@ impl<L: Language> EGraph<L> {
         let change_proven_permutation_from_from_to_to = |proven_perm: ProvenPerm| {
             let new_perm = change_permutation_from_from_to_to(proven_perm.0);
             let new_proof = self.prove_transitivity(prf_rev.clone(), self.prove_transitivity(proven_perm.1, prf.clone()));
-            ProvenPerm(new_perm, new_proof)
+            ProvenPerm(new_perm, new_proof, self.proof_registry.clone())
         };
 
         let set = self.classes[&from.id].group.generators()
@@ -269,7 +269,7 @@ impl<L: Language> EGraph<L> {
 
     fn handle_shrink_in_upwards_merge(&mut self, src_id: Id) {
         let (leader, leader_prf) = self.proven_unionfind_get(src_id);
-        let neg_leader_prf = prove_symmetry(leader_prf.clone());
+        let neg_leader_prf = prove_symmetry(leader_prf.clone(), &self.proof_registry);
         let src_syn_slots = self.syn_slots(src_id);
 
         let identity = self.mk_syn_identity_applied_id(src_id);
@@ -281,8 +281,8 @@ impl<L: Language> EGraph<L> {
         let mut combined = Vec::new();
         for (app_id, prf) in new_node.applied_id_occurences().into_iter().zip(prfs.into_iter()) {
             // each child-proof might "fix" a few slots, which are not witnessed to be redundant by it.
-            let rev = prove_symmetry(prf.clone());
-            let cycle = prove_transitivity(prf, rev);
+            let rev = prove_symmetry(prf.clone(), &self.proof_registry);
+            let cycle = prove_transitivity(prf, rev, &self.proof_registry);
 
             combined.push(cycle);
         }
@@ -383,7 +383,7 @@ impl<L: Language> EGraph<L> {
                     let new_to_old_ids = self.prove_symmetry(old_to_new_ids.clone());
 
                     let eq = self.prove_transitivity(self.prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids.clone());
-                    let combined = TransitivityProof(self.prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids.clone()).check(&eq);
+                    let combined = TransitivityProof(self.prove_transitivity(old_to_new_ids.clone(), perm_prf.clone()), new_to_old_ids.clone()).check(&eq, &self.proof_registry);
                     combined_prfs.push(combined);
                 }
 
@@ -405,7 +405,7 @@ impl<L: Language> EGraph<L> {
                     assert_eq!(prf.l.id, i);
                     assert_eq!(prf.r.id, i);
                 }
-                let proven_perm = ProvenPerm(perm, prf);
+                let proven_perm = ProvenPerm(perm, prf, self.proof_registry.clone());
 
                 if CHECKS {
                     proven_perm.check();

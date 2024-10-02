@@ -31,7 +31,7 @@ impl<L: Language> EGraph<L> {
         let prf2 = self.prove_symmetry(prf2);
 
         let final_eq = Equation { l: i1, r: i2 };
-        let p = TransitivityProof(prf1, prf2).check(&final_eq);
+        let p = TransitivityProof(prf1, prf2).check(&final_eq, &self.proof_registry);
 
         if CHECKS {
             assert_proves_equation(&p, &final_eq);

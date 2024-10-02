@@ -27,7 +27,7 @@ impl<L: Language> EGraph<L> {
         let entry_to_leader = self.unionfind_get_impl(entry.0.id, map);
         let new = (
             entry_to_leader.0.apply_slotmap(&entry.0.m),
-            prove_transitivity(entry.1, entry_to_leader.1),
+            prove_transitivity(entry.1, entry_to_leader.1, &self.proof_registry),
         );
 
         map[i.0] = new.clone();
@@ -55,7 +55,7 @@ impl<L: Language> EGraph<L> {
 
         // We can directly access the redundancy_proof here, because we know that 'app_id.id' is a leader.
         let red = self.classes[&app_id.id].redundancy_proof.clone();
-        let peq = prove_transitivity(peq, red);
+        let peq = prove_transitivity(peq, red, &self.proof_registry);
         (app_id, peq)
     }
 

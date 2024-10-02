@@ -1,25 +1,25 @@
 use crate::*;
 
 #[track_caller]
-pub fn prove_explicit(l: &AppliedId, r: &AppliedId, j: Option<String>) -> ProvenEq {
+pub fn prove_explicit(l: &AppliedId, r: &AppliedId, j: Option<String>, reg: &ProofRegistry) -> ProvenEq {
     let eq = Equation { l: l.clone(), r: r.clone() };
-    ExplicitProof(j).check(&eq)
+    ExplicitProof(j).check(&eq, reg)
 }
 
 #[track_caller]
-pub fn prove_reflexivity(id: &AppliedId) -> ProvenEq {
+pub fn prove_reflexivity(id: &AppliedId, reg: &ProofRegistry) -> ProvenEq {
     let eq = Equation { l: id.clone(), r: id.clone() };
-    ReflexivityProof.check(&eq)
+    ReflexivityProof.check(&eq, reg)
 }
 
 #[track_caller]
-pub fn prove_symmetry(x: ProvenEq) -> ProvenEq {
+pub fn prove_symmetry(x: ProvenEq, reg: &ProofRegistry) -> ProvenEq {
     let eq = Equation { l: x.r.clone(), r: x.l.clone() };
-    SymmetryProof(x).check(&eq)
+    SymmetryProof(x).check(&eq, reg)
 }
 
 #[track_caller]
-pub fn prove_transitivity(x: ProvenEq, y: ProvenEq) -> ProvenEq {
+pub fn prove_transitivity(x: ProvenEq, y: ProvenEq, reg: &ProofRegistry) -> ProvenEq {
     let eq1 = x.clone();
     let eq2 = y.clone();
     let theta = match_app_id(&eq2.l, &eq1.r);
@@ -27,7 +27,7 @@ pub fn prove_transitivity(x: ProvenEq, y: ProvenEq) -> ProvenEq {
     let c = eq2.r.apply_slotmap_fresh(&theta);
     let eq = Equation { l: a, r: c };
 
-    TransitivityProof(x.clone(), y.clone()).check(&eq)
+    TransitivityProof(x.clone(), y.clone()).check(&eq, reg)
 }
 
 impl<L: Language> EGraph<L> {
@@ -65,11 +65,11 @@ impl<L: Language> EGraph<L> {
                 subgoal.l.m.insert(x, f);
                 subgoal.r.m.insert(goal_associations[x], f);
             }
-            current = TransitivityProof(l_red, current).check(&subgoal);
+            current = TransitivityProof(l_red, current).check(&subgoal, &self.proof_registry);
         }
 
         let r_red = self.get_redundancy_proof(current.r.id);
-        TransitivityProof(current, r_red).check(goal)
+        TransitivityProof(current, r_red).check(goal, &self.proof_registry)
     }
 
     fn disassociation_necessary(&self, peq: &ProvenEq) -> bool {
@@ -88,8 +88,8 @@ impl<L: Language> EGraph<L> {
     fn get_redundancy_proof(&self, i: Id) -> ProvenEq {
         let (leader, prf) = self.proven_unionfind_get(i);
         let red_prf = self.classes[&leader.id].redundancy_proof.clone();
-        let inv_prf = prove_symmetry(prf.clone());
-        let out = prove_transitivity(prf, prove_transitivity(red_prf, inv_prf));
+        let inv_prf = prove_symmetry(prf.clone(), &self.proof_registry);
+        let out = prove_transitivity(prf, prove_transitivity(red_prf, inv_prf, &self.proof_registry), &self.proof_registry);
         out
     }
 
@@ -98,8 +98,8 @@ impl<L: Language> EGraph<L> {
             let mut peq = peq;
             let x = self.get_redundancy_proof(peq.l.id);
             let y = self.get_redundancy_proof(peq.r.id);
-            peq = prove_transitivity(x, peq);
-            peq = prove_transitivity(peq, y);
+            peq = prove_transitivity(x, peq, &self.proof_registry);
+            peq = prove_transitivity(peq, y, &self.proof_registry);
 
             peq
         } else {
@@ -116,23 +116,23 @@ impl<L: Language> EGraph<L> {
     pub fn prove_explicit(&self, l: &AppliedId, r: &AppliedId, j: Option<String>) -> ProvenEq {
         self.check_syn_applied_id(l);
         self.check_syn_applied_id(r);
-        self.disassociate_proven_eq(prove_explicit(l, r, j))
+        self.disassociate_proven_eq(prove_explicit(l, r, j, &self.proof_registry))
     }
 
     #[track_caller]
     pub fn prove_reflexivity(&self, id: &AppliedId) -> ProvenEq {
         self.check_syn_applied_id(id);
-        self.disassociate_proven_eq(prove_reflexivity(id))
+        self.disassociate_proven_eq(prove_reflexivity(id, &self.proof_registry))
     }
 
     #[track_caller]
     pub fn prove_symmetry(&self, x: ProvenEq) -> ProvenEq {
-        self.disassociate_proven_eq(prove_symmetry(x))
+        self.disassociate_proven_eq(prove_symmetry(x, &self.proof_registry))
     }
 
     #[track_caller]
     pub fn prove_transitivity(&self, x: ProvenEq, y: ProvenEq) -> ProvenEq {
-        self.disassociate_proven_eq(prove_transitivity(x, y))
+        self.disassociate_proven_eq(prove_transitivity(x, y, &self.proof_registry))
     }
 
     fn assert_sem_congruence(&self, l: &AppliedId, r: &AppliedId, child_proofs: &[ProvenEq]) {

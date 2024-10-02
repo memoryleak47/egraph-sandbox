@@ -20,7 +20,7 @@ impl Permutation for Perm {
 }
 
 #[derive(Clone, Debug)]
-pub struct ProvenPerm(pub Perm, pub ProvenEq);
+pub struct ProvenPerm(pub Perm, pub ProvenEq, pub ProofRegistry);
 
 impl PartialEq for ProvenPerm {
     fn eq(&self, other: &Self) -> bool { self.0 == other.0 }
@@ -46,8 +46,8 @@ impl Permutation for ProvenPerm {
         }
         // TODO why is this the other way around?
         let map = self.0.compose(&other.0);
-        let prf = prove_transitivity(other.1.clone(), self.1.clone());
-        let out = ProvenPerm(map, prf);
+        let prf = prove_transitivity(other.1.clone(), self.1.clone(), &self.2);
+        let out = ProvenPerm(map, prf, self.2.clone());
         out.check();
         out
     }
@@ -55,21 +55,21 @@ impl Permutation for ProvenPerm {
     fn inverse(&self) -> Self {
         self.check();
         let map = self.0.inverse();
-        let prf = prove_symmetry(self.1.clone());
-        let out = ProvenPerm(map, prf);
+        let prf = prove_symmetry(self.1.clone(), &self.2);
+        let out = ProvenPerm(map, prf, self.2.clone());
         out.check();
         out
     }
 }
 
 impl ProvenPerm {
-    pub fn identity(i: Id, slots: &HashSet<Slot>, syn_slots: &HashSet<Slot>) -> Self {
+    pub fn identity(i: Id, slots: &HashSet<Slot>, syn_slots: &HashSet<Slot>, reg: ProofRegistry) -> Self {
         let map = Perm::identity(slots);
 
         let identity = SlotMap::identity(syn_slots);
         let app_id = AppliedId::new(i, identity);
-        let prf = prove_reflexivity(&app_id);
-        ProvenPerm(map, prf)
+        let prf = prove_reflexivity(&app_id, &reg);
+        ProvenPerm(map, prf, reg)
     }
 
     fn to_string(&self) -> String {
