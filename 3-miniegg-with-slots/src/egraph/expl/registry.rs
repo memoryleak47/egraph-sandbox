@@ -1,8 +1,9 @@
-use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::*;
 
 #[derive(Clone, Default, Debug)]
-pub struct ProofRegistry(Arc<Mutex<HashMap<Equation, ProvenEq>>>);
+pub struct ProofRegistry(Rc<RefCell<HashMap<Equation, ProvenEq>>>);
 
 fn normalize_eq(eq: &Equation) -> Equation {
     let mut theta = SlotMap::new();
@@ -22,7 +23,7 @@ impl ProofRegistry {
     pub fn insert(&self, peq: ProvenEq) -> ProvenEq {
         let eq = normalize_eq(&peq.equ());
 
-        let mut handle = self.0.lock().unwrap();
+        let mut handle = self.0.borrow_mut();
 
         if let Some(x) = handle.get(&eq) {
             return x.clone();
