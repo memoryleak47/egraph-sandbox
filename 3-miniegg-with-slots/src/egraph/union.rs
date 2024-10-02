@@ -167,6 +167,13 @@ impl<L: Language> EGraph<L> {
         self.touched_class(from.id);
     }
 
+    fn assert_ty(&self, m: &SlotMap, keys: &HashSet<Slot>, values: &HashSet<Slot>) {
+        if CHECKS {
+            assert!(m.keys().is_subset(&keys));
+            assert!(m.values().is_subset(&values));
+        }
+    }
+
     // moves everything from `from` to `to`.
     fn move_to(&mut self, from: &AppliedId, to: &AppliedId, proof: ProvenEq) {
         if CHECKS {
@@ -174,7 +181,11 @@ impl<L: Language> EGraph<L> {
             assert_eq!(from.id, proof.l.id);
             assert_eq!(to.id, proof.r.id);
         }
+        // from.m :: slots(from.id) -> X
+        // to.m :: slots(to.id) -> X
         let map = to.m.compose_partial(&from.m.inverse());
+        self.assert_ty(&map, &self.slots(to.id), &self.slots(from.id));
+
         let app_id = self.mk_sem_applied_id(to.id, map.clone());
         self.unionfind_set(from.id, app_id, proof);
 
@@ -185,7 +196,9 @@ impl<L: Language> EGraph<L> {
         for (sh, (bij, src_id)) in from_nodes {
             let enode = sh.apply_slotmap(&bij);
             self.raw_remove_from_class(from.id, (sh.clone(), bij.clone()));
-            let new_bij = bij.compose(&map.inverse());
+            // if `sh` contains redundant slots, these won't be covered by 'map'.
+            // Thus we need compose_fresh.
+            let new_bij = bij.compose_fresh(&map.inverse());
             self.raw_add_to_class(to.id, (sh.clone(), new_bij), src_id);
             self.pending.insert(sh);
         }
