@@ -63,36 +63,50 @@ impl ProvenEqRaw {
         }
     }
 
+    fn subproofs(&self) -> Vec<&ProvenEq> {
+        match self.proof() {
+            Proof::Explicit(ExplicitProof(j)) => vec![],
+            Proof::Reflexivity(ReflexivityProof) => vec![],
+            Proof::Symmetry(SymmetryProof(x)) => vec![x],
+            Proof::Transitivity(TransitivityProof(x1, x2)) => vec![x1, x2],
+            Proof::Congruence(CongruenceProof(xs)) => xs.iter().collect(),
+        }
+    }
+
     pub fn show_impl2(&self, v: &mut ShowMap, f: &impl Fn(&AppliedId) -> String) {
-        let ptr = (&*self) as *const ProvenEqRaw;
-        if v.contains_key(&ptr) { return; }
+        let mut stack: Vec<&ProvenEqRaw> = vec![self];
 
-        let id_of = |p: &ProvenEq, v: &mut ShowMap| -> usize {
-            p.show_impl2(v, f);
-            let ptr = (&**p) as *const ProvenEqRaw;
-            v[&ptr].0
-        };
+        'outer: while let Some(x) = stack.last().cloned() {
+            let mut ids = Vec::new();
+            for sub in x.subproofs() {
+                let subptr = (&**sub) as *const ProvenEqRaw;
+                if let Some(o) = v.get(&subptr) {
+                    ids.push(o.0.to_string());
+                } else {
+                    stack.push(sub);
+                    continue 'outer;
+                }
+            }
+            let prf_string = match x.proof() {
+                Proof::Explicit(ExplicitProof(j)) => format!("{j:?}"),
+                Proof::Reflexivity(ReflexivityProof) => format!("refl"),
+                Proof::Symmetry(SymmetryProof(_)) => format!("symmetry({})", ids[0]),
+                Proof::Transitivity(TransitivityProof(_, _)) => {
+                    format!("transitivity({}, {})", ids[0], ids[1])
+                },
+                Proof::Congruence(CongruenceProof(xs)) => {
+                    let s = ids.join(", ");
+                    format!("congruence({s})")
+                },
+            };
 
-        let prf = match self.proof() {
-            Proof::Explicit(ExplicitProof(j)) => format!("{j:?}"),
-            Proof::Reflexivity(ReflexivityProof) => format!("refl"),
-            Proof::Symmetry(SymmetryProof(x)) => format!("symmetry({})", id_of(x, v)),
-            Proof::Transitivity(TransitivityProof(x1, x2)) => {
-                let y1 = id_of(x1, v);
-                let y2 = id_of(x2, v);
-                format!("transitivity({}, {})", y1, y2)
-            },
-            Proof::Congruence(CongruenceProof(xs)) => {
-                let xs: Vec<_> = xs.into_iter().map(|x| id_of(x, v).to_string()).collect();
-                let s = xs.join(", ");
-                format!("congruence({s})")
-            },
-        };
+            let i = v.len();
+            let Equation { l, r } = &**x;
+            let out = format!("lemma{i}: '{} = {}'", f(l), f(r));
+            let out = format!("{out}\n  by {prf_string}\n");
+            v.insert(x as *const ProvenEqRaw, (i, out));
+            assert_eq!(stack.pop(), Some(x));
+        }
 
-        let i = v.len();
-        let Equation { l, r } = &**self;
-        let out = format!("lemma{i}: '{} = {}'", f(l), f(r));
-        let out = format!("{out}\n  by {prf}\n");
-        v.insert(ptr, (i, out));
     }
 }
