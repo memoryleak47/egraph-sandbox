@@ -170,6 +170,7 @@ impl<L: Language> EGraph<L> {
     // moves everything from `from` to `to`.
     fn move_to(&mut self, from: &AppliedId, to: &AppliedId, proof: ProvenEq) {
         if CHECKS {
+            assert_eq!(from.slots(), to.slots());
             assert_eq!(from.id, proof.l.id);
             assert_eq!(to.id, proof.r.id);
         }
@@ -192,13 +193,13 @@ impl<L: Language> EGraph<L> {
         // re-add the group equations as well.
 
         // This basically calls self.union(from, from * perm) for each perm generator in the group of from.
-        let from = self.mk_sem_identity_applied_id(from.id);
         // from.m :: slots(from.id) -> C
         // to.m :: slots(to.id) -> C
 
         // f :: slots(from.id) -> slots(to.id)
         // Note that f is a partial map, because some slots might have become redundant.
         let f = from.m.compose_partial(&to.m.inverse());
+
         let change_permutation_from_from_to_to = |x: Perm| -> Perm {
             let perm: Perm = x.iter().filter_map(|(x, y)| {
                 if f.contains_key(x) && f.contains_key(y) {
