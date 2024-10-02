@@ -278,22 +278,11 @@ impl<L: Language> EGraph<L> {
         let (new_node, prfs) = self.proven_find_enode(&syn_enode);
         assert!(new_node.slots().is_subset(&src_syn_slots));
 
-        // the set of slots that still remain non-redundant.
-        let mut fixpoint_set = HashSet::default();
-
         let mut combined = Vec::new();
         for (app_id, prf) in new_node.applied_id_occurences().into_iter().zip(prfs.into_iter()) {
+            // each child-proof might "fix" a few slots, which are not witnessed to be redundant by it.
             let rev = prove_symmetry(prf.clone());
             let cycle = prove_transitivity(prf, rev);
-
-            for (x, y) in cycle.l.m.iter() {
-                if cycle.r.m.get(x) == Some(y) {
-                    let fixed = app_id.m[x];
-                    if src_syn_slots.contains(&fixed) {
-                        fixpoint_set.insert(fixed);
-                    }
-                }
-            }
 
             combined.push(cycle);
         }
@@ -303,12 +292,13 @@ impl<L: Language> EGraph<L> {
         let leader_inv = leader.m.inverse();
         if CHECKS {
             let ty = self.syn_slots(src_id);
-            assert!(fixpoint_set.is_subset(&ty));
             assert!(leader_inv.keys().is_subset(&ty));
         }
-        let leader_fixpoint_set: HashSet<Slot> = fixpoint_set.iter().map(|x| leader_inv[*x]).collect();
-        let leader_fixpoint_set = &leader_fixpoint_set & &self.slots(leader.id);
-        self.shrink_slots(&leader, &leader_fixpoint_set, prf);
+        let cap = prf.l.m.iter()
+             .filter_map(|(x, y)| {
+                if prf.r.m.values().contains(&y) { Some(x) } else { None }
+             }).collect();
+        self.shrink_slots(&leader, &cap, prf);
     }
 
     pub fn semantic_add(&mut self, enode: &L, i_orig: &AppliedId, src_id: AppliedId) {
