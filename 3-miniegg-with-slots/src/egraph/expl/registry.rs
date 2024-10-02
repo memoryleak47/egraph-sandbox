@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use crate::*;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct ProofRegistry(Arc<Mutex<HashMap<Equation, ProvenEq>>>);
 
 fn normalize_eq(eq: &Equation) -> Equation {

@@ -72,6 +72,8 @@ pub struct EGraph<L: Language> {
 
     // E-Nodes that need to be re-processed, stored as shapes.
     pending: HashSet<L>,
+
+    proof_registry: ProofRegistry,
 }
 
 impl<L: Language> EGraph<L> {
@@ -82,6 +84,7 @@ impl<L: Language> EGraph<L> {
             hashcons: Default::default(),
             syn_hashcons: Default::default(),
             pending: Default::default(),
+            proof_registry: ProofRegistry::default(),
         }
     }
 
