@@ -1,19 +1,31 @@
 use crate::*;
 
 impl<L: Language> EGraph<L> {
-    // creates a new eclass with slots "l.slots() cap r.slots()".
-    // returns whether it actually did something.
     pub fn union(&mut self, l: &AppliedId, r: &AppliedId) -> bool {
+        self.union_justified(l, r, None)
+    }
 
-        let syn_l = self.synify_app_id(l.clone());
-        let syn_r = self.synify_app_id(r.clone());
+    pub fn union_justified(&mut self, l: &AppliedId, r: &AppliedId, j: Option<String>) -> bool {
+        let subst = [(String::from("a"), l.clone()),
+                     (String::from("b"), r.clone())]
+                        .into_iter().collect();
+        let a = Pattern::parse("?a").unwrap();
+        let b = Pattern::parse("?b").unwrap();
 
-        let proof = self.prove_explicit(&syn_l, &syn_r, None);
-        let out = self.union_internal(l, r, proof);
+        self.union_instantiations(&a, &b, &subst, j)
+    }
 
-        // for now we don't have deferred rebuilding.
+    pub fn union_instantiations(&mut self, from_pat: &Pattern<L>, to_pat: &Pattern<L>, subst: &Subst, justification: Option<String>) -> bool {
+        let a = pattern_subst(self, from_pat, subst);
+        let b = pattern_subst(self, to_pat, subst);
+
+        let syn_a = self.synify_app_id(a.clone());
+        let syn_b = self.synify_app_id(b.clone());
+
+        let proof = self.prove_explicit(&syn_a, &syn_b, justification);
+
+        let out = self.union_internal(&a, &b, proof);
         self.rebuild();
-
         out
     }
 

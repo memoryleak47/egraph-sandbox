@@ -32,7 +32,8 @@ pub fn do_rewrites<L: Language>(eg: &mut EGraph<L>, rewrites: &[Rewrite<L>]) {
 
 // Indirect rewrites.
 
-pub fn mk_rewrite_if<L: Language + 'static>(a: Pattern<L>, b: Pattern<L>, cond: impl Fn(&Subst) -> bool + 'static) -> Rewrite<L> {
+pub fn mk_named_rewrite_if<L: Language + 'static>(rule: &str, a: Pattern<L>, b: Pattern<L>, cond: impl Fn(&Subst) -> bool + 'static) -> Rewrite<L> {
+    let rule = rule.to_string();
     let a2 = a.clone();
     RewriteT {
         searcher: Box::new(move |eg| {
@@ -42,13 +43,19 @@ pub fn mk_rewrite_if<L: Language + 'static>(a: Pattern<L>, b: Pattern<L>, cond: 
         applier: Box::new(move |substs, eg| {
             for subst in substs {
                 if cond(&subst) {
-                    let a = pattern_subst(eg, &a2, &subst);
-                    let b = pattern_subst(eg, &b, &subst);
-                    eg.union(&a, &b);
+                    eg.union_instantiations(&a2, &b, &subst, Some(rule.to_string()));
                 }
             }
         }),
     }.into()
+}
+
+pub fn mk_rewrite_if<L: Language + 'static>(a: Pattern<L>, b: Pattern<L>, cond: impl Fn(&Subst) -> bool + 'static) -> Rewrite<L> {
+    mk_named_rewrite_if("<no rule name>", a, b, cond)
+}
+
+pub fn mk_named_rewrite<L: Language + 'static>(rule: &str, a: Pattern<L>, b: Pattern<L>) -> Rewrite<L> {
+    mk_named_rewrite_if(rule, a, b, |_| true)
 }
 
 pub fn mk_rewrite<L: Language + 'static>(a: Pattern<L>, b: Pattern<L>) -> Rewrite<L> {
@@ -60,9 +67,7 @@ pub fn mk_rewrite<L: Language + 'static>(a: Pattern<L>, b: Pattern<L>) -> Rewrit
 pub fn rewrite_if<L: Language>(eg: &mut EGraph<L>, a: Pattern<L>, b: Pattern<L>, cond: impl Fn(&Subst) -> bool) {
     for subst in ematch_all(eg, &a) {
         if cond(&subst) {
-            let a = pattern_subst(eg, &a, &subst);
-            let b = pattern_subst(eg, &b, &subst);
-            eg.union(&a, &b);
+            eg.union_instantiations(&a, &b, &subst, None);
         }
     }
 }

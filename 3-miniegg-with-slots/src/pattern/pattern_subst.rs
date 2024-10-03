@@ -10,7 +10,7 @@ pub fn pattern_subst<L: Language>(eg: &mut EGraph<L>, pattern: &Pattern<L>, subs
             for i in 0..refs.len() {
                 *(refs[i]) = pattern_subst(eg, &pattern.children[i], subst);
             }
-            eg.add(n)
+            eg.add_syn(n)
         },
         ENodeOrPVar::PVar(v) => {
             subst[v].clone()
