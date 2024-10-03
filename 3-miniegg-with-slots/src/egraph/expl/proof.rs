@@ -52,6 +52,15 @@ impl ProvenEqRaw {
         })
     }
 
+    pub fn no_expl(eq: &Equation) -> ProvenEq {
+        let eq = eq.clone();
+        let proof = Proof::Explicit(ExplicitProof(None));
+        Arc::new(ProvenEqRaw {
+            eq,
+            proof
+        })
+    }
+
     pub fn equ(&self) -> Equation {
         (**self).clone()
     }
@@ -80,6 +89,9 @@ impl Hash for ProvenEqRaw {
 
 impl ExplicitProof {
     pub fn check(&self, eq: &Equation, reg: &ProofRegistry) -> ProvenEq {
+        #[cfg(not(feature = "explanations"))]
+        return ProvenEqRaw::no_expl(eq);
+
         let eq = eq.clone();
         let proof = Proof::Explicit(self.clone());
         reg.insert(Arc::new(ProvenEqRaw { eq, proof }))
@@ -88,6 +100,9 @@ impl ExplicitProof {
 
 impl ReflexivityProof {
     pub fn check(&self, eq: &Equation, reg: &ProofRegistry) -> ProvenEq {
+        #[cfg(not(feature = "explanations"))]
+        return ProvenEqRaw::no_expl(eq);
+
         assert_eq!(eq.l, eq.r);
 
         let eq = eq.clone();
@@ -98,6 +113,9 @@ impl ReflexivityProof {
 
 impl SymmetryProof {
     pub fn check(&self, eq: &Equation, reg: &ProofRegistry) -> ProvenEq {
+        #[cfg(not(feature = "explanations"))]
+        return ProvenEqRaw::no_expl(eq);
+
         let SymmetryProof(x) = self;
 
         let flipped = Equation { l: x.r.clone(), r: x.l.clone() };
@@ -111,6 +129,9 @@ impl SymmetryProof {
 
 impl TransitivityProof {
     pub fn check(&self, eq: &Equation, reg: &ProofRegistry) -> ProvenEq {
+        #[cfg(not(feature = "explanations"))]
+        return ProvenEqRaw::no_expl(eq);
+
         let TransitivityProof(eq1, eq2) = self;
 
         let mut theta1 = {
@@ -172,6 +193,9 @@ pub fn alpha_normalize<L: Language>(n: &L) -> L {
 
 impl CongruenceProof {
     pub fn check<L: Language>(&self, eq: &Equation, eg: &EGraph<L>) -> ProvenEq {
+        #[cfg(not(feature = "explanations"))]
+        return ProvenEqRaw::no_expl(eq);
+
         let CongruenceProof(child_proofs) = self;
 
         let l = alpha_normalize(&eg.get_syn_node(&eq.l));
