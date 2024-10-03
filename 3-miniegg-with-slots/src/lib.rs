@@ -13,7 +13,10 @@ pub type HashMap<K, V> = fnv::FnvHashMap<K, V>;
 pub type HashSet<T> = fnv::FnvHashSet<T>;
 
 // Whether to enable invariant-checks.
+#[cfg(feature = "checks")]
 const CHECKS: bool = true;
+#[cfg(not(feature = "checks"))]
+const CHECKS: bool = false;
 
 mod types;
 pub use types::*;
