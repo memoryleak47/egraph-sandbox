@@ -9,6 +9,9 @@ pub use front::*;
 mod registry;
 pub use registry::*;
 
+mod wrapper;
+pub use wrapper::*;
+
 impl<L: Language> EGraph<L> {
     pub fn explain_equivalence(&mut self, t1: RecExpr<L>, t2: RecExpr<L>) -> ProvenEq {
         let i1 = self.add_syn_expr(t1);

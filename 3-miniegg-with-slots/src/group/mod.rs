@@ -3,9 +3,6 @@ use crate::*;
 #[cfg(test)]
 mod tst;
 
-mod api;
-pub use api::*;
-
 // In order to be compatible with the literature:
 // https://en.wikipedia.org/wiki/Schreier%27s_lemma
 // I define "x y" = x.compose(y)
