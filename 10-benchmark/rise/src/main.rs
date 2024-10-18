@@ -54,14 +54,14 @@ fn generate_lhs(n: usize, m: usize) -> String {
     let r = chained_fns(m..=(2*m));
     let out = comp(l, r);
     let out = nested_maps(n, out);
-    format!("(app {out} input)")
+    out
 }
 
 fn generate_rhs(n: usize, m: usize) -> String {
     let l = nested_maps(n, chained_fns(1..=m));
     let r = nested_maps(n, chained_fns(m..=(2*m)));
     let out = comp(l, r);
-    format!("(app {out} input)")
+    out
 }
 
 fn assert_reaches(start: &str, goal: &str, steps: usize) {
