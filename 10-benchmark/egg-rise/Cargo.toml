@@ -1,0 +1,11 @@
+[package]
+name = "egg-rise"
+version = "0.1.0"
+authors = ["Thomas Koehler <basta.t.k+git@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+egg = "0.9.0"
+#egg = { path = "../egg" }
