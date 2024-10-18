@@ -9,44 +9,17 @@ enum WithExpansion { Yes, No }
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
 
-    let name = &*args[0];
-    let binding = &*args[1];
+    let lhs = &*args[0];
+    let rhs = &*args[1];
+    let binding = &*args[2];
 
-    let mut rules = vec!["beta", "eta"];
-
-    if let Some("eta-exp") = args.get(2).map(|x| &**x) {
-        rules.push("eta-expansion");
-    }
+    let mut rules = vec!["beta", "eta", "map-fusion", "map-fission"];
 
     let bench = |start, goal, rules| {
-        bench_prove_equiv(name, start, goal, rules, binding);
+        bench_prove_equiv("<no-name>", start, goal, rules, binding);
     };
 
-    match name {
-        "reduction" => {
-            let start = "(app (lam compose (app (lam add1 (app (app (var compose) (var add1)) (app (app (var compose) (var add1)) (app (app (var compose) (var add1)) (app (app (var compose) (var add1)) (app (app (var compose) (var add1)) (app (app (var compose) (var add1)) (var add1)))))))) (lam y (app (app add (var y)) 1)))) (lam f (lam g (lam x (app (var f) (app (var g) (var x)))))))";
-            let goal = "(lam x (app (app add (app (app add (app (app add (app (app add (app (app add (app (app add (app (app add (var x)) 1)) 1)) 1)) 1)) 1)) 1)) 1))";
-            bench(start, goal, &rules)
-        },
-        "fission" => {
-            let start = "(lam f1 (lam f2 (lam f3 (lam f4 (lam f5 (app map (lam x11 (app (var f5) (app (var f4) (app (var f3) (app (var f2) (app (var f1) (var x11)))))))))))))";
-            let goal =  "(lam f1 (lam f2 (lam f3 (lam f4 (lam f5 (lam x7 (app (app map (lam x6 (app (var f5) (app (var f4) (app (var f3) (var x6)))))) (app (app map (lam x4 (app (var f2) (app (var f1) (var x4))))) (var x7)))))))))";
-            rules.extend(["map-fusion", "map-fission"]);
-            bench(start, goal, &rules)
-        },
-        "binomial" => {
-            let start = "(lam x17 (app (app map (app map (lam nbh (app (app (app reduce add) 0) (app (app map (lam mt (app (app mul (app fst (var mt))) (app snd (var mt))))) (app (app zip (app join weights2d)) (app join (var nbh)))))))) (app (app map transpose) (app (app (app slide 3) 1) (app (app map (app (app slide 3) 1)) (var x17))))))";
-            let goal = "(lam x26 (app (app map (lam x25 (app (app map (lam x15 (app (app (app reduce add) 0) (app (app map (lam x16 (app (app mul (app fst (var x16))) (app snd (var x16))))) (app (app zip weightsH) (var x15)))))) (app (app (app slide 3) 1) (app (app map (lam b (app (app (app reduce add) 0) (app (app map (lam mt (app (app mul (app fst (var mt))) (app snd (var mt))))) (app (app zip weightsV) (var b)))))) (app transpose (var x25))))))) (app (app (app slide 3) 1) (var x26))))";
-
-            rules.extend([
-                "remove-transpose-pair", "map-fusion", "map-fission",
-                "slide-before-map", "map-slide-before-transpose", "slide-before-map-map-f",
-                "separate-dot-vh-simplified", "separate-dot-hv-simplified"
-            ]);
-            bench(start, goal, &rules)
-        },
-        _ => panic!("did not expect {}", name)
-    }
+    bench(lhs, rhs, &rules)
 }
 
 use std::env;
@@ -100,7 +73,8 @@ fn to_db(e: RecExpr<Rise>) -> DBRiseExpr {
 fn bench_prove_equiv(name: &str, start_s: &str, goal_s: &str, rule_names: &[&str], binding: &str) {
     println!();
     println!("-------");
-    println!("- goal:         {}", name);
+    println!("- lhs:         {}", start_s);
+    println!("- rhs:         {}", goal_s);
     println!("- binding:      {}", binding);
     println!("-------");
     println!();

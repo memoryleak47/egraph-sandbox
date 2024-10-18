@@ -17,53 +17,6 @@ pub use symbol_table::GlobalSymbol as Symbol;
 pub use slotted_egraphs::*;
 pub use std::ops::RangeInclusive;
 
-// (a ° b)
-fn comp(a: String, b: String) -> String {
-    let x = Slot::fresh();
-    format!("(lam {x} (app {a} (app {b} (var {x}))))")
-}
-
-// (map x)
-fn map(x: String) -> String {
-    format!("(app map {x})")
-}
-
-// f1 ° ... ° fm
-fn chained_fns(it: impl Iterator<Item=usize>) -> String {
-    let mut it = it.map(|x| format!("f{x}"));
-
-    let mut out = it.next().unwrap();
-    for i in it {
-        out = comp(i, out);
-    }
-    out
-}
-
-fn nested_maps(n: usize, arg: String) -> String {
-    let mut out = arg;
-    for _ in 0..n {
-        out = map(out);
-    }
-    out
-}
-
-// N = number of nested maps.
-// M = half amount of the chained functions.
-fn generate_lhs(n: usize, m: usize) -> String {
-    let l = chained_fns(1..=m);
-    let r = chained_fns(m..=(2*m));
-    let out = comp(l, r);
-    let out = nested_maps(n, out);
-    out
-}
-
-fn generate_rhs(n: usize, m: usize) -> String {
-    let l = nested_maps(n, chained_fns(1..=m));
-    let r = nested_maps(n, chained_fns(m..=(2*m)));
-    let out = comp(l, r);
-    out
-}
-
 fn assert_reaches(start: &str, goal: &str, steps: usize) {
     let start = RecExpr::parse(start).unwrap();
     let goal = RecExpr::parse(goal).unwrap();
@@ -90,14 +43,9 @@ fn assert_reaches(start: &str, goal: &str, steps: usize) {
     assert!(false);
 }
 
-fn run(n: usize, m: usize) {
-    let lhs = generate_lhs(n, m);
-    let rhs = generate_rhs(n, m);
-    dbg!(&lhs);
-    dbg!(&rhs);
-    assert_reaches(&lhs, &rhs, 60);
-}
-
 fn main() {
-    run(3, 3);
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    let lhs = &args[0];
+    let rhs = &args[1];
+    assert_reaches(lhs, rhs, 60);
 }
