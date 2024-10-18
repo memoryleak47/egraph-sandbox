@@ -2,19 +2,12 @@
 
 import os
 
-def generate(n, m, CRATE):
+def generate(n, m):
     FRESH = [0]
 
     def fresh_slot():
         FRESH[0] += 1
-
-        if CRATE == "slotted":
-            return "$" + str(FRESH[0])
-        elif CRATE == "egg":
-            return "s" + str(FRESH[0])
-        else:
-            print(f"unknown CRATE {CRATE}")
-            os.exit(1)
+        return "$" + str(FRESH[0])
 
     # (a ° b)
     def comp(a, b):
