@@ -2,17 +2,16 @@
 
 import os
 
-FRESH = 0
 def generate(n, m, CRATE):
+    FRESH = [0]
 
     def fresh_slot():
-        global FRESH
-        FRESH += 1
+        FRESH[0] += 1
 
         if CRATE == "slotted":
-            return "$" + str(FRESH)
+            return "$" + str(FRESH[0])
         elif CRATE == "egg":
-            return "s" + str(FRESH)
+            return "s" + str(FRESH[0])
         else:
             print(f"unknown CRATE {CRATE}")
             os.exit(1)
