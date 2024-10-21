@@ -38,14 +38,14 @@ def generate(n, m):
     # M = half amount of the chained functions.
     def generate_lhs(n, m):
         l = chained_fns(range(1, m+1))
-        r = chained_fns(range(m, 2*m+1))
+        r = chained_fns(range(m+1, 2*m+1))
         out = comp(l, r)
         out = nested_maps(n, out)
         return out
 
     def generate_rhs(n, m):
         l = nested_maps(n, chained_fns(range(1, m+1)))
-        r = nested_maps(n, chained_fns(range(m, 2*m+1)))
+        r = nested_maps(n, chained_fns(range(m+1, 2*m+1)))
         out = comp(l, r)
         return out
 

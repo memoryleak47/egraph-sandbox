@@ -59,7 +59,9 @@ checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
 
 [[package]]
 name = "slotted-egraphs"
-version = "0.0.13"
+version = "0.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be33363bbd26c6bd09868afc31b121e0a7afea8b5d2f2fabe67b8d3c709664c1"
 dependencies = [
  "fnv",
 ]
