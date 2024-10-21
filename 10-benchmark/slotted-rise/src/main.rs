@@ -1,3 +1,6 @@
+mod tst;
+pub use tst::*;
+
 mod rewrite;
 pub use rewrite::*;
 
@@ -18,7 +21,7 @@ fn assert_reaches(start: &str, goal: &str, steps: usize) {
     let start = RecExpr::parse(start).unwrap();
     let goal = RecExpr::parse(goal).unwrap();
 
-    let rules = rise_rules();
+    let rules = rise_rules(SubstMethod::SmallStep);
 
     let mut eg = EGraph::new();
     let i1 = eg.add_expr(start.clone());
