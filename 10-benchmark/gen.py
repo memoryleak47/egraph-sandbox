@@ -24,6 +24,9 @@ def generate(n, m):
         fresh = fresh_slot()
         it = [f"fn{x}" for x in it]
 
+        if len(it) == 1:
+            return it[0]
+
         out = f"(var {fresh})"
         for i in it:
             out = f"(app {i} {out})"
