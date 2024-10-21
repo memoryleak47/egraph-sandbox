@@ -15,12 +15,12 @@ pub fn rise_rules(subst_m: RiseSubstMethod) -> Vec<Rewrite<Rise>> {
     rewrites.push(map_fusion());
     rewrites.push(map_fission());
 
-    rewrites.push(remove_transpose_pair());
-    rewrites.push(slide_before_map());
-    rewrites.push(map_slide_before_transpose());
-    rewrites.push(slide_before_map_map_f());
-    rewrites.push(separate_dot_vh_simplified());
-    rewrites.push(separate_dot_hv_simplified());
+    // rewrites.push(remove_transpose_pair());
+    // rewrites.push(slide_before_map());
+    // rewrites.push(map_slide_before_transpose());
+    // rewrites.push(slide_before_map_map_f());
+    // rewrites.push(separate_dot_vh_simplified());
+    // rewrites.push(separate_dot_hv_simplified());
 
     match subst_m {
         RiseSubstMethod::Extraction => {

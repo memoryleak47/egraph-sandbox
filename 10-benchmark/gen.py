@@ -2,8 +2,14 @@
 
 import os
 
-def generate(n, m):
+def generate(n, m, VARS):
     FRESH = [0]
+
+    def var_wrapper(x):
+        if VARS:
+            return f"(var ${x})"
+        else:
+            return x
 
     def fresh_slot():
         FRESH[0] += 1
@@ -22,7 +28,7 @@ def generate(n, m):
     # f1 ° ... ° fm
     def chained_fns(it):
         fresh = fresh_slot()
-        it = [f"fn{x}" for x in it]
+        it = [var_wrapper(f"fn{x}") for x in it]
 
         if len(it) == 1:
             return it[0]
@@ -43,13 +49,20 @@ def generate(n, m):
     def generate_lhs(n, m):
         out = chained_fns(range(1, 2*m+1))
         out = nested_maps(n, out)
-        return out
+        return nest_lams(out, m)
 
     def generate_rhs(n, m):
         l = nested_maps(n, chained_fns(range(m+1, 2*m+1)))
         r = nested_maps(n, chained_fns(range(1, m+1)))
         out = comp(l, r)
-        return out
+        return nest_lams(out, m)
+
+    def nest_lams(arg, m):
+        if VARS:
+            l = list(range(1, 2*m+1))
+            for i in l[::-1]:
+                arg = f"(lam $fn{i} {arg})"
+        return arg
 
     lhs = generate_lhs(n, m)
     rhs = generate_rhs(n, m)
