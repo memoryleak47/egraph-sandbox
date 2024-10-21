@@ -22,15 +22,20 @@ lhs = "(app map (lam $42 (app f5 (app f4 (app f3 (app f2 (app f1 (var $42)))))))
 rhs = "(lam $1 (app (app map (lam $42 (app f5 (app f4 (app f3 (var $42)))))) (app (app map (lam $42 (app f2 (app f1 (var $42))))) (var $1))))"
 """
 
-for M in range(1, 21):
-    for N in range(1, 21):
-        lhs, rhs = generate(N, M)
+GRID = []
+for N in range(1, 21):
+    for M in range(1, 21):
+        GRID.append((N, M))
 
-        # print(N, M, "egg-name")
-        # os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./egg-rise/target/release/egg-rise '{lhs}' '{rhs}' name &> ./outputs/egg-name-{N}-{M}")
+GRID = sorted(GRID, key=lambda xy: xy[0]+xy[1]*1.0001)
 
-        print(N, M, "egg-db")
-        os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./egg-rise/target/release/egg-rise '{lhs}' '{rhs}' de-bruijn &> ./outputs/egg-db-{N}-{M}")
+for (N, M) in GRID:
+    lhs, rhs = generate(N, M)
+    # print(N, M, "egg-name")
+    # os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./egg-rise/target/release/egg-rise '{lhs}' '{rhs}' name &> ./outputs/egg-name-{N}-{M}")
 
-        print(N, M, "slotted")
-        os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./slotted-rise/target/release/slotted-rise '{lhs}' '{rhs}' &> ./outputs/slotted-{N}-{M}")
+    print(N, M, "egg-db")
+    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./egg-rise/target/release/egg-rise '{lhs}' '{rhs}' de-bruijn &> ./outputs/egg-db-{N}-{M}")
+
+    print(N, M, "slotted")
+    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./slotted-rise/target/release/slotted-rise '{lhs}' '{rhs}' &> ./outputs/slotted-{N}-{M}")
