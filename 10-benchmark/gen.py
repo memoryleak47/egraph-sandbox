@@ -21,12 +21,16 @@ def generate(n, m):
 
     # f1 ° ... ° fm
     def chained_fns(it):
-        it = [f"f{x}" for x in it]
+        fresh = fresh_slot()
+        it = [f"fn{x}" for x in it]
 
-        out = it[0]
-        for i in it[1:]:
-            out = comp(i, out)
-        return out
+        if len(it) == 1:
+            return it[0]
+
+        out = f"(var {fresh})"
+        for i in it:
+            out = f"(app {i} {out})"
+        return f"(lam {fresh} {out})"
 
     def nested_maps(n, arg):
         out = arg;
@@ -37,15 +41,13 @@ def generate(n, m):
     # N = number of nested maps.
     # M = half amount of the chained functions.
     def generate_lhs(n, m):
-        l = chained_fns(range(1, m+1))
-        r = chained_fns(range(m, 2*m+1))
-        out = comp(l, r)
+        out = chained_fns(range(1, 2*m+1))
         out = nested_maps(n, out)
         return out
 
     def generate_rhs(n, m):
-        l = nested_maps(n, chained_fns(range(1, m+1)))
-        r = nested_maps(n, chained_fns(range(m, 2*m+1)))
+        l = nested_maps(n, chained_fns(range(m+1, 2*m+1)))
+        r = nested_maps(n, chained_fns(range(1, m+1)))
         out = comp(l, r)
         return out
 

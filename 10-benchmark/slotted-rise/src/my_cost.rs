@@ -2,6 +2,7 @@ use crate::*;
 
 use std::cmp::Ordering;
 
+#[derive(Default)]
 pub struct AstSizeNoLet;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
