@@ -71,7 +71,7 @@ fn iteration_stats<W, L, N>(csv_out: &mut W, it_number: usize, eg: &EGraph<L, N>
         eg.ids().into_iter().map(|c| eg.enodes(c).len()).sum::<usize>(),
         eg.ids().len(),
         start_time.elapsed().as_secs_f64(),
-        found);
+        found).unwrap();
     out_of_memory
 }
 

@@ -6,17 +6,21 @@ mod dbrules;
 
 enum WithExpansion { Yes, No }
 
+use std::fs::File;
+
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
 
     let lhs = &*args[0];
     let rhs = &*args[1];
     let binding = &*args[2];
+    let csv_out = &args[3];
+    let csv_f = File::create(csv_out).unwrap();
 
     let mut rules = vec!["beta", "eta", "map-fusion", "map-fission"];
 
     let bench = |start, goal, rules| {
-        bench_prove_equiv("<no-name>", start, goal, rules, binding);
+        bench_prove_equiv("<no-name>", start, goal, rules, binding, csv_f);
     };
 
     bench(lhs, rhs, &rules)
@@ -72,7 +76,7 @@ fn to_db(e: RecExpr<Rise>) -> DBRiseExpr {
     r.into()
 }
 
-fn bench_prove_equiv(name: &str, start_s: &str, goal_s: &str, rule_names: &[&str], binding: &str) {
+fn bench_prove_equiv(name: &str, start_s: &str, goal_s: &str, rule_names: &[&str], binding: &str, csv_out: File) {
     println!();
     println!("-------");
     println!("- lhs:         {}", start_s);
@@ -99,7 +103,7 @@ fn bench_prove_equiv(name: &str, start_s: &str, goal_s: &str, rule_names: &[&str
                 ]);
             }
 
-            prove_equiv_aux(start, goal, rules(&*rule_names))
+            prove_equiv_aux(start, goal, rules(&*rule_names), csv_out)
         },
         "de-bruijn" => {
             if rule_names.contains(&"beta") {
@@ -110,7 +114,7 @@ fn bench_prove_equiv(name: &str, start_s: &str, goal_s: &str, rule_names: &[&str
                 ]);
             }
 
-            to_db_prove_equiv_aux(start, goal, dbrules(&*rule_names))
+            to_db_prove_equiv_aux(start, goal, dbrules(&*rule_names), csv_out)
         },
         _ => panic!("did not expect {}", binding)
     }
@@ -118,27 +122,29 @@ fn bench_prove_equiv(name: &str, start_s: &str, goal_s: &str, rule_names: &[&str
     println!();
 }
 
-fn prove_equiv_aux(start: RecExpr<Rise>, goal: RecExpr<Rise>, rules: Vec<Rewrite<Rise, RiseAnalysis>>) {
+fn prove_equiv_aux(start: RecExpr<Rise>, goal: RecExpr<Rise>, rules: Vec<Rewrite<Rise, RiseAnalysis>>, csv_out: File) {
     let goal = expr_to_alpha_equiv_pattern(goal);
     let goals: Vec<Pattern<Rise>> = vec![goal];
-    common_prove_equiv_aux(&start, goals, rules);
+    common_prove_equiv_aux(&start, goals, rules, csv_out);
     // count_alpha_equiv(&mut runner.egraph);
     // runner.egraph.dot().to_svg(format!("/tmp/{}.svg", name)).unwrap();
 }
 
-fn db_prove_equiv_aux(start: RecExpr<DBRise>, goal: RecExpr<DBRise>, rules: Vec<Rewrite<DBRise, DBRiseAnalysis>>) {
+fn db_prove_equiv_aux(start: RecExpr<DBRise>, goal: RecExpr<DBRise>, rules: Vec<Rewrite<DBRise, DBRiseAnalysis>>, csv_out: File) {
    let goals: Vec<Pattern<DBRise>> = vec![goal.as_ref().into()];
-   common_prove_equiv_aux(&start, goals, rules); 
+   common_prove_equiv_aux(&start, goals, rules, csv_out); 
 }
 
-fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rules: Vec<Rewrite<L, A>>)
-    where A: egg::Analysis<L> + std::default::Default + 'static, L: egg::Language + 'static, L: std::fmt::Display
+fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rules: Vec<Rewrite<L, A>>, mut csv_out: File)
+    where A: egg::Analysis<L> + std::default::Default + 'static,
+          L: egg::Language + std::fmt::Display + 'static,
 {
     let mut runner = Runner::default();
     let id = runner.egraph.add_expr(start);
     runner.roots.push(id);
 
     let goals2 = goals.clone();
+    let mut csv_out2 = csv_out.try_clone().unwrap();
     runner = runner
         .with_scheduler(SimpleScheduler)
         .with_node_limit(100_000_000)
@@ -148,7 +154,7 @@ fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rule
             // dbg!(r.egraph.total_number_of_nodes());
             let mut out_of_memory = false;
             if let Some(it) = r.iterations.last() {
-                out_of_memory = iteration_stats(it, r.iterations.len() - 1);
+                out_of_memory = iteration_stats(it, r.iterations.len() - 1, &mut csv_out2);
             }
 
             if goals2.iter().all(|g| g.search_eclass(&r.egraph, id).is_some()) {
@@ -161,7 +167,7 @@ fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rule
         }).run(&rules);
 
     
-    iteration_stats(runner.iterations.last().unwrap(), runner.iterations.len() - 1);
+    iteration_stats(runner.iterations.last().unwrap(), runner.iterations.len() - 1, &mut csv_out);
     runner.print_report();
     let rules = runner.iterations.iter().map(|i|
         i.applied.iter().map(|(_, n)| n).sum::<usize>()).sum::<usize>();
@@ -180,15 +186,18 @@ fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rule
 // hook time,
 // search time,
 // apply time,
-// rebuild time
-fn iteration_stats(it: &egg::Iteration<()>, it_number: usize) -> bool {
+// rebuild time,
+// found
+fn iteration_stats<W>(it: &egg::Iteration<()>, it_number: usize, csv_out: &mut W) -> bool
+    where W: std::io::Write
+{
     let memory = memory_stats().expect("could not get current memory usage");
     let out_of_memory = memory.virtual_mem > 4_000_000_000;
     let found = match &it.stop_reason {
-        Some(egg::StopReason::Other(s)) => s == "Satisfied",
+        Some(egg::StopReason::Other(s)) => s == "Done",
         _ => false,
     };
-    eprintln!("{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
+    writeln!(csv_out, "{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
         it_number,
         memory.physical_mem,
         memory.virtual_mem,
@@ -200,14 +209,14 @@ fn iteration_stats(it: &egg::Iteration<()>, it_number: usize) -> bool {
         it.search_time,
         it.apply_time,
         it.rebuild_time,
-        found);
+        found).unwrap();
     out_of_memory
 }
 
-fn to_db_prove_equiv_aux(start: RecExpr<Rise>, goal: RecExpr<Rise>, rules: Vec<Rewrite<DBRise, DBRiseAnalysis>>) {
+fn to_db_prove_equiv_aux(start: RecExpr<Rise>, goal: RecExpr<Rise>, rules: Vec<Rewrite<DBRise, DBRiseAnalysis>>, csv_out: File) {
     let start_db = to_db(start);
     let goal_db = to_db(goal);
     println!("start (db): {}", start_db);
     println!("goal  (db): {}", goal_db);
-    db_prove_equiv_aux(start_db, goal_db, rules)
+    db_prove_equiv_aux(start_db, goal_db, rules, csv_out)
 }
