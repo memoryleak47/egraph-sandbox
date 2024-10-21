@@ -43,8 +43,8 @@ def generate(n, m):
         return out
 
     def generate_rhs(n, m):
-        l = nested_maps(n, chained_fns(range(1, m+1)))
-        r = nested_maps(n, chained_fns(range(m+1, 2*m+1)))
+        l = nested_maps(n, chained_fns(range(m+1, 2*m+1)))
+        r = nested_maps(n, chained_fns(range(1, m+1)))
         out = comp(l, r)
         return out
 
