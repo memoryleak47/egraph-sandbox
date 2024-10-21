@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-slotted-egraphs = "=0.0.13"
+slotted-egraphs = { path = "../../../slotted-egraphs" }
 symbol_table = { version = "0.3", features = ["global"]}
 
 [profile.release]

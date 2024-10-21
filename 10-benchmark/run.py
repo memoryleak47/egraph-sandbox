@@ -8,8 +8,8 @@ os.system("rm outputs/*")
 os.system("cd egg-rise; cargo b --release")
 os.system("cd slotted-rise; cargo b --release")
 
-for N in range(1, 21):
-    for M in range(1, 21):
+for M in range(1, 21):
+    for N in range(1, 21):
         lhs, rhs = generate(N, M)
 
         # print(N, M, "egg-name")
