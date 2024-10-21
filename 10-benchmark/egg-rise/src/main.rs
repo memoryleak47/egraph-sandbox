@@ -32,6 +32,8 @@ use crate::dbrules::*;
 use crate::alpha_equiv::*;
 use crate::dbrise::DBRiseExpr;
 
+use memory_stats::memory_stats;
+
 fn to_db_str<S: AsRef<str>>(e: S) -> String {
     format!("{}", to_db(e.as_ref().parse().unwrap()))
 }
@@ -119,49 +121,22 @@ fn bench_prove_equiv(name: &str, start_s: &str, goal_s: &str, rule_names: &[&str
 fn prove_equiv_aux(start: RecExpr<Rise>, goal: RecExpr<Rise>, rules: Vec<Rewrite<Rise, RiseAnalysis>>) {
     let goal = expr_to_alpha_equiv_pattern(goal);
     let goals: Vec<Pattern<Rise>> = vec![goal];
-    let mut runner = Runner::default()
-        .with_expr(&start);
-
-    // NOTE this is a bit of hack, we rely on the fact that the
-    // initial root is the last expr added by the runner. We can't
-    // use egraph.find_expr(start) because it may have been pruned
-    // away
-    let id = runner.egraph.find(*runner.roots.last().unwrap());
-
-    let goals2 = goals.clone();
-    runner = runner
-        .with_scheduler(SimpleScheduler)
-        .with_node_limit(100_000_000)
-        .with_iter_limit(500)
-        .with_time_limit(std::time::Duration::from_secs(60*60)) // 4mn
-        .with_hook(move |r| {
-            dbg!(r.egraph.total_number_of_nodes());
-            if goals2.iter().all(|g| g.search_eclass(&r.egraph, id).is_some()) {
-                Err("Done".into())
-            } else {
-                Ok(())
-            }
-        }).run(&rules);
-    runner.print_report();
-    let rules = runner.iterations.iter().map(|i|
-        i.applied.iter().map(|(_, n)| n).sum::<usize>()).sum::<usize>();
-    println!("applied rules: {}", rules);
-    runner.iterations.iter().for_each(|i| println!("{:?}", i));
+    common_prove_equiv_aux(&start, goals, rules);
     // count_alpha_equiv(&mut runner.egraph);
     // runner.egraph.dot().to_svg(format!("/tmp/{}.svg", name)).unwrap();
-    runner.egraph.check_goals(id, &goals);
 }
 
 fn db_prove_equiv_aux(start: RecExpr<DBRise>, goal: RecExpr<DBRise>, rules: Vec<Rewrite<DBRise, DBRiseAnalysis>>) {
-    let goals: Vec<Pattern<DBRise>> = vec![goal.as_ref().into()];
-    let mut runner = Runner::default()
-        .with_expr(&start);
+   let goals: Vec<Pattern<DBRise>> = vec![goal.as_ref().into()];
+   common_prove_equiv_aux(&start, goals, rules); 
+}
 
-    // NOTE this is a bit of hack, we rely on the fact that the
-    // initial root is the last expr added by the runner. We can't
-    // use egraph.find_expr(start) because it may have been pruned
-    // away
-    let id = runner.egraph.find(*runner.roots.last().unwrap());
+fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rules: Vec<Rewrite<L, A>>)
+    where A: egg::Analysis<L> + std::default::Default + 'static, L: egg::Language + 'static, L: std::fmt::Display
+{
+    let mut runner = Runner::default();
+    let id = runner.egraph.add_expr(start);
+    runner.roots.push(id);
 
     let goals2 = goals.clone();
     runner = runner
@@ -170,19 +145,63 @@ fn db_prove_equiv_aux(start: RecExpr<DBRise>, goal: RecExpr<DBRise>, rules: Vec<
         .with_iter_limit(500)
         .with_time_limit(std::time::Duration::from_secs(60*60)) // 4mn
         .with_hook(move |r| {
-            dbg!(r.egraph.total_number_of_nodes());
+            // dbg!(r.egraph.total_number_of_nodes());
+            let mut out_of_memory = false;
+            if let Some(it) = r.iterations.last() {
+                out_of_memory = iteration_stats(it, r.iterations.len() - 1);
+            }
+
             if goals2.iter().all(|g| g.search_eclass(&r.egraph, id).is_some()) {
                 Err("Done".into())
+            } else if out_of_memory {
+                Err("Out of Memory".into())
             } else {
                 Ok(())
             }
         }).run(&rules);
+
+    
+    iteration_stats(runner.iterations.last().unwrap(), runner.iterations.len() - 1);
     runner.print_report();
     let rules = runner.iterations.iter().map(|i|
         i.applied.iter().map(|(_, n)| n).sum::<usize>()).sum::<usize>();
     println!("applied rules: {}", rules);
     runner.iterations.iter().for_each(|i| println!("{:?}", i));
     runner.egraph.check_goals(id, &goals);
+}
+
+// iteration number,
+// physical memory,
+// virtual memory,
+// e-graph nodes,
+// e-graph classes,
+// applied rules,
+// total time,
+// hook time,
+// search time,
+// apply time,
+// rebuild time
+fn iteration_stats(it: &egg::Iteration<()>, it_number: usize) -> bool {
+    let memory = memory_stats().expect("could not get current memory usage");
+    let out_of_memory = memory.virtual_mem > 4_000_000_000;
+    let found = match &it.stop_reason {
+        Some(egg::StopReason::Other(s)) => s == "Satisfied",
+        _ => false,
+    };
+    eprintln!("{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
+        it_number,
+        memory.physical_mem,
+        memory.virtual_mem,
+        it.egraph_nodes,
+        it.egraph_classes,
+        it.applied.iter().map(|(_, &n)| n).sum::<usize>(),
+        it.total_time,
+        it.hook_time,
+        it.search_time,
+        it.apply_time,
+        it.rebuild_time,
+        found);
+    out_of_memory
 }
 
 fn to_db_prove_equiv_aux(start: RecExpr<Rise>, goal: RecExpr<Rise>, rules: Vec<Rewrite<DBRise, DBRiseAnalysis>>) {
