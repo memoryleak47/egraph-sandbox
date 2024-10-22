@@ -6,7 +6,10 @@ import math
 import sys
 import os
 
+# call like `python3 plot.py outputs/`
 workdir = sys.argv[1]
+# modify to change plotting behaviour:
+zcol = "total_time"
 
 def lastIterationFromCSV(path, columns):
   data = pd.read_csv(path, names=[ n for n, _ in columns.items() ], skipinitialspace=True)
@@ -47,6 +50,7 @@ def summaryFromCSV(path):
   lastrow = lastrow[["iteration_number", "physical_memory", "virtual_memory", "e-nodes", "e-classes", "total_time", "found"]]
   return lastrow
 
+# 1. Collect last iteration rows for all impl-n-m-variant.csv files
 rows = []
 for entry in os.scandir(workdir):
   (base, ext) = entry.name.split(".")
@@ -78,7 +82,7 @@ def sec_fmt_func(x, pos):
   s = '{} s'.format(x)
   return s
 
-zcol = "total_time"
+# 2. Decide how to format z axis depending on column name
 zfmt = None
 if zcol == "virtual_memory":
   zfmt = tkr.FuncFormatter(bytes_fmt_func)
@@ -90,6 +94,7 @@ elif zcol == "total_time":
 else:
   raise Exception("???")
 
+# 3. Plot a 3D surface for every implementation and variant
 impls = data["impl"].unique()
 variants = data["variant"].unique()
 fig, axs = plt.subplots(len(impls), len(variants), squeeze=False, subplot_kw={"projection": "3d"})
@@ -124,4 +129,5 @@ for impl_i, impl in enumerate(impls):
     #ax.zaxis.set_major_locator(LinearLocator(10))
     ax.zaxis.set_major_formatter(zfmt)
 
+# 4. Display the result
 plt.show()
