@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.ticker as tkr
 import numpy as np
 import pandas as pd
 import math
@@ -64,6 +65,12 @@ for entry in os.scandir(workdir):
   })
 
 data = pd.DataFrame(rows, columns=["impl", "n", "m", "variant", "iteration_number", "physical_memory", "virtual_memory", "e-nodes", "e-classes", "total_time", "found"])
+
+def bytes_fmt_func(x, pos):
+  s = '{} GB'.format(x / 1e9)
+  return s
+bytes_fmt = tkr.FuncFormatter(bytes_fmt_func)
+
 impls = data["impl"].unique()
 variants = data["variant"].unique()
 fig, axs = plt.subplots(len(impls), len(variants), squeeze=False, subplot_kw={"projection": "3d"})
@@ -75,7 +82,7 @@ for impl_i, impl in enumerate(impls):
     lns = sorted(ldata["n"].unique())
     lms = sorted(ldata["m"].unique())
     x, y = np.meshgrid(lns, lms)
-    def ldata_at(n, m, col, default):
+    def ldata_map_or(n, m, col, f, default):
       row = ldata[
         (ldata["n"] == n) &
         (ldata["m"] == m)
@@ -83,13 +90,20 @@ for impl_i, impl in enumerate(impls):
       if len(row) == 0:
         return default
       elif len(row) == 1:
-        return row[col].values[0]
+        return f(row[col].values[0])
       else:
         print(row)
         raise Exception("expected one row or less")
-    z = np.array([[ldata_at(n, m, "e-nodes", 0) for n in lns] for m in lms])
-    colors = np.array([[("green" if ldata_at(n, m, "found", False) else "red") for n in lns] for m in lms])
+    z = np.array([[ldata_map_or(n, m, "virtual_memory", lambda x: x, 0) for n in lns] for m in lms])
+    print(z.max())
+    colors = np.array([[ldata_map_or(n, m, "found", lambda b: "green" if b else "red", "black") for n in lns] for m in lms])
     ax.plot_surface(x, y, z, facecolors=colors)
     ax.set_title("{}, {}".format(impl, variant))
+    ax.set_xlabel("N (#maps)")
+    ax.set_ylabel("M (#funcs / 2)")
+    ax.set_zlabel("virtual memory")
+    ax.set_zlim(z.min(), z.max())
+    #ax.zaxis.set_major_locator(LinearLocator(10))
+    ax.zaxis.set_major_formatter(bytes_fmt)
 
 plt.show()
