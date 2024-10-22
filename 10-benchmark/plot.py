@@ -69,7 +69,26 @@ data = pd.DataFrame(rows, columns=["impl", "n", "m", "variant", "iteration_numbe
 def bytes_fmt_func(x, pos):
   s = '{} GB'.format(x / 1e9)
   return s
-bytes_fmt = tkr.FuncFormatter(bytes_fmt_func)
+
+def nodes_fmt_func(x, pos):
+  s = '{} M'.format(x / 1e6)
+  return s
+
+def sec_fmt_func(x, pos):
+  s = '{} s'.format(x)
+  return s
+
+zcol = "total_time"
+zfmt = None
+if zcol == "virtual_memory":
+  zfmt = tkr.FuncFormatter(bytes_fmt_func)
+elif zcol == "e-nodes":
+  zfmt = tkr.FuncFormatter(nodes_fmt_func)
+elif zcol == "total_time":
+  # NOTE: this is the time of the last iteration, not of entire process
+  zfmt = tkr.FuncFormatter(sec_fmt_func)
+else:
+  raise Exception("???")
 
 impls = data["impl"].unique()
 variants = data["variant"].unique()
@@ -94,16 +113,15 @@ for impl_i, impl in enumerate(impls):
       else:
         print(row)
         raise Exception("expected one row or less")
-    z = np.array([[ldata_map_or(n, m, "virtual_memory", lambda x: x, 0) for n in lns] for m in lms])
-    print(z.max())
+    z = np.array([[ldata_map_or(n, m, zcol, lambda x: x, 0) for n in lns] for m in lms])
     colors = np.array([[ldata_map_or(n, m, "found", lambda b: "green" if b else "red", "black") for n in lns] for m in lms])
     ax.plot_surface(x, y, z, facecolors=colors)
     ax.set_title("{}, {}".format(impl, variant))
     ax.set_xlabel("N (#maps)")
     ax.set_ylabel("M (#funcs / 2)")
-    ax.set_zlabel("virtual memory")
+    ax.set_zlabel(zcol)
     ax.set_zlim(z.min(), z.max())
     #ax.zaxis.set_major_locator(LinearLocator(10))
-    ax.zaxis.set_major_formatter(bytes_fmt)
+    ax.zaxis.set_major_formatter(zfmt)
 
 plt.show()
