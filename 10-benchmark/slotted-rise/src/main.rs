@@ -26,6 +26,7 @@ fn assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: usize) wher
     let mut eg = EGraph::new();
     let i1 = eg.add_expr(start.clone());
     for iteration in 0..steps {
+        dbg!(eg.total_number_of_nodes());
         let start_time = Instant::now();
         apply_rewrites(&mut eg, &rules);
         if let Some(i2) = lookup_rec_expr(&goal, &eg) {

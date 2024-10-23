@@ -151,7 +151,7 @@ fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rule
         .with_iter_limit(500)
         .with_time_limit(std::time::Duration::from_secs(60*60)) // 4mn
         .with_hook(move |r| {
-            // dbg!(r.egraph.total_number_of_nodes());
+            dbg!(r.egraph.total_number_of_nodes());
             let mut out_of_memory = false;
             if let Some(it) = r.iterations.last() {
                 out_of_memory = iteration_stats(it, r.iterations.len() - 1, &mut csv_out2);

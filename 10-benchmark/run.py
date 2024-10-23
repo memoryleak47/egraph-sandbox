@@ -35,7 +35,7 @@ for (N, M) in GRID:
     var = "var" if VARS else "novar"
 
     print(N, M, "egg-db")
-    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./egg-rise/target/release/egg-rise '{lhs}' '{rhs}' de-bruijn ./outputs/egg-db-{N}-{M}-{var}.csv &> /dev/null")
+    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./egg-rise/target/release/egg-rise '{lhs}' '{rhs}' de-bruijn ./outputs/egg-db-{N}-{M}-{var}.csv &> ./outputs/egg-db-{N}-{M}-{var}.output")
 
     print(N, M, "slotted")
-    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./slotted-rise/target/release/slotted-rise '{lhs}' '{rhs}' ./outputs/slotted-{N}-{M}-{var}.csv &> /dev/null")
+    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./slotted-rise/target/release/slotted-rise '{lhs}' '{rhs}' ./outputs/slotted-{N}-{M}-{var}.csv &> ./outputs/slotted-{N}-{M}-{var}.output")
