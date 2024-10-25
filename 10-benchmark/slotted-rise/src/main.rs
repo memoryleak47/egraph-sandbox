@@ -69,7 +69,8 @@ fn iteration_stats<W, L, N>(csv_out: &mut W, it_number: usize, eg: &EGraph<L, N>
         memory.physical_mem,
         memory.virtual_mem,
         eg.total_number_of_nodes(),
-        eg.ids().into_iter().map(|c| eg.enodes(c).len()).sum::<usize>(),
+        eg.total_number_of_nodes(), // TODO: remove
+        // eg.ids().into_iter().map(|c| eg.enodes(c).len()).sum::<usize>(),
         eg.ids().len(),
         start_time.elapsed().as_secs_f64(),
         found).unwrap();

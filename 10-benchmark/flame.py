@@ -3,8 +3,7 @@
 import gen
 import os
 
-VARS = False
-l, r = gen.generate(5, 5, VARS)
+l, r = gen.generate(5, 5, True)
 print(l)
 print(r)
-os.system(f"cd slotted-rise; cargo flamegraph -- '{l}' '{r}' flame.csv")
+os.system(f"cd slotted-rise; cargo flamegraph --no-inline -- '{l}' '{r}' flame.csv")

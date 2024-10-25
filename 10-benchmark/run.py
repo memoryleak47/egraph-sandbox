@@ -1,12 +1,39 @@
 #!/usr/bin/python3 -B
 
+import sys
 import os
 from gen import generate
 
-os.system("rm -r outputs")
-os.system("mkdir -p outputs")
+def found_in_csv(path):
+    with open(path) as file:
+        contents = file.read()
+        found = "true" in contents
+        print("found:", found)
+        return found
+
+def run_one(N, M, VARS):
+    lhs, rhs = generate(N, M, VARS)
+    var = "var" if VARS else "novar"
+
+    print(N, M, "egg-db")
+    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./egg-rise/target/release/egg-rise '{lhs}' '{rhs}' de-bruijn ./outputs/egg-db-{N}-{M}-{var}.csv > ./outputs/egg-db-{N}-{M}-{var}.output 2>&1")
+    found_db = found_in_csv(f"./outputs/egg-db-{N}-{M}-{var}.csv")
+
+    print(N, M, "slotted")
+    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./slotted-rise/target/release/slotted-rise '{lhs}' '{rhs}' ./outputs/slotted-{N}-{M}-{var}.csv > ./outputs/slotted-{N}-{M}-{var}.output 2>&1")
+    found_slotted = found_in_csv(f"./outputs/slotted-{N}-{M}-{var}.csv")
+
+    return found_db and found_slotted
+
 os.system("cd egg-rise; cargo b --release")
 os.system("cd slotted-rise; cargo b --release")
+
+if len(sys.argv) == 3:
+    run_one(int(sys.argv[1]), int(sys.argv[2]), True)
+    exit()
+
+os.system("rm -r outputs")
+os.system("mkdir -p outputs")
 
 """
 # much better for slotted.
@@ -25,17 +52,25 @@ rhs = "(lam $1 (app (app map (lam $42 (app f5 (app f4 (app f3 (var $42)))))) (ap
 GRID = []
 for N in range(1, 21):
     for M in range(1, 21):
-        GRID.append((N, M))
+        both_found = run_one(N, M, True)
+        if not both_found:
+            break
 
-GRID = sorted(GRID, key=lambda xy: xy[0]+xy[1]*1.0001)
-VARS = True
+"""
+DeBruijn saturates but fails to prove: \z. \x. ((\y. z) x) x = \z. z
+DeBruijn does not saturate but can prove: λ x, (λ t y, t) (λ z, x z) = λ x y, x
 
-for (N, M) in GRID:
-    lhs, rhs = generate(N, M, VARS)
-    var = "var" if VARS else "novar"
+First combination, not so bad:
+(app (lam $a (lam $b (app (app (lam $c (var $a)) (var $b)) (var $b)))) (lam $x (app (lam $t (lam $y (var $t))) (lam $z (app (var $x) (var $z))))))
+(λz. λx. ((λy. z) x) x) (λ x, (λ t y, t) (λ z, x z)) =
+(λz. z) (λ x y, x) =
+(λ x y, x)
+= (lam $x (lam $y (var $x)))
 
-    print(N, M, "egg-db")
-    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./egg-rise/target/release/egg-rise '{lhs}' '{rhs}' de-bruijn ./outputs/egg-db-{N}-{M}-{var}.csv &> ./outputs/egg-db-{N}-{M}-{var}.output")
-
-    print(N, M, "slotted")
-    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m ./slotted-rise/target/release/slotted-rise '{lhs}' '{rhs}' ./outputs/slotted-{N}-{M}-{var}.csv &> ./outputs/slotted-{N}-{M}-{var}.output")
+Second combination, explosion?
+(app (lam $x (app (lam $t (lam $y (var $t))) (lam $z (app (var $x) (var $z))))) (lam $a (lam $b (app (app (lam $c (var $a)) (var $b)) (var $b))))) =
+(λ x, (λ t y, t) (λ z, x z)) (λz. λx. ((λy. z) x) x) =
+(λ x y, x) (λz. z) =
+(λ y, (λz. z))
+= (lam $y (lam $z (var $z)))
+"""

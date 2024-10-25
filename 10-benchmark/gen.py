@@ -39,7 +39,7 @@ def generate(n, m, VARS):
         return f"(lam {fresh} {out})"
 
     def nested_maps(n, arg):
-        out = arg;
+        out = arg
         for _ in range(n):
             out = map_(out)
         return out
