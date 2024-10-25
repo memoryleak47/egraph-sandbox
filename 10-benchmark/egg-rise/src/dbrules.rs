@@ -147,8 +147,11 @@ impl Applier<DBRise, DBRiseAnalysis> for SigVarConstApplier {
         match egraph[subst[self.n]].data.beta_extract.as_ref() {
             [DBRise::Number(_)] | [DBRise::Symbol(_)] => {
                 let id = subst[self.n];
-                egraph.union(eclass, id);
-                vec![id]
+                if egraph.union(eclass, id) {
+                    vec![eclass]
+                } else {
+                    vec![]
+                }
             }
             &[DBRise::Var(Index(var))] => {
                 let i_num = match egraph[subst[self.i]].data.beta_extract.as_ref() {
@@ -164,8 +167,11 @@ impl Applier<DBRise, DBRiseAnalysis> for SigVarConstApplier {
                     DBRise::Var(Index(var))
                 };
                 let id = egraph.add(node);
-                egraph.union(eclass, id);
-                vec![id]
+                if egraph.union(eclass, id) {
+                    vec![eclass]
+                } else {
+                    vec![]
+                }
             }
             _ => vec![] // do nothing
         }
@@ -184,8 +190,11 @@ impl Applier<DBRise, DBRiseAnalysis> for PhiVarConstApplier {
         match egraph[subst[self.n]].data.beta_extract.as_ref() {
             [DBRise::Number(_)] | [DBRise::Symbol(_)] => {
                 let id = subst[self.n];
-                egraph.union(eclass, id);
-                vec![id]
+                if egraph.union(eclass, id) {
+                    vec![eclass]
+                } else {
+                    vec![]
+                }
             }
             &[DBRise::Var(Index(var))] => {
                 let i_num = match egraph[subst[self.i]].data.beta_extract.as_ref() {
@@ -199,8 +208,11 @@ impl Applier<DBRise, DBRiseAnalysis> for PhiVarConstApplier {
                 let n = var as i32;
                 let shifted = DBRise::Var(Index(if n >= k_num { (n + i_num) as u32 } else { var }));
                 let id = egraph.add(shifted);
-                egraph.union(eclass, id);
-                vec![id]
+                if egraph.union(eclass, id) {
+                    vec![eclass]
+                } else {
+                    vec![]
+                }
             }
             _ => vec![] // do nothing
         }
