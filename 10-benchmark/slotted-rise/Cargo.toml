@@ -3,10 +3,20 @@ name = "slotted-rise"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+tracing = ["slotted-egraphs/tracing"]
+# ??? no_tracing = ["slotted-egraphs/no_tracing"]
+explanations = ["slotted-egraphs/explanations"]
+
 [dependencies]
-slotted-egraphs = "=0.0.15"
+slotted-egraphs = { path = "../../../slotted-egraphs" }
 symbol_table = { version = "0.3", features = ["global"]}
 memory-stats = "1.0.0"
+tracing = "0.1"
+# tracing-opentelemetry = "0.27.0"
+# tracing-timing = "0.6.0"
+tracing-subscriber = "0.3"
+tracing-profile = "0.7.0"
 
 [profile.release]
 debug = true
