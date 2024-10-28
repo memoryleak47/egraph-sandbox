@@ -55,8 +55,8 @@ impl Analysis<DBRise> for DBRiseAnalysis {
 
     fn merge(&mut self, to: &mut DBData, from: DBData) -> DidMerge {
         let before_len = to.free.len();
-        // to.free.retain(|x| from.free.contains(x));
-        to.free.extend(from.free);
+        to.free.retain(|x| from.free.contains(x));
+        // overly conservative: to.free.extend(from.free);
         let mut did_change = before_len != to.free.len();
         if !from.beta_extract.as_ref().is_empty() &&
             (to.beta_extract.as_ref().is_empty() ||
