@@ -11,13 +11,16 @@ mod lang;
 pub use lang::*;
 
 pub use symbol_table::GlobalSymbol as Symbol;
-pub use slotted_egraphs::*;
+pub use slotted_egraphs::{*, Id};
 pub use std::ops::RangeInclusive;
 
 use memory_stats::memory_stats;
 use std::time::Instant;
 
+use tracing::*;
+
 fn assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: usize) where W: std::io::Write {
+    let init_span = trace_span!("init").entered();
     let start = RecExpr::parse(start).unwrap();
     let goal = RecExpr::parse(goal).unwrap();
 
@@ -25,10 +28,12 @@ fn assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: usize) wher
 
     let mut eg = EGraph::new();
     let i1 = eg.add_expr(start.clone());
+    init_span.exit();
     for iteration in 0..steps {
         dbg!(eg.total_number_of_nodes());
         let start_time = Instant::now();
         apply_rewrites(&mut eg, &rules);
+        let check_span = trace_span!("check").entered();
         if let Some(i2) = lookup_rec_expr(&goal, &eg) {
             if eg.eq(&i1, &i2) {
                 dbg!(eg.total_number_of_nodes());
@@ -38,6 +43,7 @@ fn assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: usize) wher
                 return;
             }
         }
+        check_span.exit();
         let out_of_memory = iteration_stats(&mut csv_out, iteration, &eg, false, start_time);
         if out_of_memory {
             dbg!("reached memory limit!");
@@ -45,7 +51,7 @@ fn assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: usize) wher
         }
     }
 
-    dbg!(extract::<_, _, AstSizeNoLet>(i1, &eg));
+    dbg!(extract::<_, _, AstSizeNoLet>(&i1, &eg));
     dbg!(&goal);
     assert!(false);
 }
@@ -59,6 +65,7 @@ fn assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: usize) wher
 // e-graph classes,
 // total time,
 // found
+#[tracing::instrument(level = "trace", skip_all)]
 fn iteration_stats<W, L, N>(csv_out: &mut W, it_number: usize, eg: &EGraph<L, N>, found: bool, start_time: Instant) -> bool
     where W: std::io::Write, L: Language, N: Analysis<L>
 {
@@ -82,6 +89,32 @@ fn main() {
     let lhs = &args[0];
     let rhs = &args[1];
     let csv_out = &args[2];
-    let mut csv_f = std::fs::File::create(csv_out).unwrap();
-    assert_reaches(lhs, rhs, csv_f, 60);
+    let csv_f = std::fs::File::create(csv_out).unwrap();
+
+    if cfg!(feature = "trace") {
+        use tracing_subscriber;
+        use tracing_subscriber::layer::SubscriberExt;
+        use tracing_subscriber::prelude::*;
+        use tracing_profile::*;
+
+        println!("<TRACING>");
+        /*
+        tracing_subscriber::fmt()
+            .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
+            .with_max_level(tracing_subscriber::filter::LevelFilter::TRACE)
+            .init();
+            */
+
+        tracing_subscriber::registry()
+            .with(PrintTreeLayer::default())
+            // .with(CsvLayer::new("/tmp/slotted-rise-tracing.csv"))
+            .init();
+
+        let span = trace_span!("root");
+        span.in_scope(|| {
+            assert_reaches(lhs, rhs, csv_f, 60);
+        });
+    } else {
+        assert_reaches(lhs, rhs, csv_f, 60);
+    }
 }
