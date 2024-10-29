@@ -57,7 +57,7 @@ for N in range(1, 21):
             break
 
 """
-DeBruijn saturates but fails to prove: \z. \x. ((\y. z) x) x = \z. z
+DeBruijn saturates but fails to prove: λz. λx. ((λy. z) x) x = λz. z
 DeBruijn does not saturate but can prove: λ x, (λ t y, t) (λ z, x z) = λ x y, x
 
 First combination, not so bad:
