@@ -3,7 +3,7 @@
 import gen
 import os
 
-os.system("cd slotted-rise; cargo b --release --features tracing")
+os.system("cd slotted-rise; cargo b --release --features trace")
 
 l, r = gen.generate(5, 5, True)
 print(l)

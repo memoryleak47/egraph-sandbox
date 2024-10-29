@@ -11,7 +11,7 @@ mod lang;
 pub use lang::*;
 
 pub use symbol_table::GlobalSymbol as Symbol;
-pub use slotted_egraphs::*;
+pub use slotted_egraphs::{*, Id};
 pub use std::ops::RangeInclusive;
 
 use memory_stats::memory_stats;
@@ -89,9 +89,9 @@ fn main() {
     let lhs = &args[0];
     let rhs = &args[1];
     let csv_out = &args[2];
-    let mut csv_f = std::fs::File::create(csv_out).unwrap();
+    let csv_f = std::fs::File::create(csv_out).unwrap();
 
-    if cfg!(feature = "tracing") {
+    if cfg!(feature = "trace") {
         use tracing_subscriber;
         use tracing_subscriber::layer::SubscriberExt;
         use tracing_subscriber::prelude::*;
@@ -114,73 +114,7 @@ fn main() {
         span.in_scope(|| {
             assert_reaches(lhs, rhs, csv_f, 60);
         });
-/*
-        DEPRECATED (tracing-timing):
-
-        use tracing::{dispatcher, Dispatch};
-        use tracing_timing::{Builder, Histogram};
-
-        let subscriber = Builder::default().build(|| Histogram::new_with_max(1_000_000, 2).unwrap());
-        let sid = subscriber.downcaster();
-        let dispatcher = Dispatch::new(subscriber);
-        dispatcher::with_default(&dispatcher, || {
-            assert_reaches(lhs, rhs, csv_f, 60);
-        });
-
-        sid.downcast(&dispatcher).unwrap().with_histograms(|hs| {
-            for (span_group, hs) in hs {
-                for (event_group, h) in hs {
-                    println!("span: {}, event: {}", span_group, event_group);
-
-                    println!(
-                        "mean: {:.1}µs, p50: {}µs, p90: {}µs, p99: {}µs, p999: {}µs, max: {}µs",
-                        h.mean() / 1000.0,
-                        h.value_at_quantile(0.5) / 1_000,
-                        h.value_at_quantile(0.9) / 1_000,
-                        h.value_at_quantile(0.99) / 1_000,
-                        h.value_at_quantile(0.999) / 1_000,
-                        h.max() / 1_000,
-                    );
-                    for v in break_once(
-                        h.iter_linear(25_000).skip_while(|v| v.quantile() < 0.01),
-                        |v| v.quantile() > 0.95,
-                    ) {
-                        println!(
-                            "{:4}µs | {:40} | {:4.1}th %-ile",
-                            (v.value_iterated_to() + 1) / 1_000,
-                            "*".repeat(
-                                (v.count_since_last_iteration() as f64 * 40.0 / h.len() as f64).ceil() as usize
-                            ),
-                            v.percentile(),
-                        );
-                    }
-                }
-            }
-        });
-        */
     } else {
         assert_reaches(lhs, rhs, csv_f, 60);
     }
-}
-
-#[cfg(feature = "tracing")]
-fn break_once<I, F>(it: I, mut f: F) -> impl Iterator<Item = I::Item>
-where
-    I: IntoIterator,
-    F: FnMut(&I::Item) -> bool,
-{
-    let mut got_true = false;
-    it.into_iter().take_while(move |i| {
-        if got_true {
-            // we've already yielded when f was true
-            return false;
-        }
-        if f(i) {
-            // this must be the first time f returns true
-            // we should yield i, and then no more
-            got_true = true;
-        }
-        // f returned false, so we should keep yielding
-        true
-    })
 }
