@@ -10,6 +10,10 @@ pub use my_cost2::*;
 mod lang;
 pub use lang::*;
 
+#[cfg(feature = "trace")]
+mod trace;
+use trace::BucketSubscriber;
+
 pub use symbol_table::GlobalSymbol as Symbol;
 pub use slotted_egraphs::{*, Id};
 pub use std::ops::RangeInclusive;
@@ -104,11 +108,23 @@ fn main() {
             .with_max_level(tracing_subscriber::filter::LevelFilter::TRACE)
             .init();
             */
-
+/*
+        // let (perfetto, _guard) = PerfettoLayer::new_from_env().unwrap();
         tracing_subscriber::registry()
-            .with(PrintTreeLayer::default())
+            .with(PrintTreeLayer::new(PrintTreeConfig {
+                attention_above_percent: 25.0,
+                relevant_above_percent: 2.5,
+                hide_below_percent: 1.0,
+                display_unaccounted: true,
+                accumulate_events: true
+            }))
             // .with(CsvLayer::new("/tmp/slotted-rise-tracing.csv"))
+            // .with(perfetto)
+            // .with(IttApiLayer::default())
             .init();
+*/
+        tracing::subscriber::set_global_default(BucketSubscriber::new())
+            .expect("setting tracing default failed");
 
         let span = trace_span!("root");
         span.in_scope(|| {
