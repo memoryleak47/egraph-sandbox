@@ -10,6 +10,14 @@ pub use my_cost2::*;
 mod lang;
 pub use lang::*;
 
+mod dblang;
+pub use dblang::*;
+
+#[cfg(feature = "trace")]
+mod trace;
+#[cfg(feature = "trace")]
+use trace::BucketSubscriber;
+
 pub use symbol_table::GlobalSymbol as Symbol;
 pub use slotted_egraphs::{*, Id};
 pub use std::ops::RangeInclusive;
@@ -91,30 +99,50 @@ fn main() {
     let csv_out = &args[2];
     let csv_f = std::fs::File::create(csv_out).unwrap();
 
-    if cfg!(feature = "trace") {
-        use tracing_subscriber;
-        use tracing_subscriber::layer::SubscriberExt;
-        use tracing_subscriber::prelude::*;
-        use tracing_profile::*;
+    may_trace_assert_reaches(lhs, rhs, csv_f, 60);
+}
 
-        println!("<TRACING>");
-        /*
-        tracing_subscriber::fmt()
-            .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
-            .with_max_level(tracing_subscriber::filter::LevelFilter::TRACE)
-            .init();
-            */
+#[cfg(feature = "trace")]
+fn may_trace_assert_reaches<W>(start: &str, goal: &str, csv_out: W, steps: usize) where W: std::io::Write {
 
-        tracing_subscriber::registry()
-            .with(PrintTreeLayer::default())
-            // .with(CsvLayer::new("/tmp/slotted-rise-tracing.csv"))
-            .init();
+    use tracing_subscriber;
+    // use tracing_subscriber::layer::SubscriberExt;
+    // use tracing_subscriber::prelude::*;
+    // use tracing_profile::*;
 
-        let span = trace_span!("root");
-        span.in_scope(|| {
-            assert_reaches(lhs, rhs, csv_f, 60);
-        });
-    } else {
-        assert_reaches(lhs, rhs, csv_f, 60);
-    }
+    println!("<TRACING>");
+    /*
+    tracing_subscriber::fmt()
+        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL)
+        .with_max_level(tracing_subscriber::filter::LevelFilter::TRACE)
+        .init();
+        */
+/*
+    // let (perfetto, _guard) = PerfettoLayer::new_from_env().unwrap();
+    tracing_subscriber::registry()
+        .with(PrintTreeLayer::new(PrintTreeConfig {
+            attention_above_percent: 25.0,
+            relevant_above_percent: 2.5,
+            hide_below_percent: 1.0,
+            display_unaccounted: true,
+            accumulate_events: true
+        }))
+        // .with(CsvLayer::new("/tmp/slotted-rise-tracing.csv"))
+        // .with(perfetto)
+        // .with(IttApiLayer::default())
+        .init();
+*/
+    tracing::subscriber::set_global_default(BucketSubscriber::new())
+        .expect("setting tracing default failed");
+
+    let span = trace_span!("root");
+    span.in_scope(|| {
+        assert_reaches(start, goal, csv_out, steps);
+    });
+    trace!(name: "display", ""); // trigger display of stats
+}
+
+#[cfg(not(feature = "trace"))]
+fn may_trace_assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: usize) where W: std::io::Write {
+    assert_reaches(start, goal, csv_out, steps);
 }

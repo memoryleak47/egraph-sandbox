@@ -124,12 +124,14 @@ fn let_const() -> Rewrite<Rise> {
     let rt: RewriteT<Rise, (), ()> = RewriteT {
         searcher: Box::new(|_| ()),
         applier: Box::new(move |(), eg| {
+            let span = tracing::trace_span!("let_const apply").entered();
             for subst in ematch_all(eg, &pat) {
                 if eg.enodes_applied(&subst["c"]).iter().any(|n| matches!(n, Rise::Symbol(_) | Rise::Number(_))) {
                     let orig = pattern_subst(eg, &pat, &subst);
                     eg.union_justified(&orig, &subst["c"], Some("let-const".to_string()));
                 }
             }
+            span.exit();
         }),
     };
     rt.into()
@@ -228,6 +230,7 @@ fn beta_extr() -> Rewrite<Rise> {
 
     let rt: RewriteT<Rise, (), Vec<(Subst, RecExpr<Rise>)>> = RewriteT {
         searcher: Box::new(move |eg| {
+            let span = tracing::trace_span!("beta_extr search").entered();
             let extractor = Extractor::<_, AstSize>::new(eg, AstSize);
 
             let mut out: Vec<(Subst, RecExpr<Rise>)> = Vec::new();
@@ -237,14 +240,17 @@ fn beta_extr() -> Rewrite<Rise> {
                 let res = re_subst(s, b, &t);
                 out.push((subst, res));
             }
+            span.exit();
             out
         }),
         applier: Box::new(move |substs, eg| {
+            let span = tracing::trace_span!("beta_extr apply").entered();
             for (subst, res) in substs {
                 let orig = pattern_subst(eg, &pat, &subst);
                 let res = eg.add_expr(res);
                 eg.union_justified(&orig, &res, Some("beta-expr".to_string()));
             }
+            span.exit();
         }),
     };
     rt.into()
@@ -262,6 +268,7 @@ fn beta_extr_direct() -> Rewrite<Rise> {
     let rt: RewriteT<Rise, (), ()> = RewriteT {
         searcher: Box::new(|_| ()),
         applier: Box::new(move |(), eg| {
+            let span = tracing::trace_span!("beta_extr_direct apply").entered();
             let extractor = Extractor::<_, AstSize>::new(eg, AstSize);
 
             let mut out: Vec<(Subst, RecExpr<Rise>)> = Vec::new();
@@ -276,6 +283,7 @@ fn beta_extr_direct() -> Rewrite<Rise> {
                 let res = eg.add_expr(res);
                 eg.union_justified(&orig, &res, Some("betaoextr-direct".to_string()));
             }
+            span.exit();
         }),
     };
     rt.into()
