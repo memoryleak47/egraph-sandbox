@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-// use std::sync::atomic::AtomicUsize;
 use std::time::{Instant, Duration};
 use std::sync::RwLock;
 use std::ops::DerefMut;
