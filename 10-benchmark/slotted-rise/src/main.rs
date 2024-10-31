@@ -103,11 +103,11 @@ fn main() {
 }
 
 #[cfg(feature = "trace")]
-fn may_trace_assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: usize) where W: std::io::Write {
+fn may_trace_assert_reaches<W>(start: &str, goal: &str, csv_out: W, steps: usize) where W: std::io::Write {
 
     use tracing_subscriber;
-    use tracing_subscriber::layer::SubscriberExt;
-    use tracing_subscriber::prelude::*;
+    // use tracing_subscriber::layer::SubscriberExt;
+    // use tracing_subscriber::prelude::*;
     // use tracing_profile::*;
 
     println!("<TRACING>");
@@ -139,6 +139,7 @@ fn may_trace_assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: u
     span.in_scope(|| {
         assert_reaches(start, goal, csv_out, steps);
     });
+    trace!(name: "display", ""); // trigger display of stats
 }
 
 #[cfg(not(feature = "trace"))]
