@@ -4,7 +4,7 @@ use std::collections::HashSet;
 
 #[derive(PartialEq, Eq, Clone)]
 pub struct DBRiseAnalysisData {
-  free: HashSet<Index>,
+  pub free: HashSet<Index>,
   // TODO: add this for fair comparison, or remove from egg baseline?
   // beta_extract: RecExpr<DBRise>,
 }
@@ -18,6 +18,16 @@ pub fn i32_from_eclass(egraph: &EGraph<DBRise, DBRiseAnalysisData>, id: Id) -> i
     }
   }
   panic!("expected Number in eclass")
+}
+
+pub fn eclass_get_var(egraph: &EGraph<DBRise, DBRiseAnalysisData>, id: Id) -> Option<Index> {
+  for enode in egraph.enodes(id) {
+    match enode {
+      DBRise::Var(idx) => return Some(idx),
+      _ => ()
+    }
+  }
+  None
 }
 
 impl Analysis<DBRise> for DBRiseAnalysisData {

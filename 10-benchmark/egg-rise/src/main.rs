@@ -108,9 +108,8 @@ fn bench_prove_equiv(name: &str, start_s: &str, goal_s: &str, rule_names: &[&str
         "de-bruijn" => {
             if rule_names.contains(&"beta") {
                 rule_names.extend([
-                    "sig-unused", "phi-unused",
-                    "sig-lam", "sig-app", "sig-var-const",
-                    "phi-lam", "phi-app", "phi-var-const"
+                    "sig-unused", "sig-lam", "sig-app", "sig-var",
+                    "phi-unused", "phi-lam", "phi-app", "phi-var"
                 ]);
             }
 
@@ -132,7 +131,7 @@ fn prove_equiv_aux(start: RecExpr<Rise>, goal: RecExpr<Rise>, rules: Vec<Rewrite
 
 fn db_prove_equiv_aux(start: RecExpr<DBRise>, goal: RecExpr<DBRise>, rules: Vec<Rewrite<DBRise, DBRiseAnalysis>>, csv_out: File) {
    let goals: Vec<Pattern<DBRise>> = vec![goal.as_ref().into()];
-   common_prove_equiv_aux(&start, goals, rules, csv_out); 
+   common_prove_equiv_aux(&start, goals, rules, csv_out);
 }
 
 fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rules: Vec<Rewrite<L, A>>, mut csv_out: File)
@@ -166,7 +165,7 @@ fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rule
             }
         }).run(&rules);
 
-    
+
     iteration_stats(runner.iterations.last().unwrap(), runner.iterations.len() - 1, &mut csv_out);
     runner.print_report();
     let rules = runner.iterations.iter().map(|i|

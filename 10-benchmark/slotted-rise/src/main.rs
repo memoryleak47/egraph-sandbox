@@ -12,10 +12,10 @@ pub use lang::*;
 
 mod dblang;
 mod dbanalysis;
-// mod dbrewrite;
+mod dbrewrite;
 pub use dblang::*;
 pub use dbanalysis::*;
-// pub use dbrewrite::*;
+pub use dbrewrite::*;
 
 #[cfg(feature = "trace")]
 mod trace;

@@ -99,14 +99,21 @@ pub fn dbrules(names: &[&str]) -> Vec<Rewrite<DBRise, DBRiseAnalysis>> {
             { NumberShiftApplier { var: var("?i"), shift: 1, new_var: var("?ip1"),
               applier: "(lam (sig ?ip1 ?a ?b))".parse::<Pattern<DBRise>>().unwrap() } } if in_range(var("?a"), var("?i"))),
         rewrite!("sig-app"; "(sig ?i (app ?a1 ?a2) ?b)" => "(app (sig ?i ?a1 ?b) (sig ?i ?a2 ?b))" if or(in_range(var("?a1"), var("?i")), in_range(var("?a2"), var("?i")))),
+        /* DEPRECATED: const < unused
         rewrite!("sig-var-const"; "(sig ?i ?n ?b)" =>
-            { SigVarConstApplier { i: var("?i"), n: var("?n"), b: var("?b") }}),
+            { SigVarConstApplier { i: var("?i"), n: var("?n"), b: var("?b") }}), */
+        rewrite!("sig-var"; "(sig ?i ?n ?b)" =>
+            { SigVarApplier { i: var("?i"), n: var("?n"), b: var("?b") }}),
         rewrite!("phi-lam"; "(phi ?i ?k (lam ?a))" =>
             { NumberShiftApplier { var: var("?k"), shift: 1, new_var: var("?kp1"),
               applier: "(lam (phi ?i ?kp1 ?a))".parse::<Pattern<DBRise>>().unwrap() }} if in_range(var("?a"), var("?k"))),
         rewrite!("phi-app"; "(phi ?i ?k (app ?a ?b))" => "(app (phi ?i ?k ?a) (phi ?i ?k ?b))" if or(in_range(var("?a"), var("?k")), in_range(var("?b"), var("?k")))),
+        /* DEPRECATED: const < unused
         rewrite!("phi-var-const"; "(phi ?i ?k ?n)" =>
             { PhiVarConstApplier { i: var("?i"), k: var("?k"), n: var("?n") }}),
+             */
+        rewrite!("phi-var"; "(phi ?i ?k ?n)" =>
+            { PhiVarApplier { i: var("?i"), k: var("?k"), n: var("?n") }}),
 
         rewrite!("eta-expansion"; "?f" => "(lam (app (phi 1 0 ?f) %0))"),
     ];
@@ -124,6 +131,7 @@ struct NumberShiftApplier<A> {
 impl<A> Applier<DBRise, DBRiseAnalysis> for NumberShiftApplier<A> where A: Applier<DBRise, DBRiseAnalysis> {
     fn apply_one(&self, egraph: &mut DBRiseEGraph, eclass: Id, subst: &Subst,
                  searcher_ast: Option<&PatternAst<DBRise>>, rule_name: Symbol) -> Vec<Id> {
+        // TODO: use i32_from_eclass?
         let extract = &egraph[subst[self.var]].data.beta_extract;
         let shifted = match extract.as_ref() {
             [DBRise::Number(i)] => DBRise::Number(i + self.shift),
@@ -135,16 +143,17 @@ impl<A> Applier<DBRise, DBRiseAnalysis> for NumberShiftApplier<A> where A: Appli
     }
 }
 
-struct SigVarConstApplier {
+struct SigVarApplier { // DEPRECATED: SigVarConstApplier
     i: Var,
     n: Var,
     b: Var,
 }
 
-impl Applier<DBRise, DBRiseAnalysis> for SigVarConstApplier {
+impl Applier<DBRise, DBRiseAnalysis> for SigVarApplier {
     fn apply_one(&self, egraph: &mut DBRiseEGraph, eclass: Id, subst: &Subst,
                  _searcher_ast: Option<&PatternAst<DBRise>>, _rule_name: Symbol) -> Vec<Id> {
         match egraph[subst[self.n]].data.beta_extract.as_ref() {
+            /* DEPRECATED: Const case
             [DBRise::Number(_)] | [DBRise::Symbol(_)] => {
                 let id = subst[self.n];
                 if egraph.union(eclass, id) {
@@ -152,7 +161,7 @@ impl Applier<DBRise, DBRiseAnalysis> for SigVarConstApplier {
                 } else {
                     vec![]
                 }
-            }
+            } */
             &[DBRise::Var(Index(var))] => {
                 let i_num = i32_from_eclass(egraph, self.i);
                 let n = var as i32;
@@ -175,16 +184,17 @@ impl Applier<DBRise, DBRiseAnalysis> for SigVarConstApplier {
     }
 }
 
-struct PhiVarConstApplier {
+struct PhiVarApplier { // DEPRECATED: PhiVarConstApplier
     i: Var,
     k: Var,
     n: Var,
 }
 
-impl Applier<DBRise, DBRiseAnalysis> for PhiVarConstApplier {
+impl Applier<DBRise, DBRiseAnalysis> for PhiVarApplier {
     fn apply_one(&self, egraph: &mut DBRiseEGraph, eclass: Id, subst: &Subst,
                  _searcher_ast: Option<&PatternAst<DBRise>>, _rule_name: Symbol) -> Vec<Id> {
         match egraph[subst[self.n]].data.beta_extract.as_ref() {
+            /* DEPRECATED: Const case
             [DBRise::Number(_)] | [DBRise::Symbol(_)] => {
                 let id = subst[self.n];
                 if egraph.union(eclass, id) {
@@ -192,7 +202,7 @@ impl Applier<DBRise, DBRiseAnalysis> for PhiVarConstApplier {
                 } else {
                     vec![]
                 }
-            }
+            } */
             &[DBRise::Var(Index(var))] => {
                 let i_num = i32_from_eclass(egraph, self.i);
                 let k_num = i32_from_eclass(egraph, self.k);
