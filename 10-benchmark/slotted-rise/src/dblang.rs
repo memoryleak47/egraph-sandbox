@@ -1,16 +1,21 @@
 use crate::*;
 
+use std::str::FromStr;
+
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DBRise {
     // lambda calculus:
     Lam(AppliedId),
     App(AppliedId, AppliedId),
     Var(Index),
-    Sigma(Index, AppliedId, AppliedId),
-    Phi(Index, Index, AppliedId),
+    Sigma(AppliedId, AppliedId, AppliedId),
+    Phi(AppliedId, AppliedId, AppliedId),
+    // can do that, but unfair to egg? :
+    // Sigma(Index, AppliedId, AppliedId),
+    // Phi(Index, Index, AppliedId),
 
     // rest:
-    Number(u32),
+    Number(i32),
     Symbol(Symbol),
 }
 
@@ -23,7 +28,7 @@ impl std::fmt::Display for Index {
     }
 }
 
-impl std::str::FromStr for Index {
+impl FromStr for Index {
     type Err = Option<std::num::ParseIntError>;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
@@ -47,11 +52,14 @@ impl Language for DBRise {
                 out.extend(r.slots_mut());
             }
             DBRise::Var(_) => {}
-            DBRise::Sigma(_, a, b) => {
+            DBRise::Sigma(i, a, b) => {
+                out.extend(i.slots_mut());
                 out.extend(a.slots_mut());
                 out.extend(b.slots_mut());
             }
-            DBRise::Phi(_, _, a) => {
+            DBRise::Phi(i, k, a) => {
+                out.extend(i.slots_mut());
+                out.extend(k.slots_mut());
                 out.extend(a.slots_mut());
             }
             DBRise::Number(_) => {}
@@ -69,8 +77,8 @@ impl Language for DBRise {
             DBRise::Lam(b) => vec![b],
             DBRise::App(l, r) => vec![l, r],
             DBRise::Var(_) => vec![],
-            DBRise::Sigma(_, a, b) => vec![a, b],
-            DBRise::Phi(_, _, a) => vec![a],
+            DBRise::Sigma(i, a, b) => vec![i, a, b],
+            DBRise::Phi(i, k, a) => vec![i, k, a],
             DBRise::Number(_) => vec![],
             DBRise::Symbol(_) => vec![],
         }
@@ -81,33 +89,33 @@ impl Language for DBRise {
             DBRise::Lam(b) => (String::from("lam"), vec![Child::AppliedId(b)]),
             DBRise::App(l, r) => (String::from("app"), vec![Child::AppliedId(l), Child::AppliedId(r)]),
             DBRise::Var(s) => (format!("{s}"), vec![]),
-            DBRise::Sigma(i, a, b) => (format!("sig-{}", i), vec![Child::AppliedId(a), Child::AppliedId(b)]),
-            // TODO: (String::from("phi"), vec![Child::Custom(i), Child::Cusom(k), Child::AppliedId(a)]) ?
-            DBRise::Phi(i, k, a) => (format!("phi-{}-{}", i, k), vec![Child::AppliedId(a)]),
+            DBRise::Sigma(i, a, b) => (String::from("sig"), vec![Child::AppliedId(i), Child::AppliedId(a), Child::AppliedId(b)]),
+            // (format!("phi-{}-{}", i, k), vec![Child::AppliedId(a)]),
+            // (String::from("phi"), vec![Child::Custom(i), Child::Cusom(k), Child::AppliedId(a)]) ?
+            DBRise::Phi(i, k, a) => (String::from("phi"), vec![Child::AppliedId(i), Child::AppliedId(k), Child::AppliedId(a)]),
             DBRise::Number(n) => (format!("{}", n), vec![]),
             DBRise::Symbol(s) => (format!("{}", s), vec![]),
         }
     }
 
     fn from_op(op: &str, children: Vec<Child>) -> Option<Self> {
-        unimplemented!()
-        /*
         match (op, &*children) {
-            ("lam", [Child::Slot(s), Child::AppliedId(a)]) => Some(Rise::Lam(*s, a.clone())),
-            ("app", [Child::AppliedId(l), Child::AppliedId(r)]) => Some(Rise::App(l.clone(), r.clone())),
-            ("var", [Child::Slot(s)]) => Some(Rise::Var(*s)),
-            ("let", [Child::Slot(s), Child::AppliedId(t), Child::AppliedId(b)]) => Some(Rise::Let(*s, t.clone(), b.clone())),
+            ("lam", [Child::AppliedId(b)]) => Some(DBRise::Lam(b.clone())),
+            ("app", [Child::AppliedId(l), Child::AppliedId(r)]) => Some(DBRise::App(l.clone(), r.clone())),
+            ("sig", [Child::AppliedId(i), Child::AppliedId(a), Child::AppliedId(b)]) => Some(DBRise::Sigma(i.clone(), a.clone(), b.clone())),
+            ("phi", [Child::AppliedId(i), Child::AppliedId(k), Child::AppliedId(a)]) => Some(DBRise::Phi(i.clone(), k.clone(), a.clone())),
             (op, []) => {
-                if let Ok(u) = op.parse::<u32>() {
-                    Some(Rise::Number(u))
+                if let Ok(i) = Index::from_str(op) {
+                    Some(DBRise::Var(i))
+                } else if let Ok(u) = op.parse::<i32>() {
+                    Some(DBRise::Number(u))
                 } else {
                     let s: Symbol = op.parse().ok()?;
-                    Some(Rise::Symbol(s))
+                    Some(DBRise::Symbol(s))
                 }
             },
             _ => None,
         }
-            */
     }
 }
 
@@ -119,8 +127,8 @@ impl Debug for DBRise {
             DBRise::Lam(b) => write!(f, "(lam {b:?})"),
             DBRise::App(l, r) => write!(f, "(app {l:?} {r:?})"),
             DBRise::Var(s) => write!(f, "{s}"),
-            DBRise::Sigma(i, a, b) => write!(f, "(sig {i} {a:?} {b:?})"),
-            DBRise::Phi(i, k, a) => write!(f, "(phi {i} {k} {a:?})"),
+            DBRise::Sigma(i, a, b) => write!(f, "(sig {i:?} {a:?} {b:?})"),
+            DBRise::Phi(i, k, a) => write!(f, "(phi {i:?} {k:?} {a:?})"),
             DBRise::Number(i) => write!(f, "{i}"),
             DBRise::Symbol(i) => write!(f, "symb{i:?}"),
         }
