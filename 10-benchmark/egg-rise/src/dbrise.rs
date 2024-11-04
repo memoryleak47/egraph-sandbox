@@ -50,6 +50,13 @@ pub struct DBData {
     pub beta_extract: DBRiseExpr,
 }
 
+pub fn i32_from_eclass(egraph: &DBRiseEgraph, id: Id) -> i32 {
+    match egraph[id].data.beta_extract.as_ref() {
+        &[DBRise::Number(i_num)] => i_num,
+        _ => panic!("expected Number in eclass")
+    };
+}
+
 impl Analysis<DBRise> for DBRiseAnalysis {
     type Data = DBData;
 
@@ -80,10 +87,7 @@ impl Analysis<DBRise> for DBRiseAnalysis {
                         .map(|idx| Index(idx.0 - 1)));
             }
             DBRise::Sigma([i, a, b]) => {
-                let i_num = match egraph[*i].data.beta_extract.as_ref() {
-                    &[DBRise::Number(i_num)] => i_num as u32,
-                    _ => panic!()
-                };
+                let i_num = i32_from_eclass(egraph, *i) as u32;
                 let used = egraph[*a].data.free.contains(&Index(i_num));
                 free.extend(
                     egraph[*a].data.free.iter().cloned()
@@ -91,19 +95,13 @@ impl Analysis<DBRise> for DBRiseAnalysis {
                         .map(|idx| if idx.0 > i_num { Index(idx.0 - 1) } else { idx }));
                 if used {
                     free.extend(egraph[*b].data.free.iter().map(|idx| {
-                        Index((idx.0 + i_num))
+                        Index(idx.0 + i_num)
                     }));
                 }
             }
             DBRise::Phi([i, k, a]) => {
-                let i_num = match egraph[*i].data.beta_extract.as_ref() {
-                    &[DBRise::Number(i_num)] => i_num,
-                    _ => panic!()
-                };
-                let k_num = match egraph[*k].data.beta_extract.as_ref() {
-                    &[DBRise::Number(k_num)] => k_num,
-                    _ => panic!()
-                };
+                let i_num = i32_from_eclass(egraph, *i);
+                let k_num = i32_from_eclass(egraph, *k);
                 free.extend(
                     egraph[*a].data.free.iter().cloned().map(|idx| {
                         let n = idx.0 as i32;

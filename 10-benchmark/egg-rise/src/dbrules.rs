@@ -154,10 +154,7 @@ impl Applier<DBRise, DBRiseAnalysis> for SigVarConstApplier {
                 }
             }
             &[DBRise::Var(Index(var))] => {
-                let i_num = match egraph[subst[self.i]].data.beta_extract.as_ref() {
-                    &[DBRise::Number(i_num)] => i_num,
-                    _ => panic!()
-                };
+                let i_num = i32_from_eclass(egraph, self.i);
                 let n = var as i32;
                 let node = if n > i_num {
                     DBRise::Var(Index(var - 1))
@@ -197,14 +194,8 @@ impl Applier<DBRise, DBRiseAnalysis> for PhiVarConstApplier {
                 }
             }
             &[DBRise::Var(Index(var))] => {
-                let i_num = match egraph[subst[self.i]].data.beta_extract.as_ref() {
-                    &[DBRise::Number(i_num)] => i_num,
-                    _ => panic!()
-                };
-                let k_num = match egraph[subst[self.k]].data.beta_extract.as_ref() {
-                    &[DBRise::Number(k_num)] => k_num,
-                    _ => panic!()
-                };
+                let i_num = i32_from_eclass(egraph, self.i);
+                let k_num = i32_from_eclass(egraph, self.k);
                 let n = var as i32;
                 let shifted = DBRise::Var(Index(if n >= k_num { (n + i_num) as u32 } else { var }));
                 let id = egraph.add(shifted);
