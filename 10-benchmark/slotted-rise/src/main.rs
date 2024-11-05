@@ -1,14 +1,12 @@
-mod rewrite;
-pub use rewrite::*;
-
-mod my_cost;
-pub use my_cost::*;
-
-mod my_cost2;
-pub use my_cost2::*;
 
 mod lang;
+mod rewrite;
+mod my_cost;
+mod my_cost2;
 pub use lang::*;
+pub use rewrite::*;
+pub use my_cost::*;
+pub use my_cost2::*;
 
 mod dblang;
 mod dbanalysis;
@@ -31,83 +29,134 @@ use std::time::Instant;
 
 use tracing::*;
 
-fn assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: usize) where W: std::io::Write {
-    let init_span = trace_span!("init").entered();
-    let start = RecExpr::parse(start).unwrap();
-    let goal = RecExpr::parse(goal).unwrap();
+fn assert_reaches<W>(start: &str, goal: &str, binding: &str, csv_out: W, steps: usize) where W: std::io::Write {
+     match binding {
+        "slot" => {
+            let start = RecExpr::parse(start).unwrap();
+            let goal = RecExpr::parse(goal).unwrap();
+            let rules = rise_rules(RiseSubstMethod::SmallStep);
+            assert_reaches_common(start, goal, rules, csv_out, steps);
+        }
+        "de-bruijn" => {
+            let start = RecExpr::parse(start).unwrap();
+            let goal = RecExpr::parse(goal).unwrap();
+            let rules = db_rise_rules();
+            assert_reaches_common(to_db(start), to_db(goal), rules, csv_out, steps);
+        }
+        _ => panic!("did expect binding '{}'", binding)
+    };
+}
 
-    let rules = rise_rules(RiseSubstMethod::SmallStep);
+struct Iteration {
+    physical_mem: usize,
+    virtual_mem: usize,
+    egraph_nodes: usize,
+    egraph_classes: usize,
+    total_time: f64,
+    found: bool
+}
 
+fn assert_reaches_common<W, L, N>(
+    start: RecExpr<L>, goal: RecExpr<L>, rules: Vec<Rewrite<L, N>>,
+    mut csv_out: W, steps: usize)
+    where W: std::io::Write, L: Language, N: Analysis<L>
+{
     let mut eg = EGraph::new();
     let i1 = eg.add_expr(start.clone());
-    init_span.exit();
-    for iteration in 0..steps {
-        dbg!(eg.total_number_of_nodes());
+    for it_number in 0..steps {
         let start_time = Instant::now();
-        apply_rewrites(&mut eg, &rules);
+
         let check_span = trace_span!("check").entered();
-        if let Some(i2) = lookup_rec_expr(&goal, &eg) {
-            if eg.eq(&i1, &i2) {
-                dbg!(eg.total_number_of_nodes());
-                #[cfg(feature = "explanations")]
-                println!("{}", eg.explain_equivalence(start, goal).to_string(&eg));
-                iteration_stats(&mut csv_out, iteration, &eg, true, start_time);
-                return;
-            }
-        }
-        check_span.exit();
-        let out_of_memory = iteration_stats(&mut csv_out, iteration, &eg, false, start_time);
+        dbg!(it_number, eg.total_number_of_nodes());
+        let memory = memory_stats().expect("could not get current memory usage");
+        let out_of_memory = memory.virtual_mem > 4_000_000_000;
         if out_of_memory {
             dbg!("reached memory limit!");
-            break;
+        }
+        let mut it = Iteration {
+            physical_mem: memory.physical_mem,
+            virtual_mem: memory.virtual_mem,
+            egraph_nodes: eg.total_number_of_nodes(),
+            egraph_classes: eg.ids().len(),
+            total_time: 0.0,
+            found: false
+        };
+
+        if let Some(i2) = lookup_rec_expr(&goal, &eg) {
+            if eg.eq(&i1, &i2) {
+                #[cfg(feature = "explanations")]
+                println!("{}", eg.explain_equivalence(start, goal).to_string(&eg));
+                it.found = true;
+            }
+        }
+        let stop = it.found || out_of_memory;
+        check_span.exit();
+
+        if !stop {
+            apply_rewrites(&mut eg, &rules);
+        }
+
+        it.total_time = start_time.elapsed().as_secs_f64();
+        writeln!(csv_out, "{}, {}, {}, {}, {}, {}, {}",
+            it_number,
+            it.physical_mem,
+            it.virtual_mem,
+            it.egraph_nodes,
+            it.egraph_classes,
+            it.total_time,
+            it.found
+        ).unwrap();
+
+        if stop {
+            return;
         }
     }
 
-    dbg!(extract::<_, _, AstSizeNoLet>(&i1, &eg));
+    // dbg!(extract::<_, _, AstSizeNoLet>(&i1, &eg));
     dbg!(&goal);
     assert!(false);
 }
 
+fn to_db(e: RecExpr<Rise>) -> RecExpr<DBRise> {
+    fn rec(expr: RecExpr<Rise>, bound: &[Slot]) -> RecExpr<DBRise> {
+        match expr.node {
+            Rise::Number(n) => RecExpr { node: DBRise::Number(n as i32), children: vec![] },
+            Rise::Symbol(s) => RecExpr { node: DBRise::Symbol(s), children: vec![] },
+            Rise::Var(x) => {
+                let pos = bound.iter().position(|&s| s == x)
+                    .unwrap_or_else(|| panic!("{} not bound", x));
+                RecExpr { node: DBRise::Var(Index(pos as u32)), children: vec![] }
+            },
+            Rise::Lam(x, _) => {
+                let mut bound2 = vec![x];
+                bound2.extend_from_slice(&bound[..]);
+                let children = expr.children.into_iter().map(|c| rec(c, &bound2[..])).collect();
+                RecExpr { node: DBRise::Lam(AppliedId::null()), children }
+            }
+            Rise::App(_, _) => {
+                let children = expr.children.into_iter().map(|c| rec(c, &bound[..])).collect();
+                RecExpr { node: DBRise::App(AppliedId::null(), AppliedId::null()), children }
+            }
+            Rise::Let(_, _, _) => unimplemented!(),
+        }
+    }
 
-// iteration number,
-// physical memory,
-// virtual memory,
-// e-graph nodes (hashcons size),
-// e-graph nodes (computed),
-// e-graph classes,
-// total time,
-// found
-#[tracing::instrument(level = "trace", skip_all)]
-fn iteration_stats<W, L, N>(csv_out: &mut W, it_number: usize, eg: &EGraph<L, N>, found: bool, start_time: Instant) -> bool
-    where W: std::io::Write, L: Language, N: Analysis<L>
-{
-    let memory = memory_stats().expect("could not get current memory usage");
-    let out_of_memory = memory.virtual_mem > 4_000_000_000;
-    writeln!(csv_out, "{}, {}, {}, {}, {}, {}, {}, {}",
-        it_number,
-        memory.physical_mem,
-        memory.virtual_mem,
-        eg.total_number_of_nodes(),
-        eg.total_number_of_nodes(), // TODO: remove
-        // eg.ids().into_iter().map(|c| eg.enodes(c).len()).sum::<usize>(),
-        eg.ids().len(),
-        start_time.elapsed().as_secs_f64(),
-        found).unwrap();
-    out_of_memory
+    rec(e, &[])
 }
 
 fn main() {
     let args: Vec<_> = std::env::args().skip(1).collect();
     let lhs = &args[0];
     let rhs = &args[1];
-    let csv_out = &args[2];
+    let binding = &args[2];
+    let csv_out = &args[3];
     let csv_f = std::fs::File::create(csv_out).unwrap();
 
-    may_trace_assert_reaches(lhs, rhs, csv_f, 60);
+    may_trace_assert_reaches(lhs, rhs, binding, csv_f, 60);
 }
 
 #[cfg(feature = "trace")]
-fn may_trace_assert_reaches<W>(start: &str, goal: &str, csv_out: W, steps: usize) where W: std::io::Write {
+fn may_trace_assert_reaches<W>(start: &str, goal: &str, binding: &str, csv_out: W, steps: usize) where W: std::io::Write {
 
     use tracing_subscriber;
     // use tracing_subscriber::layer::SubscriberExt;
@@ -141,12 +190,12 @@ fn may_trace_assert_reaches<W>(start: &str, goal: &str, csv_out: W, steps: usize
 
     let span = trace_span!("root");
     span.in_scope(|| {
-        assert_reaches(start, goal, csv_out, steps);
+        assert_reaches(start, goal, binding, csv_out, steps);
     });
     trace!(name: "display", ""); // trigger display of stats
 }
 
 #[cfg(not(feature = "trace"))]
-fn may_trace_assert_reaches<W>(start: &str, goal: &str, mut csv_out: W, steps: usize) where W: std::io::Write {
-    assert_reaches(start, goal, csv_out, steps);
+fn may_trace_assert_reaches<W>(start: &str, goal: &str, binding: &str, csv_out: W, steps: usize) where W: std::io::Write {
+    assert_reaches(start, goal, binding, csv_out, steps);
 }

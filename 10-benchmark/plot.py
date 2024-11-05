@@ -25,7 +25,6 @@ def summaryFromCSV(path):
       'physical_memory':'int',
       'virtual_memory':'int',
       'e-nodes':'int',
-      'e-nodes (computed)':'int',
       'e-classes':'int',
       'total_time':'float',
       'found':'bool'
@@ -36,6 +35,7 @@ def summaryFromCSV(path):
       'iteration_number':'int',
       'physical_memory':'int',
       'virtual_memory':'int',
+      'e-nodes-hashcons':'int',
       'e-nodes':'int',
       'e-classes':'int',
       'applied_rules':'int',

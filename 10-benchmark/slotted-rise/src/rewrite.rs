@@ -226,7 +226,6 @@ fn beta_extr() -> Rewrite<Rise> {
     let s = Slot::numeric(1);
 
     let a = pat.clone();
-    let a2 = pat.clone();
 
     let rt: RewriteT<Rise, (), Vec<(Subst, RecExpr<Rise>)>> = RewriteT {
         searcher: Box::new(move |eg| {
@@ -263,7 +262,6 @@ fn beta_extr_direct() -> Rewrite<Rise> {
     let s = Slot::numeric(1);
 
     let a = pat.clone();
-    let a2 = pat.clone();
 
     let rt: RewriteT<Rise, (), ()> = RewriteT {
         searcher: Box::new(|_| ()),

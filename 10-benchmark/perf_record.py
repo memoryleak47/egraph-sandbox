@@ -5,7 +5,7 @@ import os
 
 os.system("cd slotted-rise; cargo b --release")
 
-l, r = gen.generate(5, 5, True)
+l, r = gen.generate(5, 5, 0, True)
 print(l)
 print(r)
-os.system(f"perf record --call-graph dwarf ./slotted-rise/target/release/slotted-rise '{l}' '{r}' perf.csv")
+os.system(f"perf record --call-graph dwarf ./slotted-rise/target/release/slotted-rise '{l}' '{r}' slot perf.csv")

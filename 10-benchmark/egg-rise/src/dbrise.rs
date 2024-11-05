@@ -50,11 +50,11 @@ pub struct DBData {
     pub beta_extract: DBRiseExpr,
 }
 
-pub fn i32_from_eclass(egraph: &DBRiseEgraph, id: Id) -> i32 {
+pub fn i32_from_eclass(egraph: &DBRiseEGraph, id: Id) -> i32 {
     match egraph[id].data.beta_extract.as_ref() {
         &[DBRise::Number(i_num)] => i_num,
         _ => panic!("expected Number in eclass")
-    };
+    }
 }
 
 impl Analysis<DBRise> for DBRiseAnalysis {

@@ -2,7 +2,7 @@
 
 import os
 
-def generate(n, m, VARS):
+def generate(n, m, o, VARS):
     FRESH = [0]
 
     def var_wrapper(x):
@@ -25,17 +25,24 @@ def generate(n, m, VARS):
     def map_(x):
         return f"(app map {x})"
 
-    # f1 ° ... ° fm
-    def chained_fns(it):
-        fresh = fresh_slot()
-        it = [var_wrapper(f"fn{x}") for x in it]
+    # f p1 ... pO
+    def fn_with_args(f, o):
+        out = f
+        for i in range(1, o+1):
+            v = var_wrapper(f"p{i}")
+            out = f"(app {f} {v})"
+        return out
 
+    # f1 ° ... ° fm
+    def chained_fns(it, o):
+        it = [ fn_with_args(var_wrapper(f"fn{i}"), o) for i in it ]
         if len(it) == 1:
             return it[0]
 
+        fresh = fresh_slot()
         out = f"(var {fresh})"
-        for i in it:
-            out = f"(app {i} {out})"
+        for f in it:
+            out = f"(app {f} {out})"
         return f"(lam {fresh} {out})"
 
     def nested_maps(n, arg):
@@ -46,24 +53,28 @@ def generate(n, m, VARS):
 
     # N = number of nested maps.
     # M = half amount of the chained functions.
-    def generate_lhs(n, m):
-        out = chained_fns(range(1, 2*m+1))
+    # O = number of function parameters
+    def generate_lhs(n, m, o):
+        out = chained_fns(range(1, 2*m+1), o)
         out = nested_maps(n, out)
-        return nest_lams(out, m)
+        return nest_lams(out, m, o)
 
-    def generate_rhs(n, m):
-        l = nested_maps(n, chained_fns(range(m+1, 2*m+1)))
-        r = nested_maps(n, chained_fns(range(1, m+1)))
+    def generate_rhs(n, m, o):
+        l = nested_maps(n, chained_fns(range(m+1, 2*m+1), o))
+        r = nested_maps(n, chained_fns(range(1, m+1), o))
         out = comp(l, r)
-        return nest_lams(out, m)
+        return nest_lams(out, m, o)
 
-    def nest_lams(arg, m):
+    def nest_lams(arg, m, o):
         if VARS:
+            l = list(range(1, o+1))
+            for i in l[::-1]:
+                arg = f"(lam $p{i} {arg})"
             l = list(range(1, 2*m+1))
             for i in l[::-1]:
                 arg = f"(lam $fn{i} {arg})"
         return arg
 
-    lhs = generate_lhs(n, m)
-    rhs = generate_rhs(n, m)
+    lhs = generate_lhs(n, m, o)
+    rhs = generate_rhs(n, m, o)
     return lhs, rhs

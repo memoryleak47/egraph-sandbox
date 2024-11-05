@@ -17,10 +17,10 @@ fn main() {
     let csv_out = &args[3];
     let csv_f = File::create(csv_out).unwrap();
 
-    let mut rules = vec!["beta", "eta", "map-fusion", "map-fission"];
+    let rules = vec!["beta", "eta", "map-fusion", "map-fission"];
 
     let bench = |start, goal, rules| {
-        bench_prove_equiv("<no-name>", start, goal, rules, binding, csv_f);
+        bench_prove_equiv(start, goal, rules, binding, csv_f);
     };
 
     bench(lhs, rhs, &rules)
@@ -76,7 +76,7 @@ fn to_db(e: RecExpr<Rise>) -> DBRiseExpr {
     r.into()
 }
 
-fn bench_prove_equiv(name: &str, start_s: &str, goal_s: &str, rule_names: &[&str], binding: &str, csv_out: File) {
+fn bench_prove_equiv(start_s: &str, goal_s: &str, rule_names: &[&str], binding: &str, csv_out: File) {
     println!();
     println!("-------");
     println!("- lhs:         {}", start_s);
@@ -150,10 +150,9 @@ fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rule
         .with_iter_limit(500)
         .with_time_limit(std::time::Duration::from_secs(60*60)) // 4mn
         .with_hook(move |r| {
-            dbg!(r.egraph.total_number_of_nodes());
             let mut out_of_memory = false;
             if let Some(it) = r.iterations.last() {
-                out_of_memory = iteration_stats(it, r.iterations.len() - 1, &mut csv_out2);
+                out_of_memory = iteration_stats(&r.egraph, it, r.iterations.len() - 1, &mut csv_out2);
             }
 
             if goals2.iter().all(|g| g.search_eclass(&r.egraph, id).is_some()) {
@@ -166,7 +165,7 @@ fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rule
         }).run(&rules);
 
 
-    iteration_stats(runner.iterations.last().unwrap(), runner.iterations.len() - 1, &mut csv_out);
+    iteration_stats(&runner.egraph, runner.iterations.last().unwrap(), runner.iterations.len() - 1, &mut csv_out);
     runner.print_report();
     let rules = runner.iterations.iter().map(|i|
         i.applied.iter().map(|(_, n)| n).sum::<usize>()).sum::<usize>();
@@ -178,7 +177,8 @@ fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rule
 // iteration number,
 // physical memory,
 // virtual memory,
-// e-graph nodes,
+// e-graph nodes (hashcons),
+// e-graph nodes (real),
 // e-graph classes,
 // applied rules,
 // total time,
@@ -187,20 +187,24 @@ fn common_prove_equiv_aux<L, A>(start: &RecExpr<L>, goals: Vec<Pattern<L>>, rule
 // apply time,
 // rebuild time,
 // found
-fn iteration_stats<W>(it: &egg::Iteration<()>, it_number: usize, csv_out: &mut W) -> bool
-    where W: std::io::Write
+fn iteration_stats<W, L, N>(egraph: &EGraph<L, N>, it: &egg::Iteration<()>, it_number: usize, csv_out: &mut W) -> bool
+    where W: std::io::Write,
+    N: egg::Analysis<L> + std::default::Default + 'static,
+    L: egg::Language + std::fmt::Display + 'static,
 {
+    dbg!(it_number, egraph.total_number_of_nodes());
     let memory = memory_stats().expect("could not get current memory usage");
     let out_of_memory = memory.virtual_mem > 4_000_000_000;
     let found = match &it.stop_reason {
         Some(egg::StopReason::Other(s)) => s == "Done",
         _ => false,
     };
-    writeln!(csv_out, "{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
+    writeln!(csv_out, "{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
         it_number,
         memory.physical_mem,
         memory.virtual_mem,
         it.egraph_nodes,
+        egraph.total_number_of_nodes(),
         it.egraph_classes,
         it.applied.iter().map(|(_, &n)| n).sum::<usize>(),
         it.total_time,

@@ -163,7 +163,7 @@ impl Applier<DBRise, DBRiseAnalysis> for SigVarApplier {
                 }
             } */
             &[DBRise::Var(Index(var))] => {
-                let i_num = i32_from_eclass(egraph, self.i);
+                let i_num = i32_from_eclass(egraph, subst[self.i]);
                 let n = var as i32;
                 let node = if n > i_num {
                     DBRise::Var(Index(var - 1))
@@ -204,8 +204,8 @@ impl Applier<DBRise, DBRiseAnalysis> for PhiVarApplier {
                 }
             } */
             &[DBRise::Var(Index(var))] => {
-                let i_num = i32_from_eclass(egraph, self.i);
-                let k_num = i32_from_eclass(egraph, self.k);
+                let i_num = i32_from_eclass(egraph, subst[self.i]);
+                let k_num = i32_from_eclass(egraph, subst[self.k]);
                 let n = var as i32;
                 let shifted = DBRise::Var(Index(if n >= k_num { (n + i_num) as u32 } else { var }));
                 let id = egraph.add(shifted);
