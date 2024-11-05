@@ -2,30 +2,52 @@ use crate::*;
 
 use std::collections::HashSet;
 
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum Constant {
+  Var(Index),
+  Number(i32),
+}
+
 #[derive(PartialEq, Eq, Clone)]
 pub struct DBRiseAnalysisData {
   pub free: HashSet<Index>,
-  // TODO: add this for fair comparison, or remove from egg baseline?
+  // TODO: use this instead of constant for fair comparison, or change egg baseline?
   // beta_extract: RecExpr<DBRise>,
+  pub constant: Option<Constant>,
 }
 
 pub fn i32_from_eclass(egraph: &EGraph<DBRise, DBRiseAnalysisData>, id: Id) -> i32 {
-  // TODO: use beta_extract result for fair comparison, or change egg baseline?
+  /*
+  Method 1: iterate through enodes in O(n)
+
   for enode in egraph.enodes(id) {
     match enode {
       DBRise::Number(n) => return n,
       _ => ()
     }
   }
+  */
+  // Method 2: use analysis result in O(1)
+  match egraph.analysis_data(id).constant {
+    Some(Constant::Number(n)) => return n,
+    _ => ()
+  }
   panic!("expected Number in eclass")
 }
 
 pub fn eclass_get_var(egraph: &EGraph<DBRise, DBRiseAnalysisData>, id: Id) -> Option<Index> {
+  /* Method 1
   for enode in egraph.enodes(id) {
     match enode {
       DBRise::Var(idx) => return Some(idx),
       _ => ()
     }
+  }
+  */
+  // Method 2
+  match egraph.analysis_data(id).constant {
+    Some(Constant::Var(idx)) => return Some(idx),
+    _ => ()
   }
   None
 }
@@ -33,10 +55,12 @@ pub fn eclass_get_var(egraph: &EGraph<DBRise, DBRiseAnalysisData>, id: Id) -> Op
 impl Analysis<DBRise> for DBRiseAnalysisData {
   fn make(eg: &EGraph<DBRise, Self>, enode: &DBRise) -> Self {
     let mut free = HashSet::default();
+    let mut constant = None;
 
     match enode {
       DBRise::Var(v) => {
         free.insert(*v);
+        constant = Some(Constant::Var(*v));
       }
       DBRise::Lam(a) => {
         free.extend(
@@ -78,18 +102,27 @@ impl Analysis<DBRise> for DBRiseAnalysisData {
               }
             }));
       }
-      _ => {
+      DBRise::Number(n) => {
+        constant = Some(Constant::Number(*n));
+      }
+      DBRise::App(_, _) | DBRise::Symbol(_) => {
         for aid in enode.applied_id_occurences() {
           free.extend(&eg.analysis_data(aid.id).free);
         }
       }
     }
 
-    DBRiseAnalysisData { free }
+    DBRiseAnalysisData { free, constant }
   }
 
   fn merge(mut l: Self, r: Self) -> Self {
     l.free.retain(|x| r.free.contains(x));
+    match (&l.constant, &r.constant) {
+      (None, None) => {}
+      (Some(_), None) => {}
+      (None, Some(_)) => { l.constant = r.constant }
+      (Some(a), Some(b)) => { assert_eq!(a, b) }
+    };
     l
   }
 }

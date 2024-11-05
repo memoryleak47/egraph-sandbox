@@ -10,7 +10,7 @@ pub enum RiseSubstMethod {
 }
 */
 
-pub fn db_rise_rules(subst_m: RiseSubstMethod) -> Vec<DBRewrite> {
+pub fn db_rise_rules() -> Vec<DBRewrite> {
   let mut rewrites = Vec::new();
 
   rewrites.push(eta());
