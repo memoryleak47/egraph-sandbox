@@ -14,7 +14,7 @@ def found_in_csv(path):
 def run_one_variant(variant, binary, binding, N, M, O, VARS):
     var = "var" if VARS else "novar"
     print(N, M, O, variant)
-    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 20m {binary} '{lhs}' '{rhs}' '{binding}' ./outputs/{variant}-{N}-{M}-{O}-{var}.csv > ./outputs/{variant}-{N}-{M}-{var}.output 2>&1")
+    os.system(f"/usr/bin/time -f '%E, %M Kbytes' timeout -v 5m {binary} '{lhs}' '{rhs}' '{binding}' ./outputs/{variant}-{N}-{M}-{O}-{var}.csv > ./outputs/{variant}-{N}-{M}-{O}-{var}.output 2>&1")
     return found_in_csv(f"./outputs/{variant}-{N}-{M}-{O}-{var}.csv")
 
 os.system("cd egg-rise; cargo b --release")
@@ -32,7 +32,8 @@ if len(sys.argv) == 4:
     run_one_variant("slotted-db", "./slotted-rise/target/release/slotted-rise", "de-bruijn", N, M, O, VARS)
     exit()
 
-os.system("rm -r outputs")
+# TODO: ask confirmation
+# os.system("rm -r outputs")
 os.system("mkdir -p outputs")
 
 """
@@ -50,41 +51,57 @@ rhs = "(lam $1 (app (app map (lam $42 (app f5 (app f4 (app f3 (var $42)))))) (ap
 """
 
 def may_run_one_variant(failed_before, variant, binary, binding, N, M, O, VARS):
-    if failed_before[0] == False:
+    if failed_before[0] is None:
         found = run_one_variant(variant, binary, binding, N, M, O, VARS)
         if not found:
+            # print(variant, "failed_before:", failed_before[0])
+            # print(variant, N, M, O)
             failed_before[0] = O
 
 def carry_failure(failed_before_nested, nested_min, failed_before_outer, outer):
     if failed_before_nested[0] == nested_min:
+        print("propagated failure outwards")
         failed_before_outer[0] = outer
 
-fdb_n = [False]
-fs_n = [False]
-fsdb_n = [False]
-for N in range(1, 4): # 21
-    fdb_m = [False]
-    fs_m = [False]
-    fsdb_m = [False]
-    for M in range(1, 4): # 21
-        failed_db = [False]
-        failed_slotted = [False]
-        failed_slotted_db = [False]
-        for O in range(0, 4): # 21
+def init_failure(nested_min, failed_outer):
+    if failed_outer[0] is None:
+        return [None]
+    else:
+        print("propagated failure inwards")
+        return [nested_min]
+
+fdb_n = [None]
+fs_n = [None]
+fsdb_n = [None]
+for N in range(1, 11):
+    min_m = 1
+    fdb_m = init_failure(min_m, fdb_n)
+    fs_m = init_failure(min_m, fs_n)
+    fsdb_m = init_failure(min_m, fsdb_n)
+    for M in range(min_m, 11):
+        min_o = 0
+        failed_db = init_failure(min_o, fdb_m)
+        failed_slotted = init_failure(min_o, fs_m)
+        failed_slotted_db = init_failure(min_o, fsdb_m)
+        for O in range(min_o, 11):
+            # TWEAK:
+            should_do_that_one = (
+                M == 2 or M == 3 or M == 4 or
+                O == 2 or O == 6
+            )
+            if not should_do_that_one:
+                print("skipping", N, M, O)
+                break
             lhs, rhs = generate(N, M, O, VARS)
-            # print(N, M, O)
-            # print(lhs)
-            # print(rhs)
-            # print("----")
             may_run_one_variant(failed_db, "egg-db", "./egg-rise/target/release/egg-rise", "de-bruijn", N, M, O, VARS)
             may_run_one_variant(failed_slotted, "slotted", "./slotted-rise/target/release/slotted-rise", "slot", N, M, O, VARS)
             may_run_one_variant(failed_slotted_db, "slotted-db", "./slotted-rise/target/release/slotted-rise", "de-bruijn", N, M, O, VARS)
-        carry_failure(failed_db, 0, fdb_m, M)
-        carry_failure(failed_slotted, 0, fs_m, M)
-        carry_failure(failed_slotted_db, 0, fsdb_m, M)
-    carry_failure(fdb_m, 1, fdb_n, N)
-    carry_failure(fs_m, 1, fs_n, N)
-    carry_failure(fsdb_m, 1, fsdb_n, N)
+        carry_failure(failed_db, min_o, fdb_m, M)
+        carry_failure(failed_slotted, min_o, fs_m, M)
+        carry_failure(failed_slotted_db, min_o, fsdb_m, M)
+    carry_failure(fdb_m, min_m, fdb_n, N)
+    carry_failure(fs_m, min_m, fs_n, N)
+    carry_failure(fsdb_m, min_m, fsdb_n, N)
 
 """
 DeBruijn saturates but fails to prove: λz. λx. ((λy. z) x) x = λz. z
