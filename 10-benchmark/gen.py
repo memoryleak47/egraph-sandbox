@@ -78,3 +78,12 @@ def generate(n, m, o, VARS):
     lhs = generate_lhs(n, m, o)
     rhs = generate_rhs(n, m, o)
     return lhs, rhs
+
+if __name__ == "__main__":
+    import sys
+    N = int(sys.argv[1])
+    M = int(sys.argv[2])
+    O = int(sys.argv[3])
+    lhs, rhs = generate(N, M, O, True)
+    print(lhs)
+    print(rhs)

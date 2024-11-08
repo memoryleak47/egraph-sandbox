@@ -11,6 +11,7 @@ def found_in_csv(path):
         print("found:", found)
         return found
 
+# FIXME: maybe pass lhs/rhs as parameters instead of globals?
 def run_one_variant(variant, binary, binding, N, M, O, VARS):
     var = "var" if VARS else "novar"
     print(N, M, O, variant)
