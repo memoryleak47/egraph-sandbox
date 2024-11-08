@@ -71,38 +71,73 @@ def init_failure(nested_min, failed_outer):
         print("propagated failure inwards")
         return [nested_min]
 
-fdb_n = [None]
-fs_n = [None]
-fsdb_n = [None]
+if False:
+    # THIS CODE SAMPLES MULTIPLE PLANES FROM THE GRID MORE EFFICIENTLY THAN SPERATE LOOPS, BUT ALSO DOES NOT COLLECT AS MUCH DATA ON FAILURE POINTS
+    fdb_n = [None]
+    fs_n = [None]
+    fsdb_n = [None]
+    for N in range(1, 11):
+        min_m = 1
+        fdb_m = init_failure(min_m, fdb_n)
+        fs_m = init_failure(min_m, fs_n)
+        fsdb_m = init_failure(min_m, fsdb_n)
+        for M in range(min_m, 11):
+            min_o = 0
+            failed_db = init_failure(min_o, fdb_m)
+            failed_slotted = init_failure(min_o, fs_m)
+            failed_slotted_db = init_failure(min_o, fsdb_m)
+            for O in range(min_o, 11):
+                # TWEAK:
+                should_do_that_one = (
+                    M == 2 or M == 3 or M == 4 or
+                    O == 2 or O == 6
+                )
+                if not should_do_that_one:
+                    print("skipping", N, M, O)
+                    break
+                lhs, rhs = generate(N, M, O, VARS)
+                may_run_one_variant(failed_db, "egg-db", "./egg-rise/target/release/egg-rise", "de-bruijn", N, M, O, VARS)
+                may_run_one_variant(failed_slotted, "slotted", "./slotted-rise/target/release/slotted-rise", "slot", N, M, O, VARS)
+                may_run_one_variant(failed_slotted_db, "slotted-db", "./slotted-rise/target/release/slotted-rise", "de-bruijn", N, M, O, VARS)
+            carry_failure(failed_db, min_o, fdb_m, M)
+            carry_failure(failed_slotted, min_o, fs_m, M)
+            carry_failure(failed_slotted_db, min_o, fsdb_m, M)
+        carry_failure(fdb_m, min_m, fdb_n, N)
+        carry_failure(fs_m, min_m, fs_n, N)
+        carry_failure(fsdb_m, min_m, fsdb_n, N)
+
+fdb = [None]
+fs = [None]
+fsdb = [None]
+for O in range(0, 11):
+    N = 2
+    M = 2
+    lhs, rhs = generate(N, M, O, VARS)
+    may_run_one_variant(fdb, "egg-db", "./egg-rise/target/release/egg-rise", "de-bruijn", N, M, O, VARS)
+    may_run_one_variant(fs, "slotted", "./slotted-rise/target/release/slotted-rise", "slot", N, M, O, VARS)
+    may_run_one_variant(fsdb, "slotted-db", "./slotted-rise/target/release/slotted-rise", "de-bruijn", N, M, O, VARS)
+
+fdb = [None]
+fs = [None]
+fsdb = [None]
+for M in range(1, 11):
+    N = 2
+    O = 2
+    lhs, rhs = generate(N, M, O, VARS)
+    may_run_one_variant(fdb, "egg-db", "./egg-rise/target/release/egg-rise", "de-bruijn", N, M, O, VARS)
+    may_run_one_variant(fs, "slotted", "./slotted-rise/target/release/slotted-rise", "slot", N, M, O, VARS)
+    may_run_one_variant(fsdb, "slotted-db", "./slotted-rise/target/release/slotted-rise", "de-bruijn", N, M, O, VARS)
+
+fdb = [None]
+fs = [None]
+fsdb = [None]
 for N in range(1, 11):
-    min_m = 1
-    fdb_m = init_failure(min_m, fdb_n)
-    fs_m = init_failure(min_m, fs_n)
-    fsdb_m = init_failure(min_m, fsdb_n)
-    for M in range(min_m, 11):
-        min_o = 0
-        failed_db = init_failure(min_o, fdb_m)
-        failed_slotted = init_failure(min_o, fs_m)
-        failed_slotted_db = init_failure(min_o, fsdb_m)
-        for O in range(min_o, 11):
-            # TWEAK:
-            should_do_that_one = (
-                M == 2 or M == 3 or M == 4 or
-                O == 2 or O == 6
-            )
-            if not should_do_that_one:
-                print("skipping", N, M, O)
-                break
-            lhs, rhs = generate(N, M, O, VARS)
-            may_run_one_variant(failed_db, "egg-db", "./egg-rise/target/release/egg-rise", "de-bruijn", N, M, O, VARS)
-            may_run_one_variant(failed_slotted, "slotted", "./slotted-rise/target/release/slotted-rise", "slot", N, M, O, VARS)
-            may_run_one_variant(failed_slotted_db, "slotted-db", "./slotted-rise/target/release/slotted-rise", "de-bruijn", N, M, O, VARS)
-        carry_failure(failed_db, min_o, fdb_m, M)
-        carry_failure(failed_slotted, min_o, fs_m, M)
-        carry_failure(failed_slotted_db, min_o, fsdb_m, M)
-    carry_failure(fdb_m, min_m, fdb_n, N)
-    carry_failure(fs_m, min_m, fs_n, N)
-    carry_failure(fsdb_m, min_m, fsdb_n, N)
+    M = 2
+    O = 2
+    lhs, rhs = generate(N, M, O, VARS)
+    may_run_one_variant(fdb, "egg-db", "./egg-rise/target/release/egg-rise", "de-bruijn", N, M, O, VARS)
+    may_run_one_variant(fs, "slotted", "./slotted-rise/target/release/slotted-rise", "slot", N, M, O, VARS)
+    may_run_one_variant(fsdb, "slotted-db", "./slotted-rise/target/release/slotted-rise", "de-bruijn", N, M, O, VARS)
 
 """
 DeBruijn saturates but fails to prove: λz. λx. ((λy. z) x) x = λz. z

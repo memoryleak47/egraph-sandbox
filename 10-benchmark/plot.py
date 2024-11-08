@@ -114,49 +114,49 @@ def plot_3d(zcol, zfmt, fixed_o):
 
   plt.show()
 
-def plot_2d_plane(plane_str, data, x_axis, y_axis, y_fmt):
-  impls = data["impl"].unique()
-  variants = data["variant"].unique()
+def plot_2d_plane(filename_str, plane_str, data, x_axis, y_axis, y_fmt):
+  impls = np.sort(data["impl"].unique())
+  variants = np.sort(data["variant"].unique())
   x_min = data[x_axis].min()
   x_max = data[x_axis].max()
   y_min = data[y_axis].min()
   y_max = data[y_axis].max()
-  fig, axs = plt.subplots(len(impls), len(variants), squeeze=False, constrained_layout=True)
+  fig, axs = plt.subplots(len(impls), len(variants), squeeze=False, constrained_layout=True, sharex=True, sharey=True)
   for impl_i, impl in enumerate(impls):
     for variant_i, variant in enumerate(variants):
       ax = axs[impl_i][variant_i]
       ldata = data[(data["impl"] == impl) & (data["variant"] == variant)]
-      cmap = clr.ListedColormap(["green", "red"])
-      ax.scatter(x_axis, y_axis, c="found", cmap=cmap, data=ldata)
+      cmap = clr.ListedColormap(['red', 'green'])
+      ax.scatter(x_axis, y_axis, c="found", cmap=cmap, norm=None, vmin=False, vmax=True, data=ldata)
 
       ax.set_title("{}, {}, {}".format(plane_str, impl, variant))
       ax.set_xlim(x_min, x_max)
       ax.set_ylim(y_min, y_max)
 
-      if x_axis == "n":
-        ax.set_xlabel("N (#maps)")
-      elif x_axis == "m":
-        ax.set_xlabel("M (#funcs / 2)")
-      elif x_axis == "o":
-        ax.set_xlabel("O (#params)")
-      else:
-        ax.set_xlabel(x_axis)
-
       ax.set_ylabel(y_axis)
       ax.yaxis.set_major_formatter(y_fmt)
-  plt.show()
+  # plt.show()
+    if x_axis == "n":
+      fig.supxlabel("N (#maps)")
+    elif x_axis == "m":
+      fig.supxlabel("M (#funcs / 2)")
+    elif x_axis == "o":
+      fig.supxlabel("O (#params)")
+    else:
+      fig.supxlabel(x_axis)
+  plt.savefig(f"plots/{filename_str}-{x_axis}-{y_axis}.pdf")
 
 # 2D Plots:
 # N=2, M=2, plot O
 # N=2, plot M, O=2
 # plot N, M=2, O=2
 def plot_2d_planes(metric, metric_fmt):
-  for (plane_str, x_axis, filtered_data) in [
-    ("N = 2, M = 2", "o", data[(data["n"] == 2) & (data["m"] == 2)]),
-    ("N = 2, O = 2", "m", data[(data["n"] == 2) & (data["o"] == 2)]),
-    ("M = 2, O = 2", "n", data[(data["m"] == 2) & (data["o"] == 2)])
+  for (filename_str, plane_str, x_axis, filtered_data) in [
+    ("n2-m2", "N = 2, M = 2", "o", data[(data["n"] == 2) & (data["m"] == 2)]),
+    ("n2-o2", "N = 2, O = 2", "m", data[(data["n"] == 2) & (data["o"] == 2)]),
+    ("m2-o2", "M = 2, O = 2", "n", data[(data["m"] == 2) & (data["o"] == 2)])
   ]:
-    plot_2d_plane(plane_str, filtered_data, x_axis, metric, metric_fmt)
+    plot_2d_plane(filename_str, plane_str, filtered_data, x_axis, metric, metric_fmt)
 
 def bytes_fmt_func(x, pos):
   s = '{} GB'.format(x / 1e9)

@@ -3,6 +3,9 @@
 import os
 
 def generate(n, m, o, VARS):
+    assert (n >= 1)
+    assert (m >= 1)
+    assert (o >= 0)
     FRESH = [0]
 
     def var_wrapper(x):
@@ -30,7 +33,7 @@ def generate(n, m, o, VARS):
         out = f
         for i in range(1, o+1):
             v = var_wrapper(f"p{i}")
-            out = f"(app {f} {v})"
+            out = f"(app {out} {v})"
         return out
 
     # f1 ° ... ° fm
