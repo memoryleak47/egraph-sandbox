@@ -130,9 +130,9 @@ dependencies = [
 
 [[package]]
 name = "slotted-egraphs"
-version = "0.0.24"
+version = "0.0.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5706389d754233e6d89a4e4c84f887fce599410ba50e42086197f65b6a385c4"
+checksum = "722e4d39cab4c58c7065c5da8a50b659a5c7895059a80790fb7cc5f749929bd0"
 dependencies = [
  "fnv",
  "tracing",
