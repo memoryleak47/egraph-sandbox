@@ -114,7 +114,7 @@ def plot_3d(zcol, zfmt, fixed_o):
 
   plt.show()
 
-def plot_2d_plane(filename_str, plane_str, data, x_axis, y_axis, y_fmt):
+def plot_2d_plane_subplots(filename_str, plane_str, data, x_axis, y_axis, y_fmt):
   impls = np.sort(data["impl"].unique())
   variants = np.sort(data["variant"].unique())
   x_min = data[x_axis].min()
@@ -146,6 +146,63 @@ def plot_2d_plane(filename_str, plane_str, data, x_axis, y_axis, y_fmt):
       fig.supxlabel(x_axis)
   plt.savefig(f"plots/{filename_str}-{x_axis}-{y_axis}.pdf")
 
+def plot_2d_plane(filename_str, plane_str, data, x_axis, y_axis, y_fmt):
+  impls = np.sort(data["impl"].unique())
+  x_min = data[x_axis].min()
+  x_max = data[x_axis].max()
+  y_min = data[y_axis].min()
+  y_max = data[y_axis].max()
+
+  plt.figure(figsize=(3.2, 2.4))
+  for impl_i, impl in enumerate(impls):
+    ldata = data[(data["impl"] == impl) & (data["variant"] == "var")]
+
+    # plot lines
+    sdata = ldata.sort_values(by=x_axis)
+    linestyle = "-"
+    if impl == "egg-db":
+      linestyle = "--"
+    elif impl == "slotted":
+      linestyle = ":"
+    elif impl == "slotted-db":
+      linestyle = "-."
+    lines = plt.plot(x_axis, y_axis, data=sdata, label=impl, zorder=1, linestyle=linestyle)
+
+    # plot points
+    # cmap = clr.ListedColormap(['red', 'green'])
+    # plt.scatter(x_axis, y_axis, c="found", cmap=cmap, norm=None, vmin=False, vmax=True, data=ldata, label=None, zorder=2)
+    plt.scatter(x_axis, y_axis, c="green", marker="o", data=ldata[ldata["found"] == True], label=None, zorder=2)
+    plt.scatter(x_axis, y_axis, c="red", marker="X", data=ldata[ldata["found"] == False], label=None, zorder=2)
+
+
+  # plt.title("{}".format(plane_str))
+  if y_axis == "total_time":
+    plt.legend(loc='best')
+  ax = plt.gca()
+
+  ax.set_xlim(x_min, x_max)
+  if y_axis == "total_time":
+    ax.set_ylabel("time")
+  elif y_axis == "virtual_memory":
+    ax.set_ylabel("memory")
+  else:
+    ax.set_ylabel(y_axis)
+  ax.yaxis.set_major_formatter(y_fmt)
+
+  ax.set_ylim(y_min, y_max)
+  if x_axis == "n":
+    ax.set_xlabel("N (#maps)")
+  elif x_axis == "m":
+    ax.set_xlabel("M (#funcs / 2)")
+  elif x_axis == "o":
+    ax.set_xlabel("number of function parameters")
+  else:
+    ax.set_xlabel(x_axis)
+
+  plt.tight_layout()
+  plt.savefig(f"plots/{filename_str}-{x_axis}-{y_axis}.pdf")
+  plt.clf()
+
 # 2D Plots:
 # N=2, M=2, plot O
 # N=2, plot M, O=2
@@ -159,7 +216,7 @@ def plot_2d_planes(metric, metric_fmt):
     plot_2d_plane(filename_str, plane_str, filtered_data, x_axis, metric, metric_fmt)
 
 def bytes_fmt_func(x, pos):
-  s = '{} GB'.format(x / 1e9)
+  s = '{} GB'.format(round(x / 1e9))
   return s
 
 def nodes_fmt_func(x, pos):
@@ -167,20 +224,46 @@ def nodes_fmt_func(x, pos):
   return s
 
 def sec_fmt_func(x, pos):
-  s = '{} s'.format(x)
+  s = '{} s'.format(round(x))
   return s
 
+def plot_all_in_one():
+  impls = np.sort(data["impl"].unique())
+  for impl_i, impl in enumerate(impls):
+    found_data = data[(data["found"] == True) & (data["impl"] == impl)]
+    not_found_data = data[(data["found"] == False) & (data["impl"] == impl)]
+    plt.scatter("total_time", "virtual_memory", data=found_data, label=impl, marker="o")
+    plt.scatter("total_time", "virtual_memory", data=not_found_data, label=impl, marker="X")
+
+  plt.legend(loc='best')
+  ax = plt.gca()
+  ax.set_xlim(data["total_time"].min(), data["total_time"].max())
+  ax.set_ylim(data["virtual_memory"].min(), data["virtual_memory"].max())
+
+  ax.set_xlabel("time")
+  ax.set_ylabel("memory")
+  ax.xaxis.set_major_formatter(tkr.FuncFormatter(sec_fmt_func))
+  ax.yaxis.set_major_formatter(tkr.FuncFormatter(bytes_fmt_func))
+  ax.set_xscale("log")
+  ax.set_yscale("log")
+
+  plt.savefig(f"plots/all_in_one.pdf")
+
+print(data[(data["n"] == 2) & (data["m"] == 2)][["impl", "o", "iteration_number", "virtual_memory", "e-nodes", "e-classes", "total_time", "found"]].sort_values(by=["o", "impl"]))
+# exit(1)
+
 # Plot for each metric
-for metric in ["total_time", "virtual_memory", "e-nodes", "e-classes"]:
+for metric in ["total_time", "virtual_memory", "e-nodes", "e-classes", "iteration_number"]:
   fmt = None
   if metric == "virtual_memory":
     fmt = tkr.FuncFormatter(bytes_fmt_func)
   elif metric == "e-nodes" or metric == "e-classes":
     fmt = tkr.FuncFormatter(nodes_fmt_func)
   elif metric == "total_time":
-    # NOTE: this is the time of the last iteration, not of entire process
     fmt = tkr.FuncFormatter(sec_fmt_func)
   else:
-    raise Exception(f"did not expect {metric}")
+    fmt = tkr.ScalarFormatter()
 
   plot_2d_planes(metric, fmt)
+
+plot_all_in_one()
