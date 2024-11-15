@@ -154,8 +154,17 @@ def plot_2d_plane(filename_str, plane_str, data, x_axis, y_axis, y_fmt):
   y_max = data[y_axis].max()
 
   plt.figure(figsize=(3.2, 2.4))
+  ax = plt.gca()
+
   for impl_i, impl in enumerate(impls):
     ldata = data[(data["impl"] == impl) & (data["variant"] == "var")]
+
+    # update value for preemptive timeout
+    tmp = ldata["total_time"].case_when([(
+      (ldata["found"] == False) & (ldata["virtual_memory"] < 4000000000),
+      5*60
+    )])
+    ldata.loc[tmp.index, "total_time"] = tmp
 
     # plot lines
     sdata = ldata.sort_values(by=x_axis)
@@ -171,25 +180,26 @@ def plot_2d_plane(filename_str, plane_str, data, x_axis, y_axis, y_fmt):
     # plot points
     # cmap = clr.ListedColormap(['red', 'green'])
     # plt.scatter(x_axis, y_axis, c="found", cmap=cmap, norm=None, vmin=False, vmax=True, data=ldata, label=None, zorder=2)
-    plt.scatter(x_axis, y_axis, c="green", marker="o", data=ldata[ldata["found"] == True], label=None, zorder=2)
+    plt.scatter(x_axis, y_axis, c=lines[0].get_color(), marker="o", data=ldata[ldata["found"] == True], label=None, zorder=2)
     plt.scatter(x_axis, y_axis, c="red", marker="X", data=ldata[ldata["found"] == False], label=None, zorder=2)
 
 
   # plt.title("{}".format(plane_str))
   if y_axis == "total_time":
     plt.legend(loc='best')
-  ax = plt.gca()
 
-  ax.set_xlim(x_min, x_max)
   if y_axis == "total_time":
     ax.set_ylabel("time")
+    #ax.set_ylim(y_min - 1.0, y_max)
   elif y_axis == "virtual_memory":
     ax.set_ylabel("memory")
+    # ax.set_ylim(1, y_max)
   else:
     ax.set_ylabel(y_axis)
+    #ax.set_ylim(y_min, y_max)
   ax.yaxis.set_major_formatter(y_fmt)
 
-  ax.set_ylim(y_min, y_max)
+  ax.set_xlim(x_min, x_max)
   if x_axis == "n":
     ax.set_xlabel("N (#maps)")
   elif x_axis == "m":
