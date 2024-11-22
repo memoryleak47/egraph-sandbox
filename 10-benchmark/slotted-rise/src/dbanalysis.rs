@@ -106,7 +106,7 @@ impl Analysis<DBRise> for DBRiseAnalysisData {
         constant = Some(Constant::Number(*n));
       }
       DBRise::App(_, _) | DBRise::Symbol(_) => {
-        for aid in enode.applied_id_occurences() {
+        for aid in enode.applied_id_occurrences() {
           free.extend(&eg.analysis_data(aid.id).free);
         }
       }
