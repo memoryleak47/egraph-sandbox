@@ -8,8 +8,7 @@ trace = ["slotted-egraphs/trace"]
 explanations = ["slotted-egraphs/explanations"]
 
 [dependencies]
-slotted-egraphs = "0.0.24"
-# slotted-egraphs = { path = "../../../slotted-egraphs" }
+slotted-egraphs = "=0.0.32"
 symbol_table = { version = "0.3", features = ["global"]}
 memory-stats = "1.0.0"
 tracing = "0.1"

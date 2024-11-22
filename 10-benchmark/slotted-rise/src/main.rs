@@ -127,7 +127,7 @@ fn to_db(e: RecExpr<Rise>) -> RecExpr<DBRise> {
                     .unwrap_or_else(|| panic!("{} not bound", x));
                 RecExpr { node: DBRise::Var(Index(pos as u32)), children: vec![] }
             },
-            Rise::Lam(x, _) => {
+            Rise::Lam(Bind{slot:x, ..}) => {
                 let mut bound2 = vec![x];
                 bound2.extend_from_slice(&bound[..]);
                 let children = expr.children.into_iter().map(|c| rec(c, &bound2[..])).collect();
@@ -137,7 +137,7 @@ fn to_db(e: RecExpr<Rise>) -> RecExpr<DBRise> {
                 let children = expr.children.into_iter().map(|c| rec(c, &bound[..])).collect();
                 RecExpr { node: DBRise::App(AppliedId::null(), AppliedId::null()), children }
             }
-            Rise::Let(_, _, _) => unimplemented!(),
+            Rise::Let(..) => unimplemented!(),
         }
     }
 

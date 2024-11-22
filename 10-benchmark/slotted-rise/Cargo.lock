@@ -130,12 +130,25 @@ dependencies = [
 
 [[package]]
 name = "slotted-egraphs"
-version = "0.0.24"
+version = "0.0.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5706389d754233e6d89a4e4c84f887fce599410ba50e42086197f65b6a385c4"
+checksum = "80c8f9ad3e0ca4da5d94f57b73100141290756d2eb1524bfa711c1a6cecdc277"
 dependencies = [
  "fnv",
+ "slotted-egraphs-derive",
+ "symbol_table",
  "tracing",
+]
+
+[[package]]
+name = "slotted-egraphs-derive"
+version = "0.0.32"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59b650c9f199f4c3ebc7de2e875c97e4993f61432cc0c2dc75ac3cc1c6faa72a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
