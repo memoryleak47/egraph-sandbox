@@ -7,7 +7,7 @@ pub enum DBRise {
     // lambda calculus:
     Lam(AppliedId) = "lam",
     App(AppliedId, AppliedId) = "app",
-    Var(Index) = "var",
+    Var(Index),
     Sigma(AppliedId, AppliedId, AppliedId) = "sig",
     Phi(AppliedId, AppliedId, AppliedId) = "phi",
     // can do that, but unfair to egg? :
